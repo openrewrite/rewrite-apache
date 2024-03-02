@@ -8,7 +8,7 @@
 
 ### What is this?
 
-This project implements a [Rewrite module](https://github.com/openrewrite/rewrite) that performs common tasks when migrating to new version of Apache projects.  
+This project implements a [Rewrite module](https://github.com/openrewrite/rewrite) that performs common tasks for Apache projects.
 
 Browse [a selection of recipes available through this module in the recipe catalog](https://docs.openrewrite.org/recipes/apache).
 
