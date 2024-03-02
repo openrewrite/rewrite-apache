@@ -51,21 +51,21 @@ tags:
   - apache
   - commons
 recipeList:
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.io.Charsets.ISO_8859_1
-      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets.ISO_8859_1
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.io.Charsets.US_ASCII
-      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets.US_ASCII
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.io.Charsets.UTF_8
-      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets.UTF_8
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.io.Charsets.UTF_16
-      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets.UTF_16
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.io.Charsets.UTF_16BE
-      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets.UTF_16BE
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.io.Charsets.UTF_16LE
-      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets.UTF_16LE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.commons.io.Charsets.ISO_8859_1
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.ISO_8859_1
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.commons.io.Charsets.US_ASCII
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.US_ASCII
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.commons.io.Charsets.UTF_8
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.UTF_8
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.commons.io.Charsets.UTF_16
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.UTF_16
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.commons.io.Charsets.UTF_16BE
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.UTF_16BE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.commons.io.Charsets.UTF_16LE
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.UTF_16LE

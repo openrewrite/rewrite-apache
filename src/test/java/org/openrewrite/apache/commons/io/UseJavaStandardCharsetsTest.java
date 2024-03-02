@@ -17,7 +17,6 @@ package org.openrewrite.apache.commons.io;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -28,10 +27,7 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .recipe(Environment.builder()
-            .scanRuntimeClasspath("org.openrewrite.apache.commons.io")
-            .build()
-            .activateRecipes("org.openrewrite.apache.commons.io.UseStandardCharsets"))
+          .recipeFromResources("org.openrewrite.apache.commons.io.UseStandardCharsets")
           .parser(JavaParser.fromJavaVersion().classpath("commons-io"));
     }
 
