@@ -15,7 +15,6 @@
  */
 package org.openrewrite.apache.commons.io;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -32,7 +31,7 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
     }
 
     @Test
-    @Disabled
+    @SuppressWarnings("deprecation")
     void toStandardCharsets() {
         //language=java
         rewriteRun(
@@ -40,7 +39,7 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
             """
               import java.nio.charset.Charset;
               import org.apache.commons.io.Charsets;
-                            
+              
               class A {
                    Charset iso88591 = Charsets.ISO_8859_1;
                    Charset usAscii = Charsets.US_ASCII;
@@ -53,7 +52,7 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
             """
               import java.nio.charset.Charset;
               import java.nio.charset.StandardCharsets;
-                            
+              
               class A {
                    Charset iso88591 = StandardCharsets.ISO_8859_1;
                    Charset usAscii = StandardCharsets.US_ASCII;
