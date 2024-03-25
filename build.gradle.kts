@@ -35,7 +35,7 @@ dependencies {
     testImplementation("commons-codec:commons-codec:1.+")
 
     testRuntimeOnly("org.apache.httpcomponents:httpclient:4.5.14")
-    testRuntimeOnly("org.apache.httpcomponents.client5:httpclient5:5.1.+")
+    testRuntimeOnly("org.apache.httpcomponents.client5:httpclient5:5.2.+")
 
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:latest.release")
