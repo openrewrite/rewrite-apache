@@ -41,6 +41,9 @@ dependencies {
     testImplementation("commons-collections:commons-collections:3.2.2")
     testImplementation("org.apache.commons:commons-collections4:4.4")
 
+    testImplementation("commons-lang:commons-lang:2.6")
+    testImplementation("org.apache.commons:commons-lang3:3.+")
+
     testImplementation("org.junit.jupiter:junit-jupiter-engine:latest.release")
 
 }
