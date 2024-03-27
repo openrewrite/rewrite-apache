@@ -1,0 +1,48 @@
+#
+# Copyright 2024 original author or authors.
+# <p>
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://www.apache.org/licenses/LICENSE-2.0
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+########################################################################################################################
+# Apache Commons Collections
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4
+displayName: Migrates to Apache Commons Collections 4.x
+description: >
+  Migrate applications to the latest Apache Commons Collections 4.x release. This recipe modifies 
+  application's build files, make changes to deprecated/preferred APIs, and migrates configuration settings that have
+  changes between versions.
+tags:
+  - apache
+  - commons
+  - collections
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: commons-collections
+      oldArtifactId: commons-collections
+      newGroupId: org.apache.commons
+      newArtifactId: commons-collections4
+      newVersion: 4.x
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.collections.map.IdentityMap
+      newFullyQualifiedTypeName: java.util.IdentityHashMap
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.collections.MapUtils
+      oldFieldName: EMPTY_MAP
+      newClassName: java.util.Collections
+      newMethodName: emptyMap
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.collections
+      newPackageName: org.apache.commons.collections4
