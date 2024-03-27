@@ -8,6 +8,7 @@ description = "Apache Migration"
 recipeDependencies {
     parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.1.+")
     parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.1.+")
+    parserClasspath("org.apache.commons:commons-collections4:4.4")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
@@ -19,7 +20,7 @@ dependencies {
     implementation("org.openrewrite:rewrite-templating:$rewriteVersion")
 
     annotationProcessor("org.openrewrite:rewrite-templating:$rewriteVersion")
-    compileOnly("com.google.errorprone:error_prone_core:2.19.1:with-dependencies") {
+    compileOnly("com.google.errorprone:error_prone_core:2.19.1") {
         exclude("com.google.auto.service", "auto-service-annotations")
     }
 
@@ -37,6 +38,9 @@ dependencies {
     testRuntimeOnly("org.apache.httpcomponents:httpclient:4.5.14")
     testRuntimeOnly("org.apache.httpcomponents.client5:httpclient5:5.2.+")
 
+    testImplementation("commons-collections:commons-collections:3.2.2")
+    testImplementation("org.apache.commons:commons-collections4:4.4")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:latest.release")
+
 }

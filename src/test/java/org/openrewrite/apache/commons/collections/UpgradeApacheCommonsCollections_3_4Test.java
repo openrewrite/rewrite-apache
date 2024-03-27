@@ -17,6 +17,7 @@ package org.openrewrite.apache.commons.collections;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -28,12 +29,53 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpath(
-            "httpclient", "httpcore",
-            "httpclient5", "httpcore5"))
+            "commons-collections", "commons-collections4"))
           .recipe(Environment.builder()
             .scanRuntimeClasspath("org.openrewrite")
             .build()
-            .activateRecipes(" org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4")
+            .activateRecipes("org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4")
           );
+    }
+
+    @DocumentExample
+    @Test
+    void apacheCommonsCollections() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.collections.CollectionUtils;
+              import org.apache.commons.collections.map.IdentityMap;
+              import org.apache.commons.collections.MapUtils;
+
+              import java.util.Map;
+
+              class Test {
+                  static void helloApacheCollections() {
+                      Object[] input = new Object[] { "one", "two" };
+                      CollectionUtils.reverseArray(input);
+                      IdentityMap identityMap = new IdentityMap();
+                      Map emptyMap = MapUtils.EMPTY_MAP;
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              import java.util.Collections;
+              import java.util.IdentityHashMap;
+              import java.util.Map;
+
+              class Test {
+                  static void helloApacheCollections() {
+                      Object[] input = new Object[] { "one", "two" };
+                      CollectionUtils.reverseArray(input);
+                      IdentityHashMap identityMap = new IdentityHashMap();
+                      Map emptyMap = Collections.emptyMap();
+                  }
+              }
+              """
+          )
+        );
     }
 }
