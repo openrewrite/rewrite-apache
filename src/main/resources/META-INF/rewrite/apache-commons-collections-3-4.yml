@@ -38,6 +38,9 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.collections.map.IdentityMap
       newFullyQualifiedTypeName: java.util.IdentityHashMap
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.collections.FastArrayList
+      newFullyQualifiedTypeName: java.util.concurrent.CopyOnWriteArrayList
   - org.openrewrite.java.ChangeStaticFieldToMethod:
       oldClassName: org.apache.commons.collections.MapUtils
       oldFieldName: EMPTY_MAP
