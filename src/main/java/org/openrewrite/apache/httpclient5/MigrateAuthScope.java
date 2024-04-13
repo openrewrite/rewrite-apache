@@ -15,47 +15,52 @@
  */
 package org.openrewrite.apache.httpclient5;
 
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.TypeUtils;
 
-public class NewStatusLine extends Recipe {
+@Value
+@EqualsAndHashCode(callSuper = false)
+public class MigrateAuthScope extends Recipe {
+
     @Override
     public String getDisplayName() {
-        return "Replaces deprecated `HttpResponse::getStatusLine()`";
+        return "Replaces `AuthScope.ANY`";
     }
 
     @Override
     public String getDescription() {
-        return "`HttpResponse::getStatusLine()` was deprecated in 4.x, so we replace it for `new StatusLine(HttpResponse)`. " +
-                "Ideally we will try to simplify method chains for `getStatusCode`, `getProtocolVersion` and `getReasonPhrase`, " +
-                "but there are some scenarios where the `StatusLine` object is assigned or used directly, and we need to " +
-                "instantiate the object.";
+        return "Replace removed constant `org.apache.http.auth.AuthScope.AuthScope.ANY` with `new org.apache.hc.client5.http.auth.AuthScope(null, -1)`";
     }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new JavaVisitor<ExecutionContext>() {
-            final MethodMatcher matcher = new MethodMatcher("org.apache.hc.core5.http.HttpResponse getStatusLine()");
-
-            @Override
-            public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-                J.MethodInvocation m = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
-                if (matcher.matches(m)) {
-                    maybeAddImport("org.apache.hc.core5.http.message.StatusLine");
-                    return JavaTemplate.builder("new StatusLine(#{any(org.apache.hc.core5.http.HttpResponse)})")
-                            .imports("org.apache.hc.core5.http.message.StatusLine")
-                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
-                            .build()
-                            .apply(updateCursor(m), m.getCoordinates().replace(), m.getSelect());
-                }
-                return m;
-            }
-        };
+        return Preconditions.check(
+                new UsesType<>("org.apache.hc.client5.http.auth.AuthScope", false),
+                new JavaVisitor<ExecutionContext>() {
+                    @Override
+                    public J visitFieldAccess(J.FieldAccess fieldAccess, ExecutionContext ctx) {
+                        J.FieldAccess f = (J.FieldAccess) super.visitFieldAccess(fieldAccess, ctx);
+                        // Type was already relocated by previous recipe
+                        if ("ANY".equals(f.getSimpleName()) && TypeUtils.isOfClassType(f.getTarget().getType(), "org.apache.hc.client5.http.auth.AuthScope")) {
+                            maybeAddImport("org.apache.hc.client5.http.auth.AuthScope");
+                            return JavaTemplate.builder("new AuthScope(null, -1)")
+                                    .imports("org.apache.hc.client5.http.auth.AuthScope")
+                                    .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
+                                    .build()
+                                    .apply(updateCursor(f), f.getCoordinates().replace());
+                        }
+                        return f;
+                    }
+                });
     }
 }

@@ -15,6 +15,8 @@
  */
 package org.openrewrite.apache.httpclient5;
 
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
@@ -24,7 +26,10 @@ import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.J;
 
+@Value
+@EqualsAndHashCode(callSuper = false)
 public class NewStatusLine extends Recipe {
+
     @Override
     public String getDisplayName() {
         return "Replaces deprecated `HttpResponse::getStatusLine()`";
