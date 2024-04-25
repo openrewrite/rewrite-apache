@@ -53,7 +53,7 @@ public class MigrateDefaultHttpClient extends Recipe {
         return Preconditions.check(new UsesType<>("org.apache.http.impl.client.DefaultHttpClient", false), new JavaVisitor<ExecutionContext>() {
             final MethodMatcher noArgsMatcher = new MethodMatcher("org.apache.http.impl.client.DefaultHttpClient <constructor>()");
             final JavaTemplate noArgsTemplate = JavaTemplate.builder("HttpClients.createDefault()")
-                    .javaParser(JavaParser.fromJavaVersion().classpath("httpclient"))
+                    .javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
                     .imports("org.apache.http.impl.client.HttpClients")
                     .build();
 
