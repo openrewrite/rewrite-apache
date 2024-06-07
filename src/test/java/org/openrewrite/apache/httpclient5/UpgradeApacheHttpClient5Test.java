@@ -64,8 +64,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                 </dependencies>
             </project>
             """, spec -> spec.after(pom -> {
-              Matcher version = Pattern.compile("5\\.2\\.\\d+").matcher(pom);
-              assertThat(version.find()).describedAs("Expected 5.2.x in %s", pom).isTrue();
+              Matcher version = Pattern.compile("5\\.3\\.\\d+").matcher(pom);
+              assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
               return """
                 <project>
                     <modelVersion>4.0.0</modelVersion>
