@@ -95,7 +95,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             import org.apache.http.client.methods.HttpGet;
             import org.apache.http.client.methods.HttpUriRequest;
             import org.apache.http.util.EntityUtils;
-                          
+
             class A {
                 void method(HttpEntity entity, String urlStr) throws Exception {
                     HttpUriRequest getRequest = new HttpGet(urlStr);
@@ -107,7 +107,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             import org.apache.hc.core5.http.HttpEntity;
             import org.apache.hc.client5.http.classic.methods.HttpGet;
             import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
-                          
+
             class A {
                 void method(HttpEntity entity, String urlStr) throws Exception {
                     HttpUriRequest getRequest = new HttpGet(urlStr);
@@ -220,4 +220,47 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         );
     }
 
+    @Test
+    void convertRequestBuilderToClassicRequestBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+        import org.apache.http.client.methods.CloseableHttpResponse;
+        import org.apache.http.client.methods.HttpUriRequest;
+        import org.apache.http.impl.client.CloseableHttpClient;
+        import org.apache.http.impl.client.HttpClientBuilder;
+        import org.apache.http.client.methods.RequestBuilder;
+
+        import java.io.IOException;
+
+        class A {
+            void method() throws IOException {
+                RequestBuilder requestBuilder = RequestBuilder.get("https://moderne.io");
+                HttpUriRequest request = requestBuilder.build();
+                CloseableHttpClient instance = HttpClientBuilder.create().build();
+                CloseableHttpResponse response = instance.execute(request);
+            }
+        }
+        """,
+        """
+        import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+        import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+        import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+        import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+        import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
+
+        import java.io.IOException;
+
+        class A {
+            void method() throws IOException {
+                ClassicRequestBuilder requestBuilder = ClassicRequestBuilder.get("https://moderne.io");
+                HttpUriRequest request = requestBuilder.build();
+                CloseableHttpClient instance = HttpClientBuilder.create().build();
+                CloseableHttpResponse response = instance.execute(request);
+            }
+        }
+        """)
+        );
+    }
 }

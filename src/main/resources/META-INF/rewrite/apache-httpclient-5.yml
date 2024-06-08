@@ -275,6 +275,12 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.RedirectStrategy
       newFullyQualifiedTypeName: org.apache.hc.client5.http.protocol.RedirectStrategy
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.client.methods.RequestBuilder
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.support.ClassicRequestBuilder
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.classic.methods.RequestBuilder
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.support.ClassicRequestBuilder
 
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.config
