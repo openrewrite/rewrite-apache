@@ -46,9 +46,11 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
             """
               import org.apache.commons.collections.CollectionUtils;
               import org.apache.commons.collections.map.IdentityMap;
+              import org.apache.commons.collections.ListUtils;
               import org.apache.commons.collections.MapUtils;
               import org.apache.commons.collections.FastArrayList;
 
+              import java.util.List;
               import java.util.Map;
 
               class Test {
@@ -58,6 +60,7 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
                       IdentityMap identityMap = new IdentityMap();
                       Map emptyMap = MapUtils.EMPTY_MAP;
                       FastArrayList fastList = new FastArrayList(100);
+                      List emptyList = ListUtils.EMPTY_LIST;
                   }
               }
               """,
@@ -66,6 +69,7 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
 
               import java.util.Collections;
               import java.util.IdentityHashMap;
+              import java.util.List;
               import java.util.Map;
               import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -76,6 +80,7 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
                       IdentityHashMap identityMap = new IdentityHashMap();
                       Map emptyMap = Collections.emptyMap();
                       CopyOnWriteArrayList fastList = new CopyOnWriteArrayList(100);
+                      List emptyList = Collections.emptyList();
                   }
               }
               """

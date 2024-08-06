@@ -46,6 +46,11 @@ recipeList:
       oldFieldName: EMPTY_MAP
       newClassName: java.util.Collections
       newMethodName: emptyMap
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.collections.ListUtils
+      oldFieldName: EMPTY_LIST
+      newClassName: java.util.Collections
+      newMethodName: emptyList
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.commons.collections
       newPackageName: org.apache.commons.collections4
