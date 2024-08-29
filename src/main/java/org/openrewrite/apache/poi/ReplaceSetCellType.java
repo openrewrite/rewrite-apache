@@ -128,8 +128,8 @@ public class ReplaceSetCellType {
     }
 
     @RecipeDescriptor(
-            name = "Replace `Cell.setCellType(CellType.BOOLEAN)` with `Cell.setCellType(CellType.BOOLEAN)`",
-            description = "Replace `Cell.setCellType(CellType.BOOLEAN)` with `Cell.setCellType(CellType.BOOLEAN)`.")
+            name = "Replace `Cell.setCellType(Cell.CELL_TYPE_BOOLEAN)` with `Cell.setCellType(CellType.BOOLEAN)`",
+            description = "Replace `Cell.setCellType(Cell.CELL_TYPE_BOOLEAN)` with `Cell.setCellType(CellType.BOOLEAN)`.")
     static class ReplaceSetCellTypeBoolean {
         @BeforeTemplate
         void beforeInt(org.apache.poi.ss.usermodel.Cell cell) {
