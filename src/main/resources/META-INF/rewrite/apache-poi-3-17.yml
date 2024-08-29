@@ -16,8 +16,8 @@
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.poi.UpgradeApachePoi_3_17
-displayName: Migrates to ApachePoi 3.17
-description: Migrates to the last Apache Poi 3.x release.  This recipe modifies build files and makes changes to deprecated/preferred APIs that have changed between versions.
+displayName: Migrates to Apache POI 3.17
+description: Migrates to the last Apache POI 3.x release. This recipe modifies build files and makes changes to deprecated/preferred APIs that have changed between versions.
 tags:
   - apache
   - poi
