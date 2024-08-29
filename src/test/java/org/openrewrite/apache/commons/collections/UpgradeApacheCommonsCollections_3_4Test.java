@@ -17,7 +17,6 @@ package org.openrewrite.apache.commons.collections;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
-import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -28,13 +27,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpath(
-            "commons-collections", "commons-collections4"))
-          .recipe(Environment.builder()
-            .scanRuntimeClasspath("org.openrewrite")
-            .build()
-            .activateRecipes("org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4")
-          );
+          .parser(JavaParser.fromJavaVersion().classpath("commons-collections"))
+          .recipeFromResources("org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4");
     }
 
     @DocumentExample
