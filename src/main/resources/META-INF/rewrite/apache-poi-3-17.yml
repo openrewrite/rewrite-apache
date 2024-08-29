@@ -28,6 +28,16 @@ recipeList:
       newGroupId: org.apache.poi
       newArtifactId: poi
       newVersion: 3.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.poi
+      artifactId: poi
+      newVersion: 3.x
+      retainVersions: []
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.poi
+      artifactId: poi-ooxml
+      newVersion: 3.x
+      retainVersions: []
   - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBoldRecipes
   - org.openrewrite.apache.poi.ReplaceSetCellTypeRecipes
   - org.openrewrite.java.migrate.ChangeMethodInvocationReturnType:
