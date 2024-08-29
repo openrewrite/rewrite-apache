@@ -17,46 +17,61 @@ package org.openrewrite.apache.poi;
 
 import com.google.errorprone.refaster.annotation.AfterTemplate;
 import com.google.errorprone.refaster.annotation.BeforeTemplate;
+import org.apache.poi.ss.usermodel.Font;
 import org.openrewrite.java.template.RecipeDescriptor;
 
-
+@RecipeDescriptor(
+        name = "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`",
+        description = "Replace `Font.setBoldweight(short)` or equivalent with `Font.setBold(boolean)`.")
+@SuppressWarnings({"AccessStaticViaInstance", "deprecation"})
 public class ReplaceSetBoldweightWithSetBold {
+
     @RecipeDescriptor(
-            name = "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`",
-            description = "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`")
+            name = "Replace `Font.setBoldweight(Font.BOLDWEIGHT_NORMAL)` with `Font.setBold(false)`",
+            description = "Replace `Font.setBoldweight(Font.BOLDWEIGHT_NORMAL)` or equivalent with `Font.setBold(false)`.")
     static class ReplaceSetBoldweightNormalWithSetBoldFalse {
         @BeforeTemplate
-        void beforeShort(org.apache.poi.ss.usermodel.Font font) {
+        void beforeShort(Font font) {
             font.setBoldweight((short) 400);
         }
 
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Font font) {
+        void beforeField(Font font) {
             font.setBoldweight(font.BOLDWEIGHT_NORMAL);
         }
 
+        @BeforeTemplate
+        void beforeStaticField(Font font) {
+            font.setBoldweight(Font.BOLDWEIGHT_NORMAL);
+        }
+
         @AfterTemplate
-        void after(org.apache.poi.ss.usermodel.Font font) {
+        void after(Font font) {
             font.setBold(false);
         }
     }
 
     @RecipeDescriptor(
-            name = "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`",
-            description = "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`")
+            name = "Replace `Font.setBoldweight(Font.BOLDWEIGHT_BOLD)` with `Font.setBold(true)`",
+            description = "Replace `Font.setBoldweight(Font.BOLDWEIGHT_BOLD)` or equivalent with `Font.setBold(true)`.")
     static class ReplaceSetBoldweightBoldWithSetBoldTrue {
         @BeforeTemplate
-        void beforeShort(org.apache.poi.ss.usermodel.Font font) {
+        void beforeShort(Font font) {
             font.setBoldweight((short) 700);
         }
 
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Font font) {
+        void beforeField(Font font) {
             font.setBoldweight(font.BOLDWEIGHT_BOLD);
         }
 
+        @BeforeTemplate
+        void beforeStaticField(Font font) {
+            font.setBoldweight(Font.BOLDWEIGHT_BOLD);
+        }
+
         @AfterTemplate
-        void after(org.apache.poi.ss.usermodel.Font font) {
+        void after(Font font) {
             font.setBold(true);
         }
     }

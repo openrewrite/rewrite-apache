@@ -16,6 +16,7 @@
 package org.openrewrite.apache.poi;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -27,34 +28,34 @@ public class ReplaceSetCellTypeTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .recipe(new ReplaceSetCellTypeRecipes())
-          .parser(JavaParser.fromJavaVersion().classpath(
-            "poi"));
+          .parser(JavaParser.fromJavaVersion().classpath("poi"));
     }
 
+    @DocumentExample
     @Test
     void replaceSetCellTypeInt() {
         //language=java
         rewriteRun(
           java(
             """
-            import org.apache.poi.ss.usermodel.Cell;
-            
-            class Test {
-                void method(Cell cell) {
-                    cell.setCellType(0);
-                }
-            }
-            """,
+              import org.apache.poi.ss.usermodel.Cell;
+              
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(0);
+                  }
+              }
+              """,
             """
-            import org.apache.poi.ss.usermodel.Cell;
-            import org.apache.poi.ss.usermodel.CellType;
-            
-            class Test {
-                void method(Cell cell) {
-                    cell.setCellType(CellType.NUMERIC);
-                }
-            }
-            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+              
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(CellType.NUMERIC);
+                  }
+              }
+              """
           )
         );
     }
@@ -65,24 +66,24 @@ public class ReplaceSetCellTypeTest implements RewriteTest {
         rewriteRun(
           java(
             """
-            import org.apache.poi.ss.usermodel.Cell;
-            
-            class Test {
-                void method(Cell cell) {
-                    cell.setCellType(Cell.CELL_TYPE_NUMERIC);
-                }
-            }
-            """,
+              import org.apache.poi.ss.usermodel.Cell;
+              
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+                  }
+              }
+              """,
             """
-            import org.apache.poi.ss.usermodel.Cell;
-            import org.apache.poi.ss.usermodel.CellType;
-            
-            class Test {
-                void method(Cell cell) {
-                    cell.setCellType(CellType.NUMERIC);
-                }
-            }
-            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+              
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(CellType.NUMERIC);
+                  }
+              }
+              """
           )
         );
     }
