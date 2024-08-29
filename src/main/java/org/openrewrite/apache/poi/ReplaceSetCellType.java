@@ -21,18 +21,28 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.openrewrite.java.template.RecipeDescriptor;
 
+@RecipeDescriptor(
+        name = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`",
+        description = "Replace `Cell.setCellType(int)` with equivalent `Cell.setCellType(CellType)`.")
+@SuppressWarnings({"AccessStaticViaInstance", "deprecation"})
 public class ReplaceSetCellType {
+
     @RecipeDescriptor(
-            name = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`",
-            description = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`")
+            name = "Replace `Cell.setCellType(Cell.CELL_TYPE_NUMERIC)` with `Cell.setCellType(CellType.NUMERIC)`",
+            description = "Replace `Cell.setCellType(Cell.CELL_TYPE_NUMERIC)` with `Cell.setCellType(CellType.NUMERIC)`.")
     static class ReplaceSetCellTypeNumeric {
         @BeforeTemplate
         void beforeInt(org.apache.poi.ss.usermodel.Cell cell) {
             cell.setCellType(0);
         }
-        
+
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Cell cell) {
+        void beforeField(org.apache.poi.ss.usermodel.Cell cell) {
+            cell.setCellType(cell.CELL_TYPE_NUMERIC);
+        }
+
+        @BeforeTemplate
+        void beforeStaticField(org.apache.poi.ss.usermodel.Cell cell) {
             cell.setCellType(Cell.CELL_TYPE_NUMERIC);
         }
 
@@ -43,8 +53,8 @@ public class ReplaceSetCellType {
     }
 
     @RecipeDescriptor(
-            name = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`",
-            description = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`")
+            name = "Replace `Cell.setCellType(Cell.CELL_TYPE_STRING)` with `Cell.setCellType(CellType.STRING)`",
+            description = "Replace `Cell.setCellType(Cell.CELL_TYPE_STRING)` with `Cell.setCellType(CellType.STRING)`.")
     static class ReplaceSetCellTypeString {
         @BeforeTemplate
         void beforeInt(org.apache.poi.ss.usermodel.Cell cell) {
@@ -52,7 +62,12 @@ public class ReplaceSetCellType {
         }
 
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Cell cell) {
+        void beforeField(org.apache.poi.ss.usermodel.Cell cell) {
+            cell.setCellType(cell.CELL_TYPE_STRING);
+        }
+
+        @BeforeTemplate
+        void beforeStaticField(org.apache.poi.ss.usermodel.Cell cell) {
             cell.setCellType(Cell.CELL_TYPE_STRING);
         }
 
@@ -63,8 +78,8 @@ public class ReplaceSetCellType {
     }
 
     @RecipeDescriptor(
-            name = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`",
-            description = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`")
+            name = "Replace `Cell.setCellType(Cell.CELL_TYPE_FORMULA)` with `Cell.setCellType(CellType.FORMULA)`",
+            description = "Replace `Cell.setCellType(Cell.CELL_TYPE_FORMULA)` with `Cell.setCellType(CellType.FORMULA)`.")
     static class ReplaceSetCellTypeFormula {
         @BeforeTemplate
         void beforeInt(org.apache.poi.ss.usermodel.Cell cell) {
@@ -72,7 +87,12 @@ public class ReplaceSetCellType {
         }
 
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Cell cell) {
+        void beforeField(org.apache.poi.ss.usermodel.Cell cell) {
+            cell.setCellType(cell.CELL_TYPE_FORMULA);
+        }
+
+        @BeforeTemplate
+        void beforeStaticField(org.apache.poi.ss.usermodel.Cell cell) {
             cell.setCellType(Cell.CELL_TYPE_FORMULA);
         }
 
@@ -83,8 +103,8 @@ public class ReplaceSetCellType {
     }
 
     @RecipeDescriptor(
-            name = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`",
-            description = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`")
+            name = "Replace `Cell.setCellType(Cell.CELL_TYPE_BLANK)` with `Cell.setCellType(CellType.BLANK)`",
+            description = "Replace `Cell.setCellType(Cell.CELL_TYPE_BLANK)` with `Cell.setCellType(CellType.BLANK)`.")
     static class ReplaceSetCellTypeBlank {
         @BeforeTemplate
         void beforeInt(org.apache.poi.ss.usermodel.Cell cell) {
@@ -92,7 +112,12 @@ public class ReplaceSetCellType {
         }
 
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Cell cell) {
+        void beforeField(org.apache.poi.ss.usermodel.Cell cell) {
+            cell.setCellType(cell.CELL_TYPE_BLANK);
+        }
+
+        @BeforeTemplate
+        void beforeStaticField(org.apache.poi.ss.usermodel.Cell cell) {
             cell.setCellType(Cell.CELL_TYPE_BLANK);
         }
 
@@ -103,8 +128,8 @@ public class ReplaceSetCellType {
     }
 
     @RecipeDescriptor(
-            name = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`",
-            description = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`")
+            name = "Replace `Cell.setCellType(CellType.BOOLEAN)` with `Cell.setCellType(CellType.BOOLEAN)`",
+            description = "Replace `Cell.setCellType(CellType.BOOLEAN)` with `Cell.setCellType(CellType.BOOLEAN)`.")
     static class ReplaceSetCellTypeBoolean {
         @BeforeTemplate
         void beforeInt(org.apache.poi.ss.usermodel.Cell cell) {
@@ -112,7 +137,12 @@ public class ReplaceSetCellType {
         }
 
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Cell cell) {
+        void beforeField(org.apache.poi.ss.usermodel.Cell cell) {
+            cell.setCellType(cell.CELL_TYPE_BOOLEAN);
+        }
+
+        @BeforeTemplate
+        void beforeStaticField(org.apache.poi.ss.usermodel.Cell cell) {
             cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
         }
 
@@ -123,8 +153,8 @@ public class ReplaceSetCellType {
     }
 
     @RecipeDescriptor(
-            name = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`",
-            description = "Replace `Cell.setCellType(int)` with `Cell.setCellType(CellType)`")
+            name = "Replace `Cell.setCellType(Cell.CELL_TYPE_ERROR)` with `Cell.setCellType(CellType.ERROR)`",
+            description = "Replace `Cell.setCellType(Cell.CELL_TYPE_ERROR)` with `Cell.setCellType(CellType.ERROR)`.")
     static class ReplaceSetCellTypeError {
         @BeforeTemplate
         void beforeInt(org.apache.poi.ss.usermodel.Cell cell) {
@@ -132,7 +162,12 @@ public class ReplaceSetCellType {
         }
 
         @BeforeTemplate
-        void beforeEnum(org.apache.poi.ss.usermodel.Cell cell) {
+        void beforeField(org.apache.poi.ss.usermodel.Cell cell) {
+            cell.setCellType(cell.CELL_TYPE_ERROR);
+        }
+
+        @BeforeTemplate
+        void beforeStaticField(org.apache.poi.ss.usermodel.Cell cell) {
             cell.setCellType(Cell.CELL_TYPE_ERROR);
         }
 

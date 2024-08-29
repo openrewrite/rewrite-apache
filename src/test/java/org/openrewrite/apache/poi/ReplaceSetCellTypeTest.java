@@ -23,7 +23,7 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
-public class ReplaceSetCellTypeTest implements RewriteTest {
+class ReplaceSetCellTypeTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
@@ -43,34 +43,9 @@ public class ReplaceSetCellTypeTest implements RewriteTest {
               class Test {
                   void method(Cell cell) {
                       cell.setCellType(0);
-                  }
-              }
-              """,
-            """
-              import org.apache.poi.ss.usermodel.Cell;
-              import org.apache.poi.ss.usermodel.CellType;
-              
-              class Test {
-                  void method(Cell cell) {
-                      cell.setCellType(CellType.NUMERIC);
-                  }
-              }
-              """
-          )
-        );
-    }
-
-    @Test
-    void replaceSetCellTypeEnum() {
-        //language=java
-        rewriteRun(
-          java(
-            """
-              import org.apache.poi.ss.usermodel.Cell;
-              
-              class Test {
-                  void method(Cell cell) {
                       cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+                      cell.setCellType(cell.CELL_TYPE_ERROR);
+                      cell.setCellType(Cell.CELL_TYPE_ERROR);
                   }
               }
               """,
@@ -81,6 +56,9 @@ public class ReplaceSetCellTypeTest implements RewriteTest {
               class Test {
                   void method(Cell cell) {
                       cell.setCellType(CellType.NUMERIC);
+                      cell.setCellType(CellType.NUMERIC);
+                      cell.setCellType(CellType.ERROR);
+                      cell.setCellType(CellType.ERROR);
                   }
               }
               """
