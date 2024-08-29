@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.poi.UpgradeApachePoi_3_17
 displayName: Migrates to ApachePoi 3.17
@@ -28,8 +28,8 @@ recipeList:
       newGroupId: org.apache.poi
       newArtifactId: poi
       newVersion: 3.x
-  - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBold
-  - org.openrewrite.apache.poi.ReplaceSetCellType
+  - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBoldRecipes
+  - org.openrewrite.apache.poi.ReplaceSetCellTypeRecipes
   - org.openrewrite.java.migrate.ChangeMethodInvocationReturnType:
       methodPattern: org.apache.poi.ss.usermodel.Cell getCellType()
       newReturnType: org.apache.poi.ss.usermodel.CellType
