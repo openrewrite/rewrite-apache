@@ -30,11 +30,11 @@ public class RepeatableArgumentMatcher implements Matcher<Expression> {
             return true;
         }
         // Allow simple getters that return a String
-        return arg instanceof J.MethodInvocation
-                && ((J.MethodInvocation) arg).getSelect() instanceof J.Identifier
-                && ((J.MethodInvocation) arg).getSimpleName().startsWith("get")
-                && (((J.MethodInvocation) arg).getArguments().isEmpty() || ((J.MethodInvocation) arg).getArguments().get(0) instanceof J.Empty)
-                && TypeUtils.isAssignableTo("java.lang.String", ((J.MethodInvocation) arg).getMethodType());
+        return arg instanceof J.MethodInvocation &&
+                ((J.MethodInvocation) arg).getSelect() instanceof J.Identifier &&
+                ((J.MethodInvocation) arg).getSimpleName().startsWith("get") &&
+                (((J.MethodInvocation) arg).getArguments().isEmpty() || ((J.MethodInvocation) arg).getArguments().get(0) instanceof J.Empty) &&
+                TypeUtils.isAssignableTo("java.lang.String", ((J.MethodInvocation) arg).getMethodType());
     }
 
     @Override

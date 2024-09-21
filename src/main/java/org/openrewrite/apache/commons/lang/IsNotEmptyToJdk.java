@@ -98,8 +98,8 @@ public class IsNotEmptyToJdk extends Recipe {
                 }
 
                 // Replace StringUtils.isEmpty(var.trim()) with var.trim().isEmpty()
-                if (trimMatcher.matches(arg)
-                        && (((J.MethodInvocation) arg).getSelect() instanceof J.Identifier || ((J.MethodInvocation) arg).getSelect() instanceof J.FieldAccess)) {
+                if (trimMatcher.matches(arg) &&
+                        (((J.MethodInvocation) arg).getSelect() instanceof J.Identifier || ((J.MethodInvocation) arg).getSelect() instanceof J.FieldAccess)) {
                     JavaTemplate replacementTemplate = isEmptyCall ? isEmptyTrimmed : isNotEmptyTrimmed;
                     // Maybe remove imports
                     maybeRemoveImport("org.apache.commons.lang3.StringUtils");
