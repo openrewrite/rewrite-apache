@@ -61,12 +61,12 @@ class PlexusFileUtils {
             description = "Replace Plexus `FileUtils.fileExists(String fileName)` with JDK provided API.")
     static class FileExistsString {
         @BeforeTemplate
-        boolean before(String fileName) throws Exception {
+        boolean before(String fileName) {
             return FileUtils.fileExists(fileName);
         }
 
         @AfterTemplate
-        boolean after(String fileName) throws Exception {
+        boolean after(String fileName) {
             return new File(fileName).exists();
         }
     }
@@ -76,12 +76,12 @@ class PlexusFileUtils {
             description = "Replace Plexus `FileUtils.getFile(String fileName)` with JDK provided API.")
     static class GetFile {
         @BeforeTemplate
-        File before(String fileName) throws Exception {
+        File before(String fileName) {
             return FileUtils.getFile(fileName);
         }
 
         @AfterTemplate
-        File after(String fileName) throws Exception {
+        File after(String fileName) {
             return new File(fileName);
         }
     }
