@@ -64,8 +64,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                 </dependencies>
             </project>
             """, spec -> spec.after(pom -> {
-              Matcher version = Pattern.compile("5\\.3\\.\\d+").matcher(pom);
-              assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
+              Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+              assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
               return """
                 <project>
                     <modelVersion>4.0.0</modelVersion>
@@ -134,7 +134,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                         .setConnectionRequestTimeout(300)
                         .setConnectTimeout(connectTimeout)
                         .setSocketTimeout(connectTimeout * 10);
-                        
+
                     long linger = 420;
                     SocketConfig.custom()
                         .setSoTimeout(1000)
@@ -144,7 +144,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             """, """
             import org.apache.hc.client5.http.config.RequestConfig;
             import org.apache.hc.core5.http.io.SocketConfig;
-            
+
             import java.util.concurrent.TimeUnit;
 
             class A {
@@ -154,7 +154,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                         .setConnectionRequestTimeout(300, TimeUnit.MILLISECONDS)
                         .setConnectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
                         .setResponseTimeout(connectTimeout * 10, TimeUnit.MILLISECONDS);
-                        
+
                     long linger = 420;
                     SocketConfig.custom()
                         .setSoTimeout(1000, TimeUnit.MILLISECONDS)
@@ -177,15 +177,15 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             import org.apache.http.impl.client.CloseableHttpClient;
             import org.apache.http.impl.client.HttpClientBuilder;
             import org.apache.http.ProtocolVersion;
-            
+
             import java.io.IOException;
-            
+
             class A {
                 void method() throws IOException {
                     HttpGet httpGet = new HttpGet("https://moderne.io");
                     CloseableHttpClient instance = HttpClientBuilder.create().build();
                     CloseableHttpResponse response = instance.execute(httpGet);
-                    
+
                     System.out.println("response.getStatusLine() :: " + response.getStatusLine());
                     int statusCode = response.getStatusLine().getStatusCode();
                     String reason = response.getStatusLine().getReasonPhrase();
@@ -201,15 +201,15 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
             import org.apache.hc.core5.http.ProtocolVersion;
             import org.apache.hc.core5.http.message.StatusLine;
-            
+
             import java.io.IOException;
-            
+
             class A {
                 void method() throws IOException {
                     HttpGet httpGet = new HttpGet("https://moderne.io");
                     CloseableHttpClient instance = HttpClientBuilder.create().build();
                     CloseableHttpResponse response = instance.execute(httpGet);
-                    
+
                     System.out.println("response.getStatusLine() :: " + new StatusLine(response));
                     int statusCode = response.getCode();
                     String reason = response.getReasonPhrase();

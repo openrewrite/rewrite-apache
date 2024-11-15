@@ -34,7 +34,7 @@ recipeList:
       oldArtifactId: httpclient
       newGroupId: org.apache.httpcomponents.client5
       newArtifactId: httpclient5
-      newVersion: 5.3.x
+      newVersion: 5.4.x
   - org.openrewrite.java.dependencies.ChangeDependency:
       oldGroupId: org.apache.httpcomponents
       oldArtifactId: httpcore
