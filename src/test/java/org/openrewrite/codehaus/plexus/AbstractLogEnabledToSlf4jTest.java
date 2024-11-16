@@ -23,6 +23,7 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
+@SuppressWarnings("RedundantSlf4jDefinition")
 class AbstractLogEnabledToSlf4jTest implements RewriteTest {
 
     @Override
@@ -49,11 +50,6 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
                       Logger log = getLogger();
                       log.info("Hello");
                   }
-                  void method3() {
-                      if (getLogger().isFatalErrorEnabled()) {
-                          getLogger().fatalError("Hello");
-                      }
-                  }
               }
               """,
             """
@@ -70,10 +66,72 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
                         Logger log = logger;
                         log.info("Hello");
                     }
-                    void method3() {
+                }
+                """
+          )
+        );
+    }
+
+    @Test
+    void renameFatal(){
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.codehaus.plexus.logging.AbstractLogEnabled;
+              import org.codehaus.plexus.logging.Logger;
+
+              class A extends AbstractLogEnabled {
+                  void method() {
+                      if (getLogger().isFatalErrorEnabled()) {
+                          getLogger().fatalError("Hello");
+                      }
+                  }
+              }
+              """,
+            """
+                import org.slf4j.Logger;
+                import org.slf4j.LoggerFactory;
+
+                class A {
+                    private static final Logger logger = LoggerFactory.getLogger(A.class);
+
+                    void method() {
                         if (logger.isErrorEnabled()) {
                             logger.error("Hello");
                         }
+                    }
+                }
+                """
+          )
+        );
+    }
+
+    @Test
+    void removeLineWrap(){
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.codehaus.plexus.logging.AbstractLogEnabled;
+              import org.codehaus.plexus.logging.Logger;
+
+              class A extends AbstractLogEnabled {
+                  void method() {
+                      getLogger()
+                          .info("Really long line that caused the previous line to be wrapped, but looks add with field");
+                  }
+              }
+              """,
+            """
+                import org.slf4j.Logger;
+                import org.slf4j.LoggerFactory;
+
+                class A {
+                    private static final Logger logger = LoggerFactory.getLogger(A.class);
+
+                    void method() {
+                        logger.info("Really long line that caused the previous line to be wrapped, but looks add with field");
                     }
                 }
                 """

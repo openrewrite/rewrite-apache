@@ -22,17 +22,16 @@ import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.*;
 import org.openrewrite.java.logging.AddLogger;
 import org.openrewrite.java.search.UsesType;
-import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.TypeTree;
-import org.openrewrite.java.tree.TypeUtils;
+import org.openrewrite.java.tree.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AbstractLogEnabledToSlf4j extends Recipe {
 
     private static final String ABSTRACT_LOG_ENABLED = "org.codehaus.plexus.logging.AbstractLogEnabled";
-    private static final MethodMatcher GET_LOGGER_MATCHER = new MethodMatcher(ABSTRACT_LOG_ENABLED + " getLogger()");
+    private static final MethodMatcher GET_LOGGER_MATCHER = new MethodMatcher(ABSTRACT_LOG_ENABLED + " getLogger()", true);
     private static final String PLEXUS_LOGGER = "org.codehaus.plexus.logging.Logger";
+    private static final MethodMatcher PLEXUS_LOGGER_MATCHER = new MethodMatcher("org.codehaus.plexus.logging.Logger *(..)");
 
     @Override
     public String getDisplayName() {
@@ -83,10 +82,14 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                             cd = (J.ClassDeclaration) new JavaVisitor<ExecutionContext>() {
                                 @Override
                                 public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-                                    if (GET_LOGGER_MATCHER.matches(method)) {
-                                        return loggerFieldReference.get().withPrefix(method.getPrefix());
+                                    J.MethodInvocation mi = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
+                                    if (GET_LOGGER_MATCHER.matches(mi)) {
+                                        return loggerFieldReference.get().withPrefix(mi.getPrefix());
                                     }
-                                    return super.visitMethodInvocation(method, ctx);
+                                    if (PLEXUS_LOGGER_MATCHER.matches(mi)) {
+                                        return mi.getPadding().withSelect(JRightPadded.build(mi.getSelect()));
+                                    }
+                                    return mi;
                                 }
                             }.visit(cd, ctx, getCursor().getParentTreeCursor());
 
