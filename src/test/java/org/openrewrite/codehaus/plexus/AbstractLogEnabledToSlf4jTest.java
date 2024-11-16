@@ -23,7 +23,7 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
-@SuppressWarnings("RedundantSlf4jDefinition")
+@SuppressWarnings({"RedundantSlf4jDefinition", "UnnecessaryLocalVariable"})
 class AbstractLogEnabledToSlf4jTest implements RewriteTest {
 
     @Override
@@ -132,6 +132,38 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
 
                     void method() {
                         logger.info("Really long line that caused the previous line to be wrapped, but looks add with field");
+                    }
+                }
+                """
+          )
+        );
+    }
+
+    @Test
+    void removeLocalVariableDeclaration(){
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.codehaus.plexus.logging.AbstractLogEnabled;
+              import org.codehaus.plexus.logging.Logger;
+
+              class A extends AbstractLogEnabled {
+                  void method() {
+                      Logger logger = getLogger();
+                      logger.info("Hello");
+                  }
+              }
+              """,
+            """
+                import org.slf4j.Logger;
+                import org.slf4j.LoggerFactory;
+
+                class A {
+                    private static final Logger logger = LoggerFactory.getLogger(A.class);
+
+                    void method() {
+                        logger.info("Hello");
                     }
                 }
                 """

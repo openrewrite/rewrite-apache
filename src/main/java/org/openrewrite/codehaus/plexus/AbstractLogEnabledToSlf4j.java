@@ -15,6 +15,7 @@
  */
 package org.openrewrite.codehaus.plexus;
 
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -60,11 +61,24 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                                 cd = cd.withExtends(null);
                             }
 
+                            // Remove local variables named `logger`
+                            cd = (J.ClassDeclaration) new JavaIsoVisitor<ExecutionContext>() {
+                                @Override
+                                public J.@Nullable VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
+                                    if (multiVariable.getVariables().stream()
+                                            .map(J.VariableDeclarations.NamedVariable::getSimpleName)
+                                            .anyMatch("logger"::equals)) {
+                                        return null;
+                                    }
+                                    return super.visitVariableDeclarations(multiVariable, ctx);
+                                }
+                            }.visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
+
                             // Add a logger field
                             maybeAddImport("org.slf4j.Logger");
                             maybeAddImport("org.slf4j.LoggerFactory");
                             cd = (J.ClassDeclaration) AddLogger.addSlf4jLogger(cd, "logger", ctx)
-                                    .visit(cd, ctx, getCursor().getParentTreeCursor());
+                                    .visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
                             AtomicReference<J.Identifier> loggerFieldReference = new AtomicReference<>();
                             new JavaIsoVisitor<AtomicReference<J.Identifier>>() {
                                 @Override
@@ -91,18 +105,18 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                                     }
                                     return mi;
                                 }
-                            }.visit(cd, ctx, getCursor().getParentTreeCursor());
+                            }.visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
 
                             // Replace `fatal` calls with `error`
                             cd = (J.ClassDeclaration) new ChangeMethodName(PLEXUS_LOGGER + " fatalError(..)", "error", false, false)
-                                    .getVisitor().visit(cd, ctx, getCursor().getParentTreeCursor());
+                                    .getVisitor().visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
                             cd = (J.ClassDeclaration) new ChangeMethodName(PLEXUS_LOGGER + " isFatalErrorEnabled(..)", "isErrorEnabled", false, false)
-                                    .getVisitor().visit(cd, ctx, getCursor().getParentTreeCursor());
+                                    .getVisitor().visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
 
                             // Change any leftover `org.codehaus.plexus.logging.Logger` types to SLF4J Logger
                             maybeRemoveImport(PLEXUS_LOGGER);
                             cd = (J.ClassDeclaration) new ChangeType(PLEXUS_LOGGER, "org.slf4j.Logger", false)
-                                    .getVisitor().visit(cd, ctx, getCursor().getParentTreeCursor());
+                                    .getVisitor().visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
 
                         }
                         return super.visitClassDeclaration(cd, ctx);
