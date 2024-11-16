@@ -119,7 +119,7 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
               class A extends AbstractLogEnabled {
                   void method() {
                       getLogger()
-                          .info("Really long line that caused the previous line to be wrapped, but looks add with field");
+                          .info("Really long line that caused the previous line to be wrapped, but looks odd with field");
                   }
               }
               """,
@@ -131,7 +131,7 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
                     private static final Logger logger = LoggerFactory.getLogger(A.class);
 
                     void method() {
-                        logger.info("Really long line that caused the previous line to be wrapped, but looks add with field");
+                        logger.info("Really long line that caused the previous line to be wrapped, but looks odd with field");
                     }
                 }
                 """
