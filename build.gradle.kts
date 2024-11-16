@@ -16,6 +16,7 @@ dependencies {
     implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
     implementation("org.openrewrite:rewrite-java")
     implementation("org.openrewrite.recipe:rewrite-java-dependencies:$rewriteVersion")
+    implementation("org.openrewrite.recipe:rewrite-logging-frameworks:$rewriteVersion")
     implementation("org.openrewrite.recipe:rewrite-static-analysis:$rewriteVersion")
     implementation("org.openrewrite:rewrite-templating:$rewriteVersion")
 
@@ -47,6 +48,8 @@ dependencies {
 
     testImplementation("commons-lang:commons-lang:2.6")
     testImplementation("org.apache.commons:commons-lang3:3.+")
+
+    testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:latest.release")
 
