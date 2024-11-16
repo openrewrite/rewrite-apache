@@ -82,9 +82,8 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                             // Replace calls to getLogger() with the logger field
                             cd = (J.ClassDeclaration) new JavaVisitor<ExecutionContext>() {
                                 @Override
-                                public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx1) {
-                                    if (GET_LOGGER_MATCHER.matches(method)) {
-                                        return loggerFieldReference.get().withPrefix(method.getPrefix());
+                                public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                                    return super.visitMethodInvocation(method, ctx);
                                     }
                                     return super.visitMethodInvocation(method, ctx1);
                                 }
