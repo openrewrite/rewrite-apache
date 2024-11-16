@@ -52,8 +52,8 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
         return Preconditions.check(
                 new UsesType<>(ABSTRACT_LOG_ENABLED, true),
                 new JavaIsoVisitor<ExecutionContext>() {
-                    @Override
-                    public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
+
+                    public @Nullable J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
                         J.ClassDeclaration cd = classDecl;
                         if (TypeUtils.isAssignableTo(ABSTRACT_LOG_ENABLED, cd.getType())) {
 
