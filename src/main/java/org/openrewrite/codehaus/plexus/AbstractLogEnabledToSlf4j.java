@@ -36,6 +36,7 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
     private static final MethodMatcher GET_LOGGER_MATCHER = new MethodMatcher(ABSTRACT_LOG_ENABLED + " getLogger()", true);
     private static final String PLEXUS_LOGGER = "org.codehaus.plexus.logging.Logger";
     private static final MethodMatcher PLEXUS_LOGGER_MATCHER = new MethodMatcher("org.codehaus.plexus.logging.Logger *(..)");
+    private static final String LOGGER_VARIABLE_NAME = "LOGGER"; // Checkstyle requires constants to be uppercase
 
     @Override
     public String getDisplayName() {
@@ -70,17 +71,26 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                                 public J.@Nullable VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
                                     if (multiVariable.getVariables().stream()
                                             .map(J.VariableDeclarations.NamedVariable::getSimpleName)
-                                            .anyMatch("logger"::equals)) {
+                                            .anyMatch("logger"::equalsIgnoreCase)) {
                                         return null;
                                     }
                                     return super.visitVariableDeclarations(multiVariable, ctx);
+                                }
+
+                                @Override
+                                public J.Identifier visitIdentifier(J.Identifier identifier, ExecutionContext ctx) {
+                                    if ("logger".equals(identifier.getSimpleName())) {
+                                        return identifier.withSimpleName(LOGGER_VARIABLE_NAME)
+                                                .withFieldType(identifier.getFieldType().withName(LOGGER_VARIABLE_NAME));
+                                    }
+                                    return super.visitIdentifier(identifier, ctx);
                                 }
                             }.visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
 
                             // Add a logger field
                             maybeAddImport("org.slf4j.Logger");
                             maybeAddImport("org.slf4j.LoggerFactory");
-                            cd = (J.ClassDeclaration) AddLogger.addSlf4jLogger(cd, "logger", ctx)
+                            cd = (J.ClassDeclaration) AddLogger.addSlf4jLogger(cd, LOGGER_VARIABLE_NAME, ctx)
                                     .visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
                             AtomicReference<J.Identifier> loggerFieldReference = new AtomicReference<>();
                             new JavaIsoVisitor<AtomicReference<J.Identifier>>() {

@@ -57,13 +57,13 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
                 import org.slf4j.LoggerFactory;
 
                 class A {
-                    private static final Logger logger = LoggerFactory.getLogger(A.class);
+                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
                     void method() {
-                        logger.info("Hello");
+                        LOGGER.info("Hello");
                     }
                     void method2() {
-                        Logger log = logger;
+                        Logger log = LOGGER;
                         log.info("Hello");
                     }
                 }
@@ -94,11 +94,11 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
                 import org.slf4j.LoggerFactory;
 
                 class A {
-                    private static final Logger logger = LoggerFactory.getLogger(A.class);
+                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
                     void method() {
-                        if (logger.isErrorEnabled()) {
-                            logger.error("Hello");
+                        if (LOGGER.isErrorEnabled()) {
+                            LOGGER.error("Hello");
                         }
                     }
                 }
@@ -128,10 +128,10 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
                 import org.slf4j.LoggerFactory;
 
                 class A {
-                    private static final Logger logger = LoggerFactory.getLogger(A.class);
+                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
                     void method() {
-                        logger.info("Really long line that caused the previous line to be wrapped, but looks odd with field");
+                        LOGGER.info("Really long line that caused the previous line to be wrapped, but looks odd with field");
                     }
                 }
                 """
@@ -160,10 +160,10 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
                 import org.slf4j.LoggerFactory;
 
                 class A {
-                    private static final Logger logger = LoggerFactory.getLogger(A.class);
+                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
                     void method() {
-                        logger.info("Hello");
+                        LOGGER.info("Hello");
                     }
                 }
                 """
