@@ -22,6 +22,7 @@ import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.*;
 import org.openrewrite.java.logging.AddLogger;
+import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JRightPadded;
@@ -63,6 +64,12 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                             if (anExtends != null && TypeUtils.isOfClassType(anExtends.getType(), ABSTRACT_LOG_ENABLED)) {
                                 maybeRemoveImport(ABSTRACT_LOG_ENABLED);
                                 cd = cd.withExtends(null);
+                            }
+
+                            // Return early if not using the logger
+                            if (new UsesMethod<ExecutionContext>(PLEXUS_LOGGER_MATCHER)
+                                        .visitNonNull(cd, ctx, getCursor().getParentTreeCursor()) == cd) {
+                                return cd;
                             }
 
                             // Remove local variables named `logger`

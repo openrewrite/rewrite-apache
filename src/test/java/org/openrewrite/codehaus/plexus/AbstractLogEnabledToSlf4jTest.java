@@ -34,7 +34,7 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
 
     @Test
     @DocumentExample
-    void addAndUseLoggerField(){
+    void addAndUseLoggerField() {
         rewriteRun(
           //language=java
           java(
@@ -53,27 +53,46 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
               }
               """,
             """
-                import org.slf4j.Logger;
-                import org.slf4j.LoggerFactory;
+              import org.slf4j.Logger;
+              import org.slf4j.LoggerFactory;
 
-                class A {
-                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
+              class A {
+                  private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
-                    void method() {
-                        LOGGER.info("Hello");
-                    }
-                    void method2() {
-                        Logger log = LOGGER;
-                        log.info("Hello");
-                    }
-                }
-                """
+                  void method() {
+                      LOGGER.info("Hello");
+                  }
+                  void method2() {
+                      Logger log = LOGGER;
+                      log.info("Hello");
+                  }
+              }
+              """
           )
         );
     }
 
     @Test
-    void renameFatal(){
+    void doNotAddFieldIfNotUsed() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.codehaus.plexus.logging.AbstractLogEnabled;
+
+              class A extends AbstractLogEnabled {
+              }
+              """,
+            """
+              class A {
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void renameFatal() {
         rewriteRun(
           //language=java
           java(
@@ -90,25 +109,25 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
               }
               """,
             """
-                import org.slf4j.Logger;
-                import org.slf4j.LoggerFactory;
+              import org.slf4j.Logger;
+              import org.slf4j.LoggerFactory;
 
-                class A {
-                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
+              class A {
+                  private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
-                    void method() {
-                        if (LOGGER.isErrorEnabled()) {
-                            LOGGER.error("Hello");
-                        }
-                    }
-                }
-                """
+                  void method() {
+                      if (LOGGER.isErrorEnabled()) {
+                          LOGGER.error("Hello");
+                      }
+                  }
+              }
+              """
           )
         );
     }
 
     @Test
-    void removeLineWrap(){
+    void removeLineWrap() {
         rewriteRun(
           //language=java
           java(
@@ -124,23 +143,23 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
               }
               """,
             """
-                import org.slf4j.Logger;
-                import org.slf4j.LoggerFactory;
+              import org.slf4j.Logger;
+              import org.slf4j.LoggerFactory;
 
-                class A {
-                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
+              class A {
+                  private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
-                    void method() {
-                        LOGGER.info("Really long line that caused the previous line to be wrapped, but looks odd with field");
-                    }
-                }
-                """
+                  void method() {
+                      LOGGER.info("Really long line that caused the previous line to be wrapped, but looks odd with field");
+                  }
+              }
+              """
           )
         );
     }
 
     @Test
-    void removeLocalVariableDeclaration(){
+    void removeLocalVariableDeclaration() {
         rewriteRun(
           //language=java
           java(
@@ -156,17 +175,17 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
               }
               """,
             """
-                import org.slf4j.Logger;
-                import org.slf4j.LoggerFactory;
+              import org.slf4j.Logger;
+              import org.slf4j.LoggerFactory;
 
-                class A {
-                    private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
+              class A {
+                  private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
 
-                    void method() {
-                        LOGGER.info("Hello");
-                    }
-                }
-                """
+                  void method() {
+                      LOGGER.info("Hello");
+                  }
+              }
+              """
           )
         );
     }
