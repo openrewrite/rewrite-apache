@@ -136,6 +136,9 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.impl.classic.BasicCredentialsProvider
       newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.client.ProxyAuthenticationStrategy
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.DefaultAuthenticationStrategy
 
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.auth
