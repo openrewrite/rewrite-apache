@@ -63,11 +63,11 @@ public class MigrateRequestConfig extends Recipe {
     private static class MigrateRequestConfigPrecondition extends JavaIsoVisitor<ExecutionContext> {
 
         @Override
-        public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext executionContext) {
+        public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
             if (MATCHER_STALE_CHECK_ENABLED.matches(method) && !Boolean.parseBoolean(method.getArguments().get(0).print())) {
                 return SearchResult.found(method);
             }
-            return super.visitMethodInvocation(method, executionContext);
+            return super.visitMethodInvocation(method, ctx);
         }
     }
 
@@ -84,27 +84,27 @@ public class MigrateRequestConfig extends Recipe {
                 doAfterVisit(new RemoveMethodInvocationsVisitor(Collections.singletonList(PATTERN_STALE_CHECK_ENABLED)));
             } else if (MATCHER_REQUEST_CONFIG.matches(method)) {
                 Set<Tree> connManagers = new HashSet<>(TreeVisitor.collect(
-                  new JavaIsoVisitor<ExecutionContext>() {
-                      @Override
-                      public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
-                          if (TypeUtils.isOfClassType(multiVariable.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER)) {
-                              return SearchResult.found(multiVariable);
-                          }
-                          return super.visitVariableDeclarations(multiVariable, ctx);
-                      }
-                  },
-                  getCursor().firstEnclosing(J.MethodDeclaration.class),
-                  new HashSet<>()
+                        new JavaIsoVisitor<ExecutionContext>() {
+                            @Override
+                            public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
+                                if (TypeUtils.isOfClassType(multiVariable.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER)) {
+                                    return SearchResult.found(multiVariable);
+                                }
+                                return super.visitVariableDeclarations(multiVariable, ctx);
+                            }
+                        },
+                        getCursor().firstEnclosing(J.MethodDeclaration.class),
+                        new HashSet<>()
                 ));
 
                 // Call `setConnectionManager()` if there's no PoolingHttpClientConnectionManager
                 // The `poolingHttpClientConnectionManager` will be created later in `visitMethodDeclaration()`
                 if (connManagers.isEmpty()) {
                     method = JavaTemplate.builder(method.print() + "\n.setConnectionManager(poolingHttpClientConnectionManager);").
-                      javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
-                      .imports("org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager")
-                      .build()
-                      .apply(updateCursor(method), method.getCoordinates().replace());
+                            javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
+                            .imports("org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager")
+                            .build()
+                            .apply(updateCursor(method), method.getCoordinates().replace());
                 }
 
                 getCursor().putMessageOnFirstEnclosing(J.MethodDeclaration.class, KEY_HTTP_CLIENT_BUILDER, method);
@@ -133,21 +133,21 @@ public class MigrateRequestConfig extends Recipe {
                 if (varsConnManager != null) {
                     J.VariableDeclarations.NamedVariable connManager = varsConnManager.getVariables().get(0);
                     method = JavaTemplate.builder("#{any(org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager)}.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);")
-                      .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
-                      .imports("org.apache.hc.core5.util.TimeValue")
-                      .build()
-                      .apply(getCursor(), varsConnManager.getCoordinates().after(), connManager.getName());
+                            .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
+                            .imports("org.apache.hc.core5.util.TimeValue")
+                            .build()
+                            .apply(getCursor(), varsConnManager.getCoordinates().after(), connManager.getName());
                 } else {
                     Statement httpClientBuilder = getCursor().getMessage(KEY_HTTP_CLIENT_BUILDER);
                     // Consider it's an useless RequestConfig if there's no httpClientBuilder
                     if (httpClientBuilder != null) {
                         String tpl = "PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager();" +
-                          "poolingHttpClientConnectionManager.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);";
+                                     "poolingHttpClientConnectionManager.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);";
                         method = JavaTemplate.builder(tpl)
-                          .javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
-                          .imports(FQN_POOL_CONN_MANAGER)
-                          .build()
-                          .apply(updateCursor(method), method.getBody().getCoordinates().firstStatement());
+                                .javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
+                                .imports(FQN_POOL_CONN_MANAGER)
+                                .build()
+                                .apply(updateCursor(method), method.getBody().getCoordinates().firstStatement());
                         maybeAddImport(FQN_POOL_CONN_MANAGER);
                     }
                 }
