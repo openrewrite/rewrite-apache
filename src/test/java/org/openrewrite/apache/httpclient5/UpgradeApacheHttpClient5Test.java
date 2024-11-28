@@ -263,4 +263,29 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         """)
         );
     }
+
+    @Test
+    void changeUsernamePasswordCredentials() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+            import org.apache.http.auth.UsernamePasswordCredentials;
+
+            class Example {
+                void method() {
+                    UsernamePasswordCredentials credentials = new UsernamePasswordCredentials("username", "password");
+                }
+            }
+            """, """
+            import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+
+            class Example {
+                void method() {
+                    UsernamePasswordCredentials credentials = new UsernamePasswordCredentials("username", "password".toCharArray());
+                }
+            }
+            """)
+        );
+    }
 }
