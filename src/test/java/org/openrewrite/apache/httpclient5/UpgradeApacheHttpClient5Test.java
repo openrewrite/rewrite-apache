@@ -421,8 +421,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       RequestConfig requestConfig = RequestConfig.custom().build();
 
                       return HttpClientBuilder.create()
-                              .setDefaultRequestConfig(requestConfig)
-                              .setConnectionManager(poolingHttpClientConnectionManager)
+                              .setDefaultRequestConfig(requestConfig).setConnectionManager(poolingHttpClientConnectionManager)
                           .build();
                   }
               }
