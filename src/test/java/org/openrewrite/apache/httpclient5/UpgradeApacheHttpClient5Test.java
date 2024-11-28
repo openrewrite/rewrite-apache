@@ -21,6 +21,7 @@ import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
+import org.openrewrite.test.TypeValidation;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -290,6 +291,144 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               class Example {
                   void method() {
                       UsernamePasswordCredentials credentials = new UsernamePasswordCredentials("username", "password".toCharArray());
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    // For `setStaleConnectionCheckEnabled(true)`, keep unchanged, need another PR to migrate it
+    // Packages are changed because of other recipes
+    @Test
+    void setStaleConnectionCheckEnabledTrue() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.config.RequestConfig;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClientBuilder;
+
+              class Example {
+                  CloseableHttpClient client() {
+                      RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(true).build();
+
+                      return HttpClientBuilder.create()
+                          .setDefaultRequestConfig(requestConfig)
+                          .build();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.config.RequestConfig;
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+              import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+
+              class Example {
+                  CloseableHttpClient client() {
+                      RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(true).build();
+
+                      return HttpClientBuilder.create()
+                          .setDefaultRequestConfig(requestConfig)
+                          .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    // For `setStaleConnectionCheckEnabled(false)`, with an existing `connManager`, just call `connManager.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);`
+    @Test
+    void setStaleConnectionCheckEnabledFalseWithConnManager() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.config.RequestConfig;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClientBuilder;
+              import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
+              class Example {
+                  CloseableHttpClient client() {
+                      RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(false).build();
+
+                      PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
+
+                      return HttpClientBuilder.create()
+                          .setConnectionManager(connManager)
+                          .setDefaultRequestConfig(requestConfig)
+                          .build();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.util.TimeValue;
+              import org.apache.hc.client5.http.config.RequestConfig;
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+              import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+
+              class Example {
+                  CloseableHttpClient client() {
+                      RequestConfig requestConfig = RequestConfig.custom().build();
+
+                      PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
+
+                      connManager.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);
+
+                      return HttpClientBuilder.create()
+                          .setConnectionManager(connManager)
+                          .setDefaultRequestConfig(requestConfig)
+                          .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    // For `setStaleConnectionCheckEnabled(false)`, without an existing `connManager`, have to create one first, then call `setConnectionManager(connManager)`
+    @Test
+    void setStaleConnectionCheckEnabledFalseWithoutConnManager() {
+        rewriteRun(
+          // We call `setConnectionManager` on a HC4 client builder, with a HC5 connection manager argument
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
+          //language=java
+          java(
+            """
+              import org.apache.http.client.config.RequestConfig;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClientBuilder;
+
+              class Example {
+                  CloseableHttpClient client() {
+                      RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(false).build();
+
+                      return HttpClientBuilder.create()
+                          .setDefaultRequestConfig(requestConfig)
+                          .build();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+              import org.apache.hc.core5.util.TimeValue;
+              import org.apache.hc.client5.http.config.RequestConfig;
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+              import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+
+              class Example {
+                  CloseableHttpClient client() {
+                      PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager();
+                      poolingHttpClientConnectionManager.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);
+                      RequestConfig requestConfig = RequestConfig.custom().build();
+
+                      return HttpClientBuilder.create()
+                              .setDefaultRequestConfig(requestConfig).setConnectionManager(poolingHttpClientConnectionManager)
+                          .build();
                   }
               }
               """
