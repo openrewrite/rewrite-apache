@@ -394,6 +394,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void setStaleConnectionCheckEnabledFalseWithoutConnManager() {
         rewriteRun(
+          // We call `setConnectionManager` on a HC4 client builder, with a HC5 connection manager argument
           spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
