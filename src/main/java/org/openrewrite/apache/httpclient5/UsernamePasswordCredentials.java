@@ -15,10 +15,15 @@
  */
 package org.openrewrite.apache.httpclient5;
 
-import org.openrewrite.*;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Preconditions;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaTemplate;
+import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
@@ -28,30 +33,29 @@ public class UsernamePasswordCredentials extends Recipe {
     private static final String METHOD_PATTERN = FQN + " <constructor>(String, String)";
 
     @Override
-    public @NlsRewrite.DisplayName String getDisplayName() {
-        return "Migrate UsernamePasswordCredentials to httpclient5";
+    public String getDisplayName() {
+        return "Migrate `UsernamePasswordCredentials` to httpclient5";
     }
 
     @Override
-    public @NlsRewrite.Description String getDescription() {
-        return "Migrate UsernamePasswordCredentials to httpclient5.";
+    public String getDescription() {
+        return "Change the password argument going into `UsernamePasswordCredentials` to be a `char[]`.";
     }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(
-          new UsesMethod<>(METHOD_PATTERN),
-          new JavaIsoVisitor<ExecutionContext>() {
-              @Override
-              public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
-                  newClass = super.visitNewClass(newClass, ctx);
-                  if (TypeUtils.isOfType(newClass.getType(), JavaType.buildType(FQN))) {
-                      newClass = JavaTemplate.builder(newClass.getArguments().get(1).printTrimmed() + ".toCharArray()")
-                        .build()
-                        .apply(getCursor(), newClass.getArguments().get(1).getCoordinates().replace());
-                  }
-                  return newClass;
-              }
-          });
+        MethodMatcher methodMatcher = new MethodMatcher(METHOD_PATTERN);
+        return Preconditions.check(new UsesMethod<>(methodMatcher), new JavaIsoVisitor<ExecutionContext>() {
+            @Override
+            public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
+                J.NewClass nc = super.visitNewClass(newClass, ctx);
+                if (methodMatcher.matches(nc)) {
+                    Expression passwordArgument = nc.getArguments().get(1);
+                    nc = JavaTemplate.apply("#{any(String)}.toCharArray()",
+                            getCursor(), passwordArgument.getCoordinates().replace(), passwordArgument);
+                }
+                return nc;
+            }
+        });
     }
 }
