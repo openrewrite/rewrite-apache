@@ -333,7 +333,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           .build();
                   }
               }
-              """)
+              """
+          )
         );
     }
 
@@ -382,7 +383,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           .build();
                   }
               }
-              """)
+              """
+          )
         );
     }
 
@@ -390,7 +392,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void setStaleConnectionCheckEnabledFalseWithoutConnManager() {
         rewriteRun(
-          recipeSpec -> recipeSpec.afterTypeValidationOptions(TypeValidation.none()),
+          // Ideally we restructure the recipe to add the poolingHttpClientConnectionManager first, and use that in setConnectionManager
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().identifiers(false).methodInvocations(false)),
           //language=java
           java(
             """
@@ -409,10 +412,10 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               }
               """,
               """
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
               import org.apache.hc.client5.http.config.RequestConfig;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
               public class Example {
                   private CloseableHttpClient client() {

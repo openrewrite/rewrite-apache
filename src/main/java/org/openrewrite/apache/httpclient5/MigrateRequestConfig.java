@@ -15,7 +15,10 @@
  */
 package org.openrewrite.apache.httpclient5;
 
-import org.openrewrite.*;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Preconditions;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.*;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.trait.Traits;
@@ -26,14 +29,15 @@ import org.openrewrite.marker.SearchResult;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 
 public class MigrateRequestConfig extends Recipe {
 
     private static final String FQN_REQUEST_CONFIG = "org.apache.http.client.config.RequestConfig";
     private static final String FQN_REQUEST_CONFIG_BUILDER = FQN_REQUEST_CONFIG + ".Builder";
-    private static final String FQN_POOL_CONN_MANAGER = "org.apache.http.impl.conn.PoolingHttpClientConnectionManager";
+    private static final String FQN_POOL_CONN_MANAGER4 = "org.apache.http.impl.conn.PoolingHttpClientConnectionManager";
+    private static final String FQN_POOL_CONN_MANAGER5 = "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager";
     private static final String FQN_HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
+    private static final String FQN_TIME_VALUE = "org.apache.hc.core5.util.TimeValue";
 
     private static final String PATTERN_STALE_CHECK_ENABLED = FQN_REQUEST_CONFIG_BUILDER + " setStaleConnectionCheckEnabled(..)";
     private static final String PATTERN_REQUEST_CONFIG = FQN_HTTP_CLIENT_BUILDER + " setDefaultRequestConfig(..)";
@@ -47,17 +51,16 @@ public class MigrateRequestConfig extends Recipe {
 
     @Override
     public String getDisplayName() {
-        return "Migrate RequestConfig to httpclient5";
+        return "Migrate `RequestConfig` to httpclient5";
     }
 
     @Override
     public String getDescription() {
-        return "Migrate RequestConfig to httpclient5.";
+        return "Migrate `RequestConfig` to httpclient5.";
     }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-
         return Preconditions.check(
                 Preconditions.and(
                         new UsesMethod<>(MATCHER_STALE_CHECK_ENABLED),
@@ -79,26 +82,12 @@ public class MigrateRequestConfig extends Recipe {
                 getCursor().putMessageOnFirstEnclosing(J.MethodDeclaration.class, KEY_REQUEST_CONFIG, method);
                 doAfterVisit(new RemoveMethodInvocationsVisitor(Collections.singletonList(PATTERN_STALE_CHECK_ENABLED)));
             } else if (MATCHER_REQUEST_CONFIG.matches(method)) {
-                Set<Tree> connManagers = new HashSet<>(TreeVisitor.collect(
-                        new JavaIsoVisitor<ExecutionContext>() {
-                            @Override
-                            public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
-                                if (TypeUtils.isOfClassType(multiVariable.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER)) {
-                                    return SearchResult.found(multiVariable);
-                                }
-                                return super.visitVariableDeclarations(multiVariable, ctx);
-                            }
-                        },
-                        getCursor().firstEnclosing(J.MethodDeclaration.class),
-                        new HashSet<>()
-                ));
-
                 // Call `setConnectionManager()` if there's no PoolingHttpClientConnectionManager
                 // The `poolingHttpClientConnectionManager` will be created later in `visitMethodDeclaration()`
-                if (connManagers.isEmpty()) {
-                    method = JavaTemplate.builder("#{any()}.setConnectionManager(poolingHttpClientConnectionManager);").
-                            javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
-                            .imports("org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager")
+                if (lacksConnectionManager()) {
+                    method = JavaTemplate.builder("#{any()}.setConnectionManager(poolingHttpClientConnectionManager);")
+                            .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
+                            .imports(FQN_POOL_CONN_MANAGER5)
                             .build()
                             .apply(updateCursor(method), method.getCoordinates().replace(), method);
                 }
@@ -109,10 +98,26 @@ public class MigrateRequestConfig extends Recipe {
             return method;
         }
 
+        private boolean lacksConnectionManager() {
+            return TreeVisitor.collect(
+                            new JavaIsoVisitor<ExecutionContext>() {
+                                @Override
+                                public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx1) {
+                                    if (TypeUtils.isOfClassType(multiVariable.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER4)) {
+                                        return SearchResult.found(multiVariable);
+                                    }
+                                    return super.visitVariableDeclarations(multiVariable, ctx1);
+                                }
+                            },
+                            getCursor().firstEnclosing(J.MethodDeclaration.class),
+                            new HashSet<>())
+                    .isEmpty();
+        }
+
         @Override
         public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
             // Consider only 1 RequestConfig and 0/1 ConnectionManager in a method
-            if (TypeUtils.isOfClassType(multiVariable.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER)) {
+            if (TypeUtils.isOfClassType(multiVariable.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER4)) {
                 getCursor().putMessageOnFirstEnclosing(J.MethodDeclaration.class, KEY_POOL_CONN_MANAGER, multiVariable);
             }
             return super.visitVariableDeclarations(multiVariable, ctx);
@@ -128,9 +133,9 @@ public class MigrateRequestConfig extends Recipe {
                 J.VariableDeclarations varsConnManager = getCursor().getMessage(KEY_POOL_CONN_MANAGER);
                 if (varsConnManager != null) {
                     J.VariableDeclarations.NamedVariable connManager = varsConnManager.getVariables().get(0);
-                    method = JavaTemplate.builder("#{any(org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager)}.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);")
+                    method = JavaTemplate.builder("#{any(" + FQN_POOL_CONN_MANAGER5 + ")}.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);")
                             .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
-                            .imports("org.apache.hc.core5.util.TimeValue")
+                            .imports(FQN_TIME_VALUE)
                             .build()
                             .apply(getCursor(), varsConnManager.getCoordinates().after(), connManager.getName());
                 } else {
@@ -140,15 +145,15 @@ public class MigrateRequestConfig extends Recipe {
                         String tpl = "PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager();" +
                                      "poolingHttpClientConnectionManager.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);";
                         method = JavaTemplate.builder(tpl)
-                                .javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
-                                .imports(FQN_POOL_CONN_MANAGER)
+                                .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
+                                .imports(FQN_POOL_CONN_MANAGER5)
                                 .build()
                                 .apply(updateCursor(method), method.getBody().getCoordinates().firstStatement());
-                        maybeAddImport(FQN_POOL_CONN_MANAGER);
+                        maybeAddImport(FQN_POOL_CONN_MANAGER5);
                     }
                 }
 
-                maybeAddImport("org.apache.hc.core5.util.TimeValue");
+                maybeAddImport(FQN_TIME_VALUE);
             }
 
             return method;
