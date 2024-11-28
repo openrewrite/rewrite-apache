@@ -310,8 +310,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               import org.apache.http.impl.client.CloseableHttpClient;
               import org.apache.http.impl.client.HttpClientBuilder;
 
-              public class Example {
-                  private CloseableHttpClient client() {
+              class Example {
+                  CloseableHttpClient client() {
                       RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(true).build();
 
                       return HttpClientBuilder.create()
@@ -319,13 +319,14 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           .build();
                   }
               }
-              """, """
+              """,
+            """
               import org.apache.hc.client5.http.config.RequestConfig;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 
-              public class Example {
-                  private CloseableHttpClient client() {
+              class Example {
+                  CloseableHttpClient client() {
                       RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(true).build();
 
                       return HttpClientBuilder.create()
@@ -350,8 +351,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               import org.apache.http.impl.client.HttpClientBuilder;
               import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
-              public class Example {
-                  private CloseableHttpClient client() {
+              class Example {
+                  CloseableHttpClient client() {
                       RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(false).build();
 
                       PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
@@ -362,15 +363,16 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           .build();
                   }
               }
-              """, """
+              """,
+            """
               import org.apache.hc.core5.util.TimeValue;
               import org.apache.hc.client5.http.config.RequestConfig;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
               import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
-              public class Example {
-                  private CloseableHttpClient client() {
+              class Example {
+                  CloseableHttpClient client() {
                       RequestConfig requestConfig = RequestConfig.custom().build();
 
                       PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
@@ -392,8 +394,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void setStaleConnectionCheckEnabledFalseWithoutConnManager() {
         rewriteRun(
-          // Ideally we restructure the recipe to add the poolingHttpClientConnectionManager first, and use that in setConnectionManager
-          spec -> spec.afterTypeValidationOptions(TypeValidation.all().identifiers(false).methodInvocations(false)),
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
             """
@@ -401,8 +402,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               import org.apache.http.impl.client.CloseableHttpClient;
               import org.apache.http.impl.client.HttpClientBuilder;
 
-              public class Example {
-                  private CloseableHttpClient client() {
+              class Example {
+                  CloseableHttpClient client() {
                       RequestConfig requestConfig = RequestConfig.custom().setStaleConnectionCheckEnabled(false).build();
 
                       return HttpClientBuilder.create()
@@ -411,14 +412,15 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   }
               }
               """,
-              """
+            """
               import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+              import org.apache.hc.core5.util.TimeValue;
               import org.apache.hc.client5.http.config.RequestConfig;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 
-              public class Example {
-                  private CloseableHttpClient client() {
+              class Example {
+                  CloseableHttpClient client() {
                       PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager();
                       poolingHttpClientConnectionManager.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);
                       RequestConfig requestConfig = RequestConfig.custom().build();
