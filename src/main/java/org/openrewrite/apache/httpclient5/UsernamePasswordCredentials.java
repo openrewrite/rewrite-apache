@@ -25,8 +25,6 @@ import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.java.tree.TypeUtils;
 
 public class UsernamePasswordCredentials extends Recipe {
     private static final String FQN = "org.apache.http.auth.UsernamePasswordCredentials";
