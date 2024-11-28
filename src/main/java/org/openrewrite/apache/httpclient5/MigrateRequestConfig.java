@@ -64,6 +64,7 @@ public class MigrateRequestConfig extends Recipe {
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(
                 Preconditions.and(
+                        // Cheap check first, to avoid more expensive search
                         new UsesMethod<>(MATCHER_STALE_CHECK_ENABLED),
                         callsSetStaleCheckEnabledFalse()
                 ), new MigrateRequestConfigVisitor());
@@ -87,7 +88,7 @@ public class MigrateRequestConfig extends Recipe {
                             .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
                             .imports(FQN_POOL_CONN_MANAGER5)
                             .build()
-                            .apply(updateCursor(method), method.getBody().getCoordinates().firstStatement());
+                            .apply(getCursor(), method.getBody().getCoordinates().firstStatement());
                     connectionManagerVD = (J.VariableDeclarations) method.getBody().getStatements().get(0);
                 }
 
@@ -98,20 +99,17 @@ public class MigrateRequestConfig extends Recipe {
                         .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
                         .imports(FQN_TIME_VALUE)
                         .build()
-                        .apply(updateCursor(method),
-                                connectionManagerVD.getCoordinates().after(),
-                                connectionManagerIdentifier);
+                        .apply(updateCursor(method), connectionManagerVD.getCoordinates().after(), connectionManagerIdentifier);
 
                 // Make the connection manager available to set in the method invocation visit below
                 if (needsNewConnectionManager) {
-                    updateCursor(method).putMessage(KEY_POOL_CONN_MANAGER, connectionManagerIdentifier);
+                    getCursor().putMessage(KEY_POOL_CONN_MANAGER, connectionManagerIdentifier);
                 }
             }
             return super.visitMethodDeclaration(method, ctx);
         }
 
         private J.@Nullable VariableDeclarations findExistingConnectionPool(J.MethodDeclaration method) {
-            // Find any existing connection manager
             AtomicReference<J.VariableDeclarations> existingConnManager = new AtomicReference<>();
             new JavaIsoVisitor<AtomicReference<J.VariableDeclarations>>() {
                 @Override
@@ -137,7 +135,7 @@ public class MigrateRequestConfig extends Recipe {
                             .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
                             .imports(FQN_POOL_CONN_MANAGER5)
                             .build()
-                            .apply(updateCursor(method), method.getCoordinates().replace(), method, connectionManagerIdentifier);
+                            .apply(getCursor(), method.getCoordinates().replace(), method, connectionManagerIdentifier);
                 }
             }
             return super.visitMethodInvocation(method, ctx);
