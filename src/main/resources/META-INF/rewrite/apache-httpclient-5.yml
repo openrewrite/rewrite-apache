@@ -41,6 +41,7 @@ recipeList:
       newGroupId: org.apache.httpcomponents.core5
       newArtifactId: httpcore5
       newVersion: 5.3.x
+  - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
