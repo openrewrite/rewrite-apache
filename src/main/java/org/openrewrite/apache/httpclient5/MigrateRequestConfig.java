@@ -100,11 +100,11 @@ public class MigrateRequestConfig extends Recipe {
                 // Call `setConnectionManager()` if there's no PoolingHttpClientConnectionManager
                 // The `poolingHttpClientConnectionManager` will be created later in `visitMethodDeclaration()`
                 if (connManagers.isEmpty()) {
-                    method = JavaTemplate.builder(method.print() + "\n.setConnectionManager(poolingHttpClientConnectionManager);").
+                    method = JavaTemplate.builder("#{any()}.setConnectionManager(poolingHttpClientConnectionManager);").
                             javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
                             .imports("org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager")
                             .build()
-                            .apply(updateCursor(method), method.getCoordinates().replace());
+                            .apply(updateCursor(method), method.getCoordinates().replace(), method);
                 }
 
                 getCursor().putMessageOnFirstEnclosing(J.MethodDeclaration.class, KEY_HTTP_CLIENT_BUILDER, method);
