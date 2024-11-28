@@ -18,6 +18,7 @@ package org.openrewrite.apache.httpclient5;
 import org.openrewrite.*;
 import org.openrewrite.java.*;
 import org.openrewrite.java.search.UsesMethod;
+import org.openrewrite.java.trait.Traits;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
@@ -56,19 +57,13 @@ public class MigrateRequestConfig extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
+
         return Preconditions.check(
                 Preconditions.and(
                         new UsesMethod<>(MATCHER_STALE_CHECK_ENABLED),
-                        new JavaIsoVisitor<ExecutionContext>() {
-                            @Override
-                            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-                                if (MATCHER_STALE_CHECK_ENABLED.matches(method) &&
-                                    J.Literal.isLiteralValue(method.getArguments().get(0), false)) {
-                                    return SearchResult.found(method);
-                                }
-                                return super.visitMethodInvocation(method, ctx);
-                            }
-                        }
+                        Traits.methodAccess(MATCHER_STALE_CHECK_ENABLED).asVisitor(access ->
+                                J.Literal.isLiteralValue(access.getTree().getArguments().get(0), false) ?
+                                        SearchResult.found(access.getTree()) : access.getTree())
                 ), new MigrateRequestConfigVisitor());
     }
 
