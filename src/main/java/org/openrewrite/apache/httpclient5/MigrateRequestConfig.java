@@ -15,8 +15,6 @@
  */
 package org.openrewrite.apache.httpclient5;
 
-import lombok.Value;
-import lombok.With;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
 import org.openrewrite.java.*;
@@ -24,14 +22,10 @@ import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.trait.Traits;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
-import org.openrewrite.marker.Marker;
 import org.openrewrite.marker.SearchResult;
 
 import java.util.Collections;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.openrewrite.Tree.randomId;
 
 public class MigrateRequestConfig extends Recipe {
 
@@ -84,7 +78,8 @@ public class MigrateRequestConfig extends Recipe {
             if (staleEnabled) {
                 // Find or create a new PoolingHttpClientConnectionManager
                 J.VariableDeclarations connectionManagerVD = findExistingConnectionPool(method);
-                if (connectionManagerVD == null) {
+                boolean needsNewConnectionManager = connectionManagerVD == null;
+                if (needsNewConnectionManager) {
                     maybeAddImport(FQN_POOL_CONN_MANAGER5);
                     method = JavaTemplate.builder(
                                     "PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = " +
@@ -107,8 +102,10 @@ public class MigrateRequestConfig extends Recipe {
                                 connectionManagerVD.getCoordinates().after(),
                                 connectionManagerIdentifier);
 
-                // Make the connection manager available to the method invocation visit below
-                updateCursor(method).putMessage(KEY_POOL_CONN_MANAGER, connectionManagerIdentifier);
+                // Make the connection manager available to set in the method invocation visit below
+                if (needsNewConnectionManager) {
+                    updateCursor(method).putMessage(KEY_POOL_CONN_MANAGER, connectionManagerIdentifier);
+                }
             }
             return super.visitMethodDeclaration(method, ctx);
         }
@@ -134,25 +131,16 @@ public class MigrateRequestConfig extends Recipe {
             if (MATCHER_STALE_CHECK_ENABLED.matches(method)) {
                 doAfterVisit(new RemoveMethodInvocationsVisitor(Collections.singletonList(PATTERN_STALE_CHECK_ENABLED)));
             } else if (MATCHER_REQUEST_CONFIG.matches(method)) {
-                boolean needsToSetConnectionManager = !method.getMarkers().findFirst(ConnectionManagerSet.class).isPresent();
                 J.Identifier connectionManagerIdentifier = getCursor().pollNearestMessage(KEY_POOL_CONN_MANAGER);
-                if (needsToSetConnectionManager && connectionManagerIdentifier != null) {
+                if (connectionManagerIdentifier != null) {
                     method = JavaTemplate.builder("#{any()}.setConnectionManager(#{any()});")
                             .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
                             .imports(FQN_POOL_CONN_MANAGER5)
                             .build()
-                            .apply(updateCursor(method), method.getCoordinates().replace(), method, connectionManagerIdentifier)
-                            .withMarkers(method.getMarkers().add(new ConnectionManagerSet(randomId())));
+                            .apply(updateCursor(method), method.getCoordinates().replace(), method, connectionManagerIdentifier);
                 }
             }
-
             return super.visitMethodInvocation(method, ctx);
-        }
-
-        @Value
-        private static class ConnectionManagerSet implements Marker {
-            @With
-            UUID id;
         }
     }
 }
