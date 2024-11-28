@@ -17,6 +17,7 @@ package org.openrewrite.apache.httpclient5;
 
 import org.openrewrite.*;
 import org.openrewrite.java.*;
+import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
@@ -55,20 +56,20 @@ public class MigrateRequestConfig extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new MigrateRequestConfigPrecondition(), new MigrateRequestConfigVisitor());
-    }
-
-    // Only check `setStaleConnectionCheckEnabled(false)` for now
-    // Need another fix for `setStaleConnectionCheckEnabled(true)`
-    private static class MigrateRequestConfigPrecondition extends JavaIsoVisitor<ExecutionContext> {
-
-        @Override
-        public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-            if (MATCHER_STALE_CHECK_ENABLED.matches(method) && !Boolean.parseBoolean(method.getArguments().get(0).print())) {
-                return SearchResult.found(method);
-            }
-            return super.visitMethodInvocation(method, ctx);
-        }
+        return Preconditions.check(
+                Preconditions.and(
+                        new UsesMethod<>(MATCHER_STALE_CHECK_ENABLED),
+                        new JavaIsoVisitor<ExecutionContext>() {
+                            @Override
+                            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                                if (MATCHER_STALE_CHECK_ENABLED.matches(method) &&
+                                    J.Literal.isLiteralValue(method.getArguments().get(0), false)) {
+                                    return SearchResult.found(method);
+                                }
+                                return super.visitMethodInvocation(method, ctx);
+                            }
+                        }
+                ), new MigrateRequestConfigVisitor());
     }
 
     private static class MigrateRequestConfigVisitor extends JavaIsoVisitor<ExecutionContext> {
@@ -77,8 +78,8 @@ public class MigrateRequestConfig extends Recipe {
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
             method = super.visitMethodInvocation(method, ctx);
 
-            if (MATCHER_STALE_CHECK_ENABLED.matches(method)) {
-                boolean enabled = Boolean.parseBoolean(method.getArguments().get(0).print());
+            if (MATCHER_STALE_CHECK_ENABLED.matches(method) && method.getArguments().get(0) instanceof J.Literal) {
+                boolean enabled = (boolean) ((J.Literal) method.getArguments().get(0)).getValue();
                 getCursor().putMessageOnFirstEnclosing(J.MethodDeclaration.class, KEY_STALE_CHECK_ENABLED, enabled);
                 getCursor().putMessageOnFirstEnclosing(J.MethodDeclaration.class, KEY_REQUEST_CONFIG, method);
                 doAfterVisit(new RemoveMethodInvocationsVisitor(Collections.singletonList(PATTERN_STALE_CHECK_ENABLED)));
@@ -127,7 +128,7 @@ public class MigrateRequestConfig extends Recipe {
             method = super.visitMethodDeclaration(method, ctx);
 
             // setStaleConnectionCheckEnabled is only related to PoolingHttpClientConnectionManager
-            boolean staleEnabled = getCursor().getMessage(KEY_STALE_CHECK_ENABLED);
+            boolean staleEnabled = getCursor().getMessage(KEY_STALE_CHECK_ENABLED, false);
             if (!staleEnabled) {
                 J.VariableDeclarations varsConnManager = getCursor().getMessage(KEY_POOL_CONN_MANAGER);
                 if (varsConnManager != null) {
