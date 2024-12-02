@@ -54,3 +54,13 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-engine:latest.release")
 
 }
+
+configurations.forEach {
+    it.resolutionStrategy.eachDependency {
+        // Force all version of log4j to be version 2.+
+        // This avoids use using earlier versions with known vulnerabilities
+        if (requested.group == "org.apache.logging.log4j") {
+            useVersion("2.+")
+        }
+    }
+}
