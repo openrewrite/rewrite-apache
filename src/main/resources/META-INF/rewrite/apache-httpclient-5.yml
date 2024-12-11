@@ -449,6 +449,10 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.HttpResponse
       newFullyQualifiedTypeName: org.apache.hc.core5.http.ClassicHttpResponse
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.client.ResponseHandler
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpClientResponseHandler
+
   # Fixing argument order change
   - org.openrewrite.java.ReorderMethodArguments:
       methodPattern: org.apache.hc.core5.http.HttpHost <constructor>(java.lang.String, int, java.lang.String)
@@ -462,7 +466,6 @@ recipeList:
       methodPattern: org.apache.hc.core5.http.HttpHost <constructor>(java.net.InetAddress, java.lang.String, int, java.lang.String)
       oldParameterNames: [address, hostname, port, scheme]
       newParameterNames: [scheme, address, hostname, port]
-
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
