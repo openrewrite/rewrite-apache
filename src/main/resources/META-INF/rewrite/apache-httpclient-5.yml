@@ -475,6 +475,9 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.hc.client5.http.config.RequestConfig.Builder setSocketTimeout(int)
       newMethodName: setResponseTimeout
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.http.HttpMessage getAllHeaders()
+      newMethodName: getHeaders
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
