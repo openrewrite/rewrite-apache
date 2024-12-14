@@ -1,0 +1,214 @@
+#
+# Copyright 2024 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.poi.UpgradeApachePoi_3_17
+displayName: Migrates to Apache POI 3.17
+description: Migrates to the last Apache POI 3.x release. This recipe modifies build files and makes changes to deprecated/preferred APIs that have changed between versions.
+tags:
+  - apache
+  - poi
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: poi
+      oldArtifactId: poi
+      newGroupId: org.apache.poi
+      newArtifactId: poi
+      newVersion: 3.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.poi
+      artifactId: poi*
+      newVersion: 3.x
+  - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBoldRecipes
+  - org.openrewrite.apache.poi.ReplaceSetCellTypeRecipes
+  - org.openrewrite.java.migrate.ChangeMethodInvocationReturnType:
+      methodPattern: org.apache.poi.ss.usermodel.Cell getCellType()
+      newReturnType: org.apache.poi.ss.usermodel.CellType
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.Cell.CELL_TYPE_NUMERIC
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellType.NUMERIC
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.Cell.CELL_TYPE_STRING
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellType.STRING
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.Cell.CELL_TYPE_FORMULA
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellType.FORMULA
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.Cell.CELL_TYPE_BLANK
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellType.BLANK
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.Cell.CELL_TYPE_BOOLEAN
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellType.BOOLEAN
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.Cell.CELL_TYPE_ERROR
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellType.ERROR
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.VERTICAL_TOP
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.VerticalAlignment.TOP
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.VERTICAL_CENTER
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.VerticalAlignment.CENTER
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.VERTICAL_BOTTOM
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.VerticalAlignment.BOTTOM
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.VERTICAL_JUSTIFY
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.VerticalAlignment.JUSTIFY
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_LEFT
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.LEFT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_CENTER
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_RIGHT
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_FILL
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.FILL
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_JUSTIFY
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.JUSTIFY
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_CENTER_SELECTION
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER_SELECTION
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_CENTER_SELECTION
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER_SELECTION
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_NONE
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.NONE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_THIN
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.THIN
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_MEDIUM
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.MEDIUM
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_DASHED
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.DASHED
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_DOTTED
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.DOTTED
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_THICK
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.THICK
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_DOUBLE
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.DOUBLE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_HAIR
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.HAIR
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_MEDIUM_DASHED
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.MEDIUM_DASHED
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_DASH_DOT
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.DASH_DOT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_MEDIUM_DASH_DOT
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.MEDIUM_DASH_DOT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_DASH_DOT_DOT
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.DASH_DOT_DOT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_MEDIUM_DASH_DOT_DOT
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.MEDIUM_DASH_DOT_DOT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_SLANTED_DASH_DOT
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.SLANTED_DASH_DOT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.NO_FILL
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.NO_FILL
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.SOLID_FOREGROUND
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.FINE_DOTS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.FINE_DOTS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALT_BARS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.ALT_BARS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.SPARSE_DOTS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.SPARSE_DOTS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THICK_HORZ_BANDS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THICK_HORZ_BANDS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THICK_VERT_BANDS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THICK_VERT_BANDS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THICK_BACKWARD_DIAG
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THICK_BACKWARD_DIAG
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THICK_FORWARD_DIAG
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THICK_FORWARD_DIAG
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BIG_SPOTS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.BIG_SPOTS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BRICKS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.BRICKS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THIN_HORZ_BANDS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THIN_HORZ_BANDS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THIN_VERT_BANDS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THIN_VERT_BANDS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THIN_BACKWARD_DIAG
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THIN_BACKWARD_DIAG
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.THIN_FORWARD_DIAG
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.THIN_FORWARD_DIAG
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.SQUARES
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.SQUARES
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.DIAMONDS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.DIAMONDS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.LESS_DOTS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.LESS_DOTS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.LEAST_DOTS
+      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.FillPatternType.LEAST_DOTS
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.common.usermodel.Hyperlink.LINK_URL
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.URL
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.common.usermodel.Hyperlink.LINK_DOCUMENT
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.DOCUMENT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.common.usermodel.Hyperlink.LINK_EMAIL
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.EMAIL
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.common.usermodel.Hyperlink.LINK_FILE
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.FILE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.xssf.usermodel.XSSFHyperlink.LINK_URL
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.URL
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.xssf.usermodel.XSSFHyperlink.LINK_DOCUMENT
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.DOCUMENT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.xssf.usermodel.XSSFHyperlink.LINK_EMAIL
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.EMAIL
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.poi.xssf.usermodel.XSSFHyperlink.LINK_FILE
+      fullyQualifiedConstantName: org.apache.poi.common.usermodel.HyperlinkType.FILE
