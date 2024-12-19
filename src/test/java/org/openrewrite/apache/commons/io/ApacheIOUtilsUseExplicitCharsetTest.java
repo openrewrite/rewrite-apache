@@ -46,7 +46,7 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
                 import java.io.Writer;
                 import java.net.URI;
                 import java.net.URL;
-                                
+
                 class T {
                     InputStream inputStream;
                     OutputStream outputStream;
@@ -59,7 +59,7 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
                     URL url;
                     char[] chars;
                     StringBuffer stringBuffer;
-                  
+
                     void flex() {
                         IOUtils.copy(inputStream, writer);
                         IOUtils.copy(reader, outputStream);
@@ -90,7 +90,7 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
                 import java.net.URI;
                 import java.net.URL;
                 import java.nio.charset.StandardCharsets;
-                                
+
                 class T {
                     InputStream inputStream;
                     OutputStream outputStream;
@@ -103,7 +103,7 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
                     URL url;
                     char[] chars;
                     StringBuffer stringBuffer;
-                  
+
                     void flex() {
                         IOUtils.copy(inputStream, writer, StandardCharsets.UTF_8);
                         IOUtils.copy(reader, outputStream, StandardCharsets.UTF_8);

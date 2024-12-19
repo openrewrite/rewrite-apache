@@ -95,7 +95,7 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
                     mi = mi.withSelect(method.getArguments().get(0));
                     //noinspection ConstantConditions
                     mi = mi.withMethodType(mi.getMethodType().withName("getBytes"));
-                    mi = JavaTemplate.builder("#{any(String)}.getBytes(StandardCharsets.#{})}")
+                    mi = JavaTemplate.builder("#{any(String)}.getBytes(StandardCharsets.#{})")
                             .javaParser(javaParser)
                             .imports("java.nio.charset.StandardCharsets")
                             .build()
