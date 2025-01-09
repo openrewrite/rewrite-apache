@@ -11,16 +11,16 @@ recipeDependencies {
     parserClasspath("org.apache.commons:commons-collections4:4.4")
 }
 
-val rewriteVersion = rewriteRecipe.rewriteVersion.get()
+val rewriteVersion = "latest.release"
 dependencies {
-    implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
+    implementation(platform("org.openrewrite:rewrite-bom:8.41.1"))
     implementation("org.openrewrite:rewrite-java")
-    implementation("org.openrewrite.recipe:rewrite-java-dependencies:$rewriteVersion")
-    implementation("org.openrewrite.recipe:rewrite-logging-frameworks:$rewriteVersion")
-    implementation("org.openrewrite.recipe:rewrite-static-analysis:$rewriteVersion")
-    implementation("org.openrewrite:rewrite-templating:$rewriteVersion")
+    implementation("org.openrewrite.recipe:rewrite-java-dependencies:1.24.1")
+    implementation("org.openrewrite.recipe:rewrite-logging-frameworks:2.17.1")
+    implementation("org.openrewrite.recipe:rewrite-static-analysis:1.21.1")
+    implementation("org.openrewrite:rewrite-templating:1.19.1")
 
-    annotationProcessor("org.openrewrite:rewrite-templating:$rewriteVersion")
+    annotationProcessor("org.openrewrite:rewrite-templating:1.19.1")
     compileOnly("com.google.errorprone:error_prone_core:2.+") {
         exclude("com.google.auto.service", "auto-service-annotations")
     }
