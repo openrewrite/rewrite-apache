@@ -17,6 +17,7 @@ package org.openrewrite.apache.commons.collections;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -77,6 +78,24 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
                       List emptyList = Collections.emptyList();
                   }
               }
+              """
+          )
+        );
+    }
+
+    @Test
+    @Issue("https://github.com/openrewrite/rewrite-apache/issues/55")
+    void hashedMap() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.collections.map.HashedMap;
+              class Test {}
+              """,
+            """
+              import org.apache.commons.collections4.map.HashedMap;
+              class Test {}
               """
           )
         );
