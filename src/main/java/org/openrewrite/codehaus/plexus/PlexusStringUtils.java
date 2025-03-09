@@ -31,9 +31,9 @@ public class PlexusStringUtils {
             description = "Replace Plexus `StringUtils.abbreviate(String str, int maxWidth)` with JDK provided API.")
     public static class Abbreviate {
         @BeforeTemplate
-        String before(@Matches(RepeatableArgumentMatcher.class) String s1,
+        String before(@Matches(RepeatableArgumentMatcher.class) String s,
                       @Matches(RepeatableArgumentMatcher.class) int width) {
-            return StringUtils.abbreviate(s1, width);
+            return StringUtils.abbreviate(s, width);
         }
 
         @AfterTemplate

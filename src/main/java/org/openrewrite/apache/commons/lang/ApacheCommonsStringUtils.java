@@ -31,9 +31,9 @@ public class ApacheCommonsStringUtils {
             description = "Replace Apache Commons `StringUtils.abbreviate(String str, int maxWidth)` with JDK provided API.")
     public static class Abbreviate {
         @BeforeTemplate
-        String before(@Matches(RepeatableArgumentMatcher.class) String s1,
+        String before(@Matches(RepeatableArgumentMatcher.class) String s,
                       @Matches(RepeatableArgumentMatcher.class) int width) {
-            return StringUtils.abbreviate(s1, width);
+            return StringUtils.abbreviate(s, width);
         }
 
         @AfterTemplate
@@ -66,7 +66,7 @@ public class ApacheCommonsStringUtils {
     //    }
 
     //    @AfterTemplate
-    //    String after(String s) {
+    //    String after(String s) {`
     //        return (s == null ? null : (s.endsWith("\n") ? s.substring(0, s.length() - 1) : s));
     //    }
     //}
