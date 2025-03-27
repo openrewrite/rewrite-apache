@@ -17,6 +17,7 @@ package org.openrewrite.apache.poi;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -27,9 +28,8 @@ class ReplaceSetBoldweightWithSetBoldTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .recipe(new ReplaceSetBoldweightWithSetBoldRecipes())
-          .parser(JavaParser.fromJavaVersion().classpath(
-            "poi"));
+          .recipe(new ReplaceSetBoldweightWithSetBold())
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi"));
     }
 
     @DocumentExample
@@ -40,7 +40,7 @@ class ReplaceSetBoldweightWithSetBoldTest implements RewriteTest {
           java(
             """
               import org.apache.poi.ss.usermodel.Font;
-              
+
               class Test {
                   void method(Font font) {
                       font.setBoldweight((short) 700);
@@ -55,7 +55,7 @@ class ReplaceSetBoldweightWithSetBoldTest implements RewriteTest {
               """,
             """
               import org.apache.poi.ss.usermodel.Font;
-              
+
               class Test {
                   void method(Font font) {
                       font.setBold(true);

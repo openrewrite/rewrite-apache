@@ -17,46 +17,76 @@ package org.openrewrite.apache.poi;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
+@SuppressWarnings({"deprecation", "AccessStaticViaInstance", "RedundantSuppression"})
 class ReplaceSetCellTypeTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .recipe(new ReplaceSetCellTypeRecipes())
-          .parser(JavaParser.fromJavaVersion().classpath("poi"));
+          .recipe(new ReplaceSetCellType())
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),"poi"));
     }
 
     @DocumentExample
     @Test
-    void replaceSetCellTypeInt() {
+    void replaceSetCellTypes() {
         //language=java
         rewriteRun(
           java(
             """
               import org.apache.poi.ss.usermodel.Cell;
-              
+
               class Test {
                   void method(Cell cell) {
                       cell.setCellType(0);
                       cell.setCellType(Cell.CELL_TYPE_NUMERIC);
-                      cell.setCellType(cell.CELL_TYPE_ERROR);
+                      cell.setCellType(cell.CELL_TYPE_NUMERIC);
+                      cell.setCellType(1);
+                      cell.setCellType(Cell.CELL_TYPE_STRING);
+                      cell.setCellType(cell.CELL_TYPE_STRING);
+                      cell.setCellType(2);
+                      cell.setCellType(Cell.CELL_TYPE_FORMULA);
+                      cell.setCellType(cell.CELL_TYPE_FORMULA);
+                      cell.setCellType(3);
+                      cell.setCellType(Cell.CELL_TYPE_BLANK);
+                      cell.setCellType(cell.CELL_TYPE_BLANK);
+                      cell.setCellType(4);
+                      cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
+                      cell.setCellType(cell.CELL_TYPE_BOOLEAN);
+                      cell.setCellType(5);
                       cell.setCellType(Cell.CELL_TYPE_ERROR);
+                      cell.setCellType(cell.CELL_TYPE_ERROR);
                   }
               }
               """,
             """
               import org.apache.poi.ss.usermodel.Cell;
               import org.apache.poi.ss.usermodel.CellType;
-              
+
               class Test {
                   void method(Cell cell) {
                       cell.setCellType(CellType.NUMERIC);
                       cell.setCellType(CellType.NUMERIC);
+                      cell.setCellType(CellType.NUMERIC);
+                      cell.setCellType(CellType.STRING);
+                      cell.setCellType(CellType.STRING);
+                      cell.setCellType(CellType.STRING);
+                      cell.setCellType(CellType.FORMULA);
+                      cell.setCellType(CellType.FORMULA);
+                      cell.setCellType(CellType.FORMULA);
+                      cell.setCellType(CellType.BLANK);
+                      cell.setCellType(CellType.BLANK);
+                      cell.setCellType(CellType.BLANK);
+                      cell.setCellType(CellType.BOOLEAN);
+                      cell.setCellType(CellType.BOOLEAN);
+                      cell.setCellType(CellType.BOOLEAN);
+                      cell.setCellType(CellType.ERROR);
                       cell.setCellType(CellType.ERROR);
                       cell.setCellType(CellType.ERROR);
                   }

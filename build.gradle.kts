@@ -10,6 +10,7 @@ recipeDependencies {
     parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.1.+")
     parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.1.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
+    parserClasspath("org.apache.poi:poi:3.16")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
@@ -29,7 +30,6 @@ dependencies {
     implementation("commons-io:commons-io:2.+")
     implementation("org.apache.commons:commons-lang3:3.+")
     implementation("org.apache.maven.shared:maven-shared-utils:3.+")
-    implementation("org.apache.poi:poi:3.16")
     implementation("org.codehaus.plexus:plexus-utils:3.+")
 
     testImplementation("org.openrewrite:rewrite-java-17")
