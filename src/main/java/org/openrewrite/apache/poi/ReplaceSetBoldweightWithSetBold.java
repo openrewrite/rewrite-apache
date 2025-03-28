@@ -15,7 +15,10 @@
  */
 package org.openrewrite.apache.poi;
 
-import org.openrewrite.*;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Preconditions;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
@@ -28,12 +31,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReplaceSetBoldweightWithSetBold extends Recipe {
     @Override
-    public @NlsRewrite.DisplayName String getDisplayName() {
+    public String getDisplayName() {
         return "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)";
     }
 
     @Override
-    public @NlsRewrite.Description String getDescription() {
+    public String getDescription() {
         return "Replace `Font.setBoldweight(short)` or equivalent with `Font.setBold(boolean)`.";
     }
 
@@ -67,19 +70,19 @@ public class ReplaceSetBoldweightWithSetBold extends Recipe {
                 AtomicBoolean found = new AtomicBoolean(false);
                 new JavaIsoVisitor<ExecutionContext>() {
                     @Override
-                    public J.Literal visitLiteral(J.Literal literal, ExecutionContext executionContext) {
+                    public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                         if (Objects.equals(400, literal.getValue())) {
                             found.set(true);
                         }
-                        return super.visitLiteral(literal, executionContext);
+                        return super.visitLiteral(literal, ctx);
                     }
 
                     @Override
-                    public J.Identifier visitIdentifier(J.Identifier identifier, ExecutionContext executionContext) {
+                    public J.Identifier visitIdentifier(J.Identifier identifier, ExecutionContext ctx) {
                         if("BOLDWEIGHT_NORMAL".equals(identifier.getSimpleName())) {
                             found.set(true);
                         }
-                        return super.visitIdentifier(identifier, executionContext);
+                        return super.visitIdentifier(identifier, ctx);
                     }
                 }.visit(method, ctx);
                 return found.get();
@@ -89,19 +92,19 @@ public class ReplaceSetBoldweightWithSetBold extends Recipe {
                 AtomicBoolean found = new AtomicBoolean(false);
                 new JavaIsoVisitor<ExecutionContext>() {
                     @Override
-                    public J.Literal visitLiteral(J.Literal literal, ExecutionContext executionContext) {
+                    public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                         if (Objects.equals(700, literal.getValue())) {
                             found.set(true);
                         }
-                        return super.visitLiteral(literal, executionContext);
+                        return super.visitLiteral(literal, ctx);
                     }
 
                     @Override
-                    public J.Identifier visitIdentifier(J.Identifier identifier, ExecutionContext executionContext) {
+                    public J.Identifier visitIdentifier(J.Identifier identifier, ExecutionContext ctx) {
                         if("BOLDWEIGHT_BOLD".equals(identifier.getSimpleName())) {
                             found.set(true);
                         }
-                        return super.visitIdentifier(identifier, executionContext);
+                        return super.visitIdentifier(identifier, ctx);
                     }
                 }.visit(method, ctx);
                 return found.get();

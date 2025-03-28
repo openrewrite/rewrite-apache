@@ -28,12 +28,12 @@ import org.openrewrite.java.tree.TypeUtils;
 public class ReplaceSetCellType extends Recipe {
 
     @Override
-    public @NlsRewrite.DisplayName String getDisplayName() {
+    public String getDisplayName() {
         return "Apache POI use `Cell.setCellType(CellType)`";
     }
 
     @Override
-    public @NlsRewrite.Description String getDescription() {
+    public String getDescription() {
         return "`Cell.setCellType()` can be configured with either an integer or a the `CellType` enumeration. " +
                "It is clearer and less error-prone to use the `CellType` enumeration, so this recipe converts all `setCellType()` calls to use it.";
     }
