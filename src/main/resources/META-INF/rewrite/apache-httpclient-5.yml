@@ -275,6 +275,9 @@ recipeList:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.HttpClient
       newFullyQualifiedTypeName: org.apache.hc.client5.http.classic.HttpClient
   - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.HttpRequestRetryHandler
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.HttpRequestRetryStrategy
+  - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.ConnectionBackoffStrategy
       newFullyQualifiedTypeName: org.apache.hc.client5.http.classic.ConnectionBackoffStrategy
   - org.openrewrite.java.ChangeType:
@@ -478,6 +481,9 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.hc.client5.http.config.RequestConfig.Builder setSocketTimeout(int)
       newMethodName: setResponseTimeout
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.client5.http.impl.classic.HttpClientBuilder setRetryHandler(..)
+      newMethodName: setRetryStrategy
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.http.HttpMessage getAllHeaders()
       newMethodName: getHeaders

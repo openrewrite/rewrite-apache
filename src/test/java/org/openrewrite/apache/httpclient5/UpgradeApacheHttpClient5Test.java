@@ -17,6 +17,7 @@ package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.Issue;
 import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -38,11 +39,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
           .parser(JavaParser.fromJavaVersion().classpath(
             "httpclient", "httpcore",
             "httpclient5", "httpcore5"))
-          .recipe(Environment.builder()
-            .scanRuntimeClasspath("org.openrewrite")
-            .build()
-            .activateRecipes("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5")
-          );
+          .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
     @Test
@@ -429,6 +426,37 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       return HttpClientBuilder.create()
                               .setDefaultRequestConfig(requestConfig).setConnectionManager(poolingHttpClientConnectionManager)
                           .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    @Issue("https://github.com/openrewrite/rewrite-apache/issues/58")
+    void setRetryHandlerToSetRetryStrategy() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.HttpRequestRetryHandler;
+              import org.apache.http.impl.client.HttpClientBuilder;
+
+              class A {
+                  void method(HttpRequestRetryHandler retryHandler) throws Exception {
+                      HttpClientBuilder builder = HttpClientBuilder.create()
+                          .setRetryHandler(retryHandler);
+                  }
+              }
+              """, """
+              import org.apache.hc.client5.http.HttpRequestRetryStrategy;
+              import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+
+              class A {
+                  void method(HttpRequestRetryStrategy retryHandler) throws Exception {
+                      HttpClientBuilder builder = HttpClientBuilder.create()
+                          .setRetryStrategy(retryHandler);
                   }
               }
               """

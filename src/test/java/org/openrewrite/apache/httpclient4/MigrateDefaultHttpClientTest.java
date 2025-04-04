@@ -42,9 +42,9 @@ class MigrateDefaultHttpClientTest implements RewriteTest {
               import org.apache.http.HttpResponse;
               import org.apache.http.client.methods.HttpPost;
               import org.apache.http.impl.client.DefaultHttpClient;
-              
+
               import java.io.IOException;
-                                   
+
               class A {
                   void method() throws IOException {
                       DefaultHttpClient httpClient = new DefaultHttpClient();
@@ -57,9 +57,9 @@ class MigrateDefaultHttpClientTest implements RewriteTest {
               import org.apache.http.client.methods.HttpPost;
               import org.apache.http.impl.client.CloseableHttpClient;
               import org.apache.http.impl.client.HttpClients;
-              
+
               import java.io.IOException;
-                                                                                                     
+
               class A {
                   void method() throws IOException {
                       CloseableHttpClient httpClient = HttpClients.createDefault();
