@@ -38,7 +38,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s, int width) {
-            return (s.length() <= width ? s : s.substring(0, width - 3) + "...");
+            return s.length() <= width ? s : s.substring(0, width - 3) + "...";
         }
     }
 
@@ -54,7 +54,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null || s.isEmpty() ? s : Character.toTitleCase(s.charAt(0)) + s.substring(1));
+            return s == null || s.isEmpty() ? s : Character.toTitleCase(s.charAt(0)) + s.substring(1);
         }
     }
 
@@ -115,7 +115,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         boolean after(String s, String other) {
-            return (s == null ? other == null : s.equalsIgnoreCase(other));
+            return s == null ? other == null : s.equalsIgnoreCase(other);
         }
     }
 
@@ -145,7 +145,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.toLowerCase());
+            return s == null ? null : s.toLowerCase();
         }
     }
 
@@ -162,7 +162,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s, String search, String replacement) {
-            return (s == null || s.isEmpty() || search == null || search.isEmpty() || replacement == null ? s : s.replace(search, replacement));
+            return s == null || s.isEmpty() || search == null || search.isEmpty() || replacement == null ? s : s.replace(search, replacement);
         }
     }
 
@@ -177,7 +177,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : new StringBuffer(s).reverse().toString());
+            return s == null ? null : new StringBuffer(s).reverse().toString();
         }
     }
 
@@ -207,7 +207,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.trim());
+            return s == null ? null : s.trim();
         }
     }
 
@@ -222,7 +222,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.trim());
+            return s == null ? null : s.trim();
         }
     }
 
@@ -237,7 +237,7 @@ public class MavenSharedStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.toUpperCase());
+            return s == null ? null : s.toUpperCase();
         }
     }
 }

@@ -230,7 +230,7 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
           java(
             """
               import org.apache.commons.lang3.StringUtils;
-                            
+
               class Foo {
                   void test(String s) {
                       String test = StringUtils.strip(s).toString();
@@ -255,7 +255,7 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
           java(
             """
               import org.apache.commons.lang3.StringUtils;
-                            
+
               class Foo {
                   void test(String s, String other) {
                       boolean test = !StringUtils.equalsIgnoreCase(s, other);
@@ -290,7 +290,7 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
           java(
             """
               import org.apache.commons.lang3.StringUtils;
-                            
+
               class Foo {
                   void test(Bar bar) {
                       String test = StringUtils.strip(bar.baz());
@@ -318,7 +318,7 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
           java(
             """
               import org.apache.commons.lang3.StringUtils;
-                            
+
               class Foo {
                   void test(Bar bar) {
                       String test = StringUtils.strip(bar.getBaz());

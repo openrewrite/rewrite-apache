@@ -38,7 +38,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s, int width) {
-            return (s == null || s.length() <= width ? s : s.substring(0, width - 3) + "...");
+            return s == null || s.length() <= width ? s : s.substring(0, width - 3) + "...";
         }
     }
 
@@ -54,7 +54,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null || s.isEmpty() || Character.isTitleCase(s.charAt(0)) ? s : Character.toTitleCase(s.charAt(0)) + s.substring(1));
+            return s == null || s.isEmpty() || Character.isTitleCase(s.charAt(0)) ? s : Character.toTitleCase(s.charAt(0)) + s.substring(1);
         }
     }
 
@@ -154,7 +154,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.replaceAll("\\s+", ""));
+            return s == null ? null : s.replaceAll("\\s+", "");
         }
     }
 
@@ -183,7 +183,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         boolean after(String s, String other) {
-            return (s == null ? other == null : s.equalsIgnoreCase(other));
+            return s == null ? other == null : s.equalsIgnoreCase(other);
         }
     }
 
@@ -359,7 +359,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.toLowerCase());
+            return s == null ? null : s.toLowerCase();
         }
     }
 
@@ -414,8 +414,8 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s, String end) {
-            return (s == null || s.isEmpty() || end == null || end.isEmpty() || !s.endsWith(end) ?
-                    s : s.substring(0, s.length() - end.length()));
+            return s == null || s.isEmpty() || end == null || end.isEmpty() || !s.endsWith(end) ?
+                    s : s.substring(0, s.length() - end.length());
         }
     }
 
@@ -457,7 +457,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s, String search, String replacement) {
-            return (s == null || s.isEmpty() || search == null || search.isEmpty() || replacement == null ? s : s.replace(search, replacement));
+            return s == null || s.isEmpty() || search == null || search.isEmpty() || replacement == null ? s : s.replace(search, replacement);
         }
     }
 
@@ -472,7 +472,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : new StringBuilder(s).reverse().toString());
+            return s == null ? null : new StringBuilder(s).reverse().toString();
         }
     }
 
@@ -500,7 +500,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String[] after(String s) {
-            return (s == null ? null : s.split("\\s+"));
+            return s == null ? null : s.split("\\s+");
         }
     }
 
@@ -541,7 +541,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.trim());
+            return s == null ? null : s.trim();
         }
     }
 
@@ -638,7 +638,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? "" : s.trim());
+            return s == null ? "" : s.trim();
         }
     }
 
@@ -654,7 +654,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null || s.trim().isEmpty() ? null : s.trim());
+            return s == null || s.trim().isEmpty() ? null : s.trim();
         }
     }
 
@@ -669,7 +669,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.trim());
+            return s == null ? null : s.trim();
         }
     }
 
@@ -684,7 +684,7 @@ public class ApacheCommonsStringUtils {
 
         @AfterTemplate
         String after(String s) {
-            return (s == null ? null : s.toUpperCase());
+            return s == null ? null : s.toUpperCase();
         }
     }
 
