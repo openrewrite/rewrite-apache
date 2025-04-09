@@ -136,7 +136,7 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
 
                             // Change any leftover `org.codehaus.plexus.logging.Logger` types to SLF4J Logger
                             maybeRemoveImport(PLEXUS_LOGGER);
-                            cd = (J.ClassDeclaration) new ChangeType(PLEXUS_LOGGER, "org.slf4j.Logger", false)
+                            cd = (J.ClassDeclaration) new ChangeType(PLEXUS_LOGGER, "org.slf4j.Logger", false, null)
                                     .getVisitor().visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
 
                         }
