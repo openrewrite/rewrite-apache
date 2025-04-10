@@ -64,7 +64,7 @@ public class MigrateDefaultHttpClient extends Recipe {
                     doAfterVisit(new ChangeType(
                             "org.apache.http.impl.client.DefaultHttpClient",
                             "org.apache.http.impl.client.CloseableHttpClient", true
-                    , null).getVisitor());
+                    ).getVisitor());
                     return noArgsTemplate.apply(getCursor(), newClass.getCoordinates().replace());
                 }
                 return super.visitNewClass(newClass, ctx);
