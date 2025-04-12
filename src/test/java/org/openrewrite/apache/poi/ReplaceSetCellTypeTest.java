@@ -30,12 +30,12 @@ class ReplaceSetCellTypeTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .recipe(new ReplaceSetCellType())
-          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),"poi"));
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi"));
     }
 
     @DocumentExample
     @Test
-    void replaceSetCellTypes() {
+    void numeric() {
         //language=java
         rewriteRun(
           java(
@@ -47,21 +47,6 @@ class ReplaceSetCellTypeTest implements RewriteTest {
                       cell.setCellType(0);
                       cell.setCellType(Cell.CELL_TYPE_NUMERIC);
                       cell.setCellType(cell.CELL_TYPE_NUMERIC);
-                      cell.setCellType(1);
-                      cell.setCellType(Cell.CELL_TYPE_STRING);
-                      cell.setCellType(cell.CELL_TYPE_STRING);
-                      cell.setCellType(2);
-                      cell.setCellType(Cell.CELL_TYPE_FORMULA);
-                      cell.setCellType(cell.CELL_TYPE_FORMULA);
-                      cell.setCellType(3);
-                      cell.setCellType(Cell.CELL_TYPE_BLANK);
-                      cell.setCellType(cell.CELL_TYPE_BLANK);
-                      cell.setCellType(4);
-                      cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
-                      cell.setCellType(cell.CELL_TYPE_BOOLEAN);
-                      cell.setCellType(5);
-                      cell.setCellType(Cell.CELL_TYPE_ERROR);
-                      cell.setCellType(cell.CELL_TYPE_ERROR);
                   }
               }
               """,
@@ -74,18 +59,163 @@ class ReplaceSetCellTypeTest implements RewriteTest {
                       cell.setCellType(CellType.NUMERIC);
                       cell.setCellType(CellType.NUMERIC);
                       cell.setCellType(CellType.NUMERIC);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void string() {
+        //language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(1);
+                      cell.setCellType(Cell.CELL_TYPE_STRING);
+                      cell.setCellType(cell.CELL_TYPE_STRING);
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+
+              class Test {
+                  void method(Cell cell) {
                       cell.setCellType(CellType.STRING);
                       cell.setCellType(CellType.STRING);
                       cell.setCellType(CellType.STRING);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void formula() {
+        //language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(2);
+                      cell.setCellType(Cell.CELL_TYPE_FORMULA);
+                      cell.setCellType(cell.CELL_TYPE_FORMULA);
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+
+              class Test {
+                  void method(Cell cell) {
                       cell.setCellType(CellType.FORMULA);
                       cell.setCellType(CellType.FORMULA);
                       cell.setCellType(CellType.FORMULA);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void blank() {
+        //language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(3);
+                      cell.setCellType(Cell.CELL_TYPE_BLANK);
+                      cell.setCellType(cell.CELL_TYPE_BLANK);
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+
+              class Test {
+                  void method(Cell cell) {
                       cell.setCellType(CellType.BLANK);
                       cell.setCellType(CellType.BLANK);
                       cell.setCellType(CellType.BLANK);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void bool() {
+        //language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(4);
+                      cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
+                      cell.setCellType(cell.CELL_TYPE_BOOLEAN);
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+
+              class Test {
+                  void method(Cell cell) {
                       cell.setCellType(CellType.BOOLEAN);
                       cell.setCellType(CellType.BOOLEAN);
                       cell.setCellType(CellType.BOOLEAN);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void error() {
+        //language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+
+              class Test {
+                  void method(Cell cell) {
+                      cell.setCellType(5);
+                      cell.setCellType(Cell.CELL_TYPE_ERROR);
+                      cell.setCellType(cell.CELL_TYPE_ERROR);
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+
+              class Test {
+                  void method(Cell cell) {
                       cell.setCellType(CellType.ERROR);
                       cell.setCellType(CellType.ERROR);
                       cell.setCellType(CellType.ERROR);
