@@ -25,6 +25,7 @@ dependencies {
     annotationProcessor("org.openrewrite:rewrite-templating:$rewriteVersion")
     compileOnly("com.google.errorprone:error_prone_core:2.+") {
         exclude("com.google.auto.service", "auto-service-annotations")
+        exclude("io.github.eisop","dataflow-errorprone")
     }
 
     implementation("commons-io:commons-io:2.+")
