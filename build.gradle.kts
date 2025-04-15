@@ -33,6 +33,7 @@ dependencies {
     implementation("org.apache.maven.shared:maven-shared-utils:3.+")
     implementation("org.codehaus.plexus:plexus-utils:3.+")
 
+    implementation("org.jspecify:jspecify:1.0.0")
     testImplementation("org.openrewrite:rewrite-java-17")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
