@@ -1,0 +1,61 @@
+#
+# Copyright 2025 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.commons.lang3.UseStandardCharsets
+displayName: Prefer `java.nio.charset.StandardCharsets`
+description: Prefer the Java standard library's `java.nio.charset.StandardCharsets` over `org.apache.commons.lang3.CharEncoding`.
+tags:
+  - apache
+  - commons
+recipeList:
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.lang3.CharEncoding
+      oldFieldName: ISO_8859_1
+      newClassName: java.nio.charset.StandardCharsets
+      newTarget: ISO_8859_1
+      newMethodName: name
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.lang3.CharEncoding
+      oldFieldName: US_ASCII
+      newClassName: java.nio.charset.StandardCharsets
+      newTarget: US_ASCII
+      newMethodName: name
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.lang3.CharEncoding
+      oldFieldName: UTF_16
+      newClassName: java.nio.charset.StandardCharsets
+      newTarget: UTF_16
+      newMethodName: name
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.lang3.CharEncoding
+      oldFieldName: UTF_16BE
+      newClassName: java.nio.charset.StandardCharsets
+      newTarget: UTF_16BE
+      newMethodName: name
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.lang3.CharEncoding
+      oldFieldName: UTF_16LE
+      newClassName: java.nio.charset.StandardCharsets
+      newTarget: UTF_16LE
+      newMethodName: name
+  - org.openrewrite.java.ChangeStaticFieldToMethod:
+      oldClassName: org.apache.commons.lang3.CharEncoding
+      oldFieldName: UTF_8
+      newClassName: java.nio.charset.StandardCharsets
+      newTarget: UTF_8
+      newMethodName: name
