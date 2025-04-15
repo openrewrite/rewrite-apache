@@ -29,16 +29,13 @@ class ApacheCommonsLang3UseStandardCharsetsTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang3"))
-          .recipe(Environment.builder()
-            .scanRuntimeClasspath("org.openrewrite")
-            .build()
-            .activateRecipes("org.openrewrite.apache.commons.lang3.UseStandardCharsets"));
+          .recipeFromResource("/META-INF/rewrite/apache-commons-lang-3.yml","org.openrewrite.apache.commons.lang3.UseStandardCharsets");
     }
 
     @SuppressWarnings({"UnusedAssignment", "deprecation"})
     @Test
     @DocumentExample
-    void foo() {
+    void convertCharEncodingFieldsToJdk() {
         // language=java
         rewriteRun(
           java(
@@ -71,6 +68,8 @@ class ApacheCommonsLang3UseStandardCharsetsTest implements RewriteTest {
                       return encoding;
                   }
               }
-              """));
+              """
+          )
+        );
     }
 }
