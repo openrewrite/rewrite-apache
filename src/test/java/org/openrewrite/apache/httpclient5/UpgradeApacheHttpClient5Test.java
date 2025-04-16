@@ -100,7 +100,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       EntityUtils.consume(entity);
                   }
               }
-              """, """
+              """,
+          """
               import org.apache.hc.core5.http.io.entity.EntityUtils;
               import org.apache.hc.core5.http.HttpEntity;
               import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -448,7 +449,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           .setRetryHandler(retryHandler);
                   }
               }
-              """, """
+              """,
+          """
               import org.apache.hc.client5.http.HttpRequestRetryStrategy;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 

@@ -60,7 +60,7 @@ class AddTimeUnitArgumentTest implements RewriteTest {
               return this;
           }
       }
-      """);
+      """ );
 
     @Test
     void addTimeUnitDefaultMilliseconds() {
@@ -76,7 +76,8 @@ class AddTimeUnitArgumentTest implements RewriteTest {
                     a.method(100);
                 }
             }
-            """, """
+            """,
+          """
             import java.util.concurrent.TimeUnit;
                         
             class B {
@@ -85,7 +86,8 @@ class AddTimeUnitArgumentTest implements RewriteTest {
                     a.method(100, TimeUnit.MILLISECONDS);
                 }
             }
-            """)
+            """
+          )
         );
     }
 
@@ -103,7 +105,8 @@ class AddTimeUnitArgumentTest implements RewriteTest {
                     a.method(100);
                 }
             }
-            """, """
+            """,
+          """
             import java.util.concurrent.TimeUnit;
                         
             class B {
@@ -112,7 +115,8 @@ class AddTimeUnitArgumentTest implements RewriteTest {
                     a.method(100, TimeUnit.SECONDS);
                 }
             }
-            """)
+            """
+          )
         );
     }
 
@@ -131,7 +135,8 @@ class AddTimeUnitArgumentTest implements RewriteTest {
                     a.method(100, 1.0f);
                 }
             }
-            """, """
+            """,
+          """
             import java.util.concurrent.TimeUnit;
                         
             class B {
@@ -140,7 +145,8 @@ class AddTimeUnitArgumentTest implements RewriteTest {
                     a.method(100, 1.0f, TimeUnit.MILLISECONDS);
                 }
             }
-            """)
+            """
+          )
         );
     }
 }

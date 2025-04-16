@@ -52,7 +52,8 @@ class MigrateDefaultHttpClientTest implements RewriteTest {
                       HttpResponse httpResponse = httpClient.execute(httpPost);
                   }
               }
-              """, """
+              """,
+          """
               import org.apache.http.HttpResponse;
               import org.apache.http.client.methods.HttpPost;
               import org.apache.http.impl.client.CloseableHttpClient;

@@ -55,7 +55,8 @@ class CookieConstantsTest implements RewriteTest {
                     String c6 = CookiePolicy.IGNORE_COOKIES;
                 }
             }
-            """, """
+            """,
+          """
             import org.apache.http.client.config.CookieSpecs;
             
             class A {

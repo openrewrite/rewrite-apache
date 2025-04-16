@@ -52,7 +52,8 @@ class CookieConstantsTest implements RewriteTest {
                     String c3 = CookieSpecs.STANDARD_STRICT;
                 }
             }
-            """, """
+            """,
+          """
             import org.apache.hc.client5.http.cookie.StandardCookieSpec;
             
             class A {

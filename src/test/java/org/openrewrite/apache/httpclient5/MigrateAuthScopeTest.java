@@ -52,7 +52,8 @@ class MigrateAuthScopeTest implements RewriteTest {
                     AuthScope any = AuthScope.ANY;
                 }
             }
-            """, """
+            """,
+          """
             import org.apache.hc.client5.http.auth.AuthScope;
             
             class A {

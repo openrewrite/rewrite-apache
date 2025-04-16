@@ -285,7 +285,8 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
                     return "baz";
                 }
             }
-            """),
+            """
+          ),
           //language=java
           java(
             """
@@ -313,7 +314,8 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
                     return "baz";
                 }
             }
-            """),
+            """
+          ),
           //language=java
           java(
             """

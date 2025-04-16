@@ -48,13 +48,15 @@ class IsNotEmptyToJdkTest implements RewriteTest {
                     return StringUtils.isEmpty(first);
                 }
             }
-            """, """
+            """,
+          """
             class A {
                 boolean test(String first) {
                     return first == null || first.isEmpty();
                 }
             }
-            """));
+            """
+          ));
     }
 
     @ParameterizedTest
