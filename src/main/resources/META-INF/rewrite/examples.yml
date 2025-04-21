@@ -1,0 +1,1017 @@
+# Copyright 2025 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.codec.ApacheBase64ToJavaBase64
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.codec.binary.Base64;
+
+      class Test {
+          static byte[] decodeBytes(byte[] encodedBytes) {
+              return Base64.decodeBase64(encodedBytes);
+          }
+          static byte[] decodeToBytes(String encodedString) {
+              return Base64.decodeBase64(encodedString);
+          }
+          static String encodeToString(byte[] decodedByteArr) {
+              return Base64.encodeBase64String(decodedByteArr);
+          }
+          static byte[] encodeBase64(byte[] binaryData) {
+              return Base64.encodeBase64(binaryData);
+          }
+          static byte[] encodeBytesUrlSafe(byte [] encodeBytes) {
+              return Base64.encodeBase64URLSafe(encodeBytes);
+          }
+          static String encodeBytesUrlSafeString(byte [] encodeBytes) {
+              return Base64.encodeBase64URLSafeString(encodeBytes);
+          }
+      }
+    after: |
+      import java.util.Base64;
+
+      class Test {
+          static byte[] decodeBytes(byte[] encodedBytes) {
+              return Base64.getDecoder().decode(encodedBytes);
+          }
+          static byte[] decodeToBytes(String encodedString) {
+              return Base64.getDecoder().decode(encodedString);
+          }
+          static String encodeToString(byte[] decodedByteArr) {
+              return Base64.getEncoder().encodeToString(decodedByteArr);
+          }
+          static byte[] encodeBase64(byte[] binaryData) {
+              return Base64.getEncoder().encode(binaryData);
+          }
+          static byte[] encodeBytesUrlSafe(byte [] encodeBytes) {
+              return Base64.getUrlEncoder().withoutPadding().encode(encodeBytes);
+          }
+          static String encodeBytesUrlSafeString(byte [] encodeBytes) {
+              return Base64.getUrlEncoder().withoutPadding().encodeToString(encodeBytes);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.collections.CollectionUtils;
+      import org.apache.commons.collections.map.IdentityMap;
+      import org.apache.commons.collections.ListUtils;
+      import org.apache.commons.collections.MapUtils;
+      import org.apache.commons.collections.FastArrayList;
+
+      import java.util.List;
+      import java.util.Map;
+
+      class Test {
+          static void helloApacheCollections() {
+              Object[] input = new Object[] { "one", "two" };
+              CollectionUtils.reverseArray(input);
+              IdentityMap identityMap = new IdentityMap();
+              Map emptyMap = MapUtils.EMPTY_MAP;
+              FastArrayList fastList = new FastArrayList(100);
+              List emptyList = ListUtils.EMPTY_LIST;
+          }
+      }
+    after: |
+      import org.apache.commons.collections4.CollectionUtils;
+
+      import java.util.Collections;
+      import java.util.IdentityHashMap;
+      import java.util.List;
+      import java.util.Map;
+      import java.util.concurrent.CopyOnWriteArrayList;
+
+      class Test {
+          static void helloApacheCollections() {
+              Object[] input = new Object[] { "one", "two" };
+              CollectionUtils.reverseArray(input);
+              IdentityHashMap identityMap = new IdentityHashMap();
+              Map emptyMap = Collections.emptyMap();
+              CopyOnWriteArrayList fastList = new CopyOnWriteArrayList(100);
+              List emptyList = Collections.emptyList();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.io.ApacheCommonsFileUtilsRecipes
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.io.FileUtils;
+
+      import java.io.File;
+      import java.io.FileFilter;
+      import java.net.URL;
+      import java.nio.charset.Charset;
+      import java.util.Collection;
+      import java.util.Collections;
+      import java.util.List;
+
+      class Foo {
+          void bar(File fileA, File fileB, URL url, Charset cs, FileFilter filter, CharSequence charSeq) throws Exception {
+              long l = 10L;
+              String s = "hello world";
+              String[] stringArray = new String[4];
+              Collection<String> collection = Collections.EMPTY_LIST;
+              byte[] bytes = new byte[0];
+              String str;
+              boolean bool;
+              List<String> strList;
+              List<File> fileList;
+              File f;
+
+              FileUtils.write(fileA, s, cs);
+              f = FileUtils.getFile(s);
+              f = FileUtils.getFile(s, s);
+              f = FileUtils.toFile(url);
+
+              str = FileUtils.byteCountToDisplaySize(l);
+              FileUtils.cleanDirectory(fileA);
+              bool = FileUtils.contentEquals(fileA, fileB);
+              bool = FileUtils.contentEqualsIgnoreEOL(fileA, fileB, s);
+              FileUtils.copyDirectory(fileA, fileB);
+              FileUtils.copyFileToDirectory(fileA, fileB);
+              FileUtils.copyFile(fileA, fileB);
+              FileUtils.copyURLToFile(url, fileA);
+              f = FileUtils.current();
+              FileUtils.deleteDirectory(fileA);
+              f = FileUtils.delete(fileA);
+              bool = FileUtils.deleteQuietly(fileA);
+              FileUtils.forceDeleteOnExit(fileA);
+              FileUtils.forceDelete(fileA);
+              FileUtils.forceMkdir(fileA);
+              FileUtils.forceMkdirParent(fileA);
+              f = FileUtils.getTempDirectory();
+              str = FileUtils.readFileToString(fileA, cs);
+              str = FileUtils.readFileToString(fileA, s);
+              strList = FileUtils.readLines(fileA, cs);
+              FileUtils.writeByteArrayToFile(fileA, bytes);
+              FileUtils.writeLines(fileA, collection);
+              FileUtils.writeStringToFile(fileA, s);
+          }
+      }
+    after: |
+      import org.apache.commons.io.FileUtils;
+
+      import java.io.File;
+      import java.io.FileFilter;
+      import java.net.URL;
+      import java.nio.charset.Charset;
+      import java.nio.file.Files;
+      import java.util.Collection;
+      import java.util.Collections;
+      import java.util.List;
+
+      class Foo {
+          void bar(File fileA, File fileB, URL url, Charset cs, FileFilter filter, CharSequence charSeq) throws Exception {
+              long l = 10L;
+              String s = "hello world";
+              String[] stringArray = new String[4];
+              Collection<String> collection = Collections.EMPTY_LIST;
+              byte[] bytes = new byte[0];
+              String str;
+              boolean bool;
+              List<String> strList;
+              List<File> fileList;
+              File f;
+
+              FileUtils.write(fileA, s, cs);
+              f = new File(s);
+              f = FileUtils.getFile(s, s);
+              f = FileUtils.toFile(url);
+
+              str = FileUtils.byteCountToDisplaySize(l);
+              FileUtils.cleanDirectory(fileA);
+              bool = FileUtils.contentEquals(fileA, fileB);
+              bool = FileUtils.contentEqualsIgnoreEOL(fileA, fileB, s);
+              FileUtils.copyDirectory(fileA, fileB);
+              FileUtils.copyFileToDirectory(fileA, fileB);
+              FileUtils.copyFile(fileA, fileB);
+              FileUtils.copyURLToFile(url, fileA);
+              f = FileUtils.current();
+              FileUtils.deleteDirectory(fileA);
+              f = FileUtils.delete(fileA);
+              bool = FileUtils.deleteQuietly(fileA);
+              FileUtils.forceDeleteOnExit(fileA);
+              FileUtils.forceDelete(fileA);
+              FileUtils.forceMkdir(fileA);
+              FileUtils.forceMkdirParent(fileA);
+              f = FileUtils.getTempDirectory();
+              str = FileUtils.readFileToString(fileA, cs);
+              str = FileUtils.readFileToString(fileA, s);
+              strList = FileUtils.readLines(fileA, cs);
+              FileUtils.writeByteArrayToFile(fileA, bytes);
+              FileUtils.writeLines(fileA, collection);
+              Files.write(fileA.toPath(), s.getBytes());
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.io.ApacheFileUtilsToJavaFiles
+examples:
+- description: ''
+  sources:
+  - before: |
+      import java.io.File;
+      import java.nio.charset.Charset;
+      import org.apache.commons.io.FileUtils;
+      import java.util.List;
+
+      class A {
+          byte[] readFileBytes(File file) {
+              return FileUtils.readFileToByteArray(file);
+          }
+          List<String> readLines(File file) {
+              return FileUtils.readLines(file);
+          }
+          List<String> readLinesWithCharset(File file, Charset charset) {
+              return FileUtils.readLines(file, charset);
+          }
+          List<String> readLinesWithCharsetId(File file) {
+              return FileUtils.readLines(file, "UTF_8");
+          }
+      }
+    after: |
+      import java.io.File;
+      import java.nio.charset.Charset;
+      import java.nio.file.Files;
+
+      import java.util.List;
+
+      class A {
+          byte[] readFileBytes(File file) {
+              return Files.readAllBytes(file.toPath());
+          }
+          List<String> readLines(File file) {
+              return Files.readAllLines(file.toPath());
+          }
+          List<String> readLinesWithCharset(File file, Charset charset) {
+              return Files.readAllLines(file.toPath(), charset);
+          }
+          List<String> readLinesWithCharsetId(File file) {
+              return Files.readAllLines(file.toPath(), Charset.forName("UTF_8"));
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.io.UseStandardCharsets
+examples:
+- description: ''
+  sources:
+  - before: |
+      import java.nio.charset.Charset;
+      import org.apache.commons.io.Charsets;
+
+      class A {
+           Charset iso88591 = Charsets.ISO_8859_1;
+           Charset usAscii = Charsets.US_ASCII;
+           Charset utf16 = Charsets.UTF_16;
+           Charset utf16be = Charsets.UTF_16BE;
+           Charset utf16le = Charsets.UTF_16LE;
+           Charset utf8 = Charsets.UTF_8;
+      }
+    after: |
+      import java.nio.charset.Charset;
+      import java.nio.charset.StandardCharsets;
+
+      class A {
+           Charset iso88591 = StandardCharsets.ISO_8859_1;
+           Charset usAscii = StandardCharsets.US_ASCII;
+           Charset utf16 = StandardCharsets.UTF_16;
+           Charset utf16be = StandardCharsets.UTF_16BE;
+           Charset utf16le = StandardCharsets.UTF_16LE;
+           Charset utf8 = StandardCharsets.UTF_8;
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.io.UseSystemLineSeparator
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.io.IOUtils;
+
+      class A {
+          static String lineSeparator() {
+              return IOUtils.LINE_SEPARATOR;
+          }
+      }
+    after: |
+      class A {
+          static String lineSeparator() {
+              return System.lineSeparator();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.ApacheCommonsStringUtilsRecipes
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.lang3.StringUtils;
+
+      class Foo {
+          void bar(String in, CharSequence cs) {
+              // Reuse output variables for readability
+              String[] array;
+              boolean bool;
+              int integer;
+              String string;
+
+              // Test all methods in alphabetical order to only execute the slow recipes once
+              string = StringUtils.abbreviate(in, 10);
+              string = StringUtils.capitalize(in);
+              string = StringUtils.center(in, 10);
+              string = StringUtils.center(in, 10, ' ');
+              string = StringUtils.center(in, 10, " ");
+              string = StringUtils.chomp(in);
+              string = StringUtils.chop(in);
+
+              bool = StringUtils.contains(in, "search");
+
+              integer = StringUtils.countMatches(in, '|');
+              integer = StringUtils.countMatches(in, "|");
+
+              string = StringUtils.defaultString(in);
+              string = StringUtils.defaultString(in, "nil");
+              string = StringUtils.deleteWhitespace(in);
+
+              //bool = StringUtils.endsWithIgnoreCase(in, "suffix");
+              bool = StringUtils.equalsIgnoreCase(in, "other");
+              bool = StringUtils.equals(in, "other");
+              bool = StringUtils.equals(cs, "other");
+              bool = StringUtils.equals(cs, cs);
+
+              //integer = StringUtils.indexOfAny(in, "search");
+
+              bool = StringUtils.isAlphanumericSpace(in);
+              bool = StringUtils.isAlphanumeric(in);
+              bool = StringUtils.isAlphaSpace(in);
+              bool = StringUtils.isAlpha(in);
+              bool = StringUtils.isEmpty(in);
+
+              string = StringUtils.join(in);
+              string = StringUtils.joinWith(",", in);
+              string = StringUtils.left(in, 4);
+              string = StringUtils.leftPad(in, 4);
+              string = StringUtils.leftPad(in, 4, ' ');
+              string = StringUtils.leftPad(in, 4, " ");
+              string = StringUtils.lowerCase(in);
+              string = StringUtils.mid(in, 3, 4);
+              string = StringUtils.overlay(in, "overlay", 3, 5);
+
+              string = StringUtils.remove(in, "r");
+              string = StringUtils.removeEnd(in, "suffix");
+              string = StringUtils.repeat(in, 4);
+              string = StringUtils.repeat(in, ",", 4);
+              string = StringUtils.replace(in, "search", "replacement");
+              //string = StringUtils.replaceOnce(in, "search", "replacement");
+              string = StringUtils.reverse(in);
+              string = StringUtils.right(in, 5);
+              string = StringUtils.rightPad(in, 5);
+              string = StringUtils.rightPad(in, 5, ' ');
+              string = StringUtils.rightPad(in, 5, " ");
+
+              array = StringUtils.split(in);
+              //array = StringUtils.split(in, "*");
+              bool = StringUtils.startsWith(in, "prefix");
+              bool = StringUtils.startsWithAny(in, "prefix");
+              bool = StringUtils.startsWithIgnoreCase(in, "prefix");
+              array = StringUtils.stripAll(in);
+
+              string = StringUtils.strip(in);
+              string = StringUtils.stripEnd(in, "suffix");
+              string = StringUtils.stripStart(in, "chars");
+
+              bool = StringUtils.startsWith(in, "prefix");
+
+              string = StringUtils.substringAfter(in, "|");
+              string = StringUtils.substring(in, 2, 4);
+              string = StringUtils.swapCase(in);
+              string = StringUtils.trimToEmpty(in);
+              string = StringUtils.trimToNull(in);
+              string = StringUtils.trim(in);
+              string = StringUtils.upperCase(in);
+              string = StringUtils.uncapitalize(in);
+          }
+      }
+    after: |
+      import org.apache.commons.lang3.StringUtils;
+
+      import java.util.Objects;
+
+      class Foo {
+          void bar(String in, CharSequence cs) {
+              // Reuse output variables for readability
+              String[] array;
+              boolean bool;
+              int integer;
+              String string;
+
+              // Test all methods in alphabetical order to only execute the slow recipes once
+              string = in == null || in.length() <= 10 ? in : in.substring(0, 10 - 3) + "...";
+              string = in == null || in.isEmpty() || Character.isTitleCase(in.charAt(0)) ? in : Character.toTitleCase(in.charAt(0)) + in.substring(1);
+              string = StringUtils.center(in, 10);
+              string = StringUtils.center(in, 10, ' ');
+              string = StringUtils.center(in, 10, " ");
+              string = StringUtils.chomp(in);
+              string = StringUtils.chop(in);
+
+              bool = StringUtils.contains(in, "search");
+
+              integer = StringUtils.countMatches(in, '|');
+              integer = StringUtils.countMatches(in, "|");
+
+              string = Objects.toString(in, "");
+              string = Objects.toString(in, "nil");
+              string = in == null ? null : in.replaceAll("\\s+", "");
+
+              //bool = StringUtils.endsWithIgnoreCase(in, "suffix");
+              bool = in == null ? false : in.equalsIgnoreCase("other");
+              bool = Objects.equals(in, "other");
+              bool = StringUtils.equals(cs, "other");
+              bool = StringUtils.equals(cs, cs);
+
+              //integer = StringUtils.indexOfAny(in, "search");
+
+              bool = StringUtils.isAlphanumericSpace(in);
+              bool = StringUtils.isAlphanumeric(in);
+              bool = StringUtils.isAlphaSpace(in);
+              bool = StringUtils.isAlpha(in);
+              bool = StringUtils.isEmpty(in);
+
+              string = StringUtils.join(in);
+              string = StringUtils.joinWith(",", in);
+              string = StringUtils.left(in, 4);
+              string = StringUtils.leftPad(in, 4);
+              string = StringUtils.leftPad(in, 4, ' ');
+              string = StringUtils.leftPad(in, 4, " ");
+              string = in == null ? null : in.toLowerCase();
+              string = StringUtils.mid(in, 3, 4);
+              string = StringUtils.overlay(in, "overlay", 3, 5);
+
+              string = StringUtils.remove(in, "r");
+              string = in == null || in.isEmpty() || !in.endsWith("suffix") ? in : in.substring(0, in.length() - "suffix".length());
+              string = StringUtils.repeat(in, 4);
+              string = StringUtils.repeat(in, ",", 4);
+              string = in == null || in.isEmpty() ? in : in.replace("search", "replacement");
+              //string = StringUtils.replaceOnce(in, "search", "replacement");
+              string = in == null ? null : new StringBuilder(in).reverse().toString();
+              string = StringUtils.right(in, 5);
+              string = StringUtils.rightPad(in, 5);
+              string = StringUtils.rightPad(in, 5, ' ');
+              string = StringUtils.rightPad(in, 5, " ");
+
+              array = in == null ? null : in.split("\\s+");
+              //array = StringUtils.split(in, "*");
+              bool = StringUtils.startsWith(in, "prefix");
+              bool = StringUtils.startsWithAny(in, "prefix");
+              bool = StringUtils.startsWithIgnoreCase(in, "prefix");
+              array = StringUtils.stripAll(in);
+
+              string = in == null ? null : in.trim();
+              string = StringUtils.stripEnd(in, "suffix");
+              string = StringUtils.stripStart(in, "chars");
+
+              bool = StringUtils.startsWith(in, "prefix");
+
+              string = StringUtils.substringAfter(in, "|");
+              string = StringUtils.substring(in, 2, 4);
+              string = StringUtils.swapCase(in);
+              string = in == null ? "" : in.trim();
+              string = in == null || in.trim().isEmpty() ? null : in.trim();
+              string = in == null ? null : in.trim();
+              string = in == null ? null : in.toUpperCase();
+              string = StringUtils.uncapitalize(in);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.IsNotEmptyToJdk
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.lang3.StringUtils;
+
+      class A {
+          boolean test(String first) {
+              return StringUtils.isEmpty(first);
+          }
+      }
+    after: |
+      class A {
+          boolean test(String first) {
+              return first == null || first.isEmpty();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.UpgradeApacheCommonsLang_2_3
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.lang.RandomStringUtils;
+      import org.apache.commons.lang.StringUtils;
+
+      import java.util.Map;
+
+      class Test {
+          static void helloApacheLang() {
+             String aaa = StringUtils.repeat("a", 20);
+             String randomString = RandomStringUtils.random(10);
+          }
+      }
+    after: |
+      import org.apache.commons.lang3.RandomStringUtils;
+      import org.apache.commons.lang3.StringUtils;
+
+      import java.util.Map;
+
+      class Test {
+          static void helloApacheLang() {
+             String aaa = StringUtils.repeat("a", 20);
+             String randomString = RandomStringUtils.random(10);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang3.UseStandardCharsets
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.lang3.CharEncoding;
+
+      class A {
+          String test() {
+              String encoding = CharEncoding.ISO_8859_1;
+              encoding = CharEncoding.US_ASCII;
+              encoding = CharEncoding.UTF_16;
+              encoding = CharEncoding.UTF_16BE;
+              encoding = CharEncoding.UTF_16LE;
+              encoding = CharEncoding.UTF_8;
+              return encoding;
+          }
+      }
+    after: |
+      import java.nio.charset.StandardCharsets;
+
+      class A {
+          String test() {
+              String encoding = StandardCharsets.ISO_8859_1.name();
+              encoding = StandardCharsets.US_ASCII.name();
+              encoding = StandardCharsets.UTF_16.name();
+              encoding = StandardCharsets.UTF_16BE.name();
+              encoding = StandardCharsets.UTF_16LE.name();
+              encoding = StandardCharsets.UTF_8.name();
+              return encoding;
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.math.UpgradeApacheCommonsMath_2_3
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.commons.math.Field;
+      import org.apache.commons.math.stat.StatUtils;
+
+      class Test {
+          static void helloApacheMath() {
+             Field field = null;
+             double[] data = new double[] { 25.1d, 35.2d };
+             double max = StatUtils.max(data);
+          }
+      }
+    after: |
+      import org.apache.commons.math3.Field;
+      import org.apache.commons.math3.stat.StatUtils;
+
+      class Test {
+          static void helloApacheMath() {
+             Field field = null;
+             double[] data = new double[] { 25.1d, 35.2d };
+             double max = StatUtils.max(data);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient4.MigrateDefaultHttpClient
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.HttpResponse;
+      import org.apache.http.client.methods.HttpPost;
+      import org.apache.http.impl.client.DefaultHttpClient;
+
+      import java.io.IOException;
+
+      class A {
+          void method() throws IOException {
+              DefaultHttpClient httpClient = new DefaultHttpClient();
+              HttpPost httpPost = new HttpPost("https://moderne.io");
+              HttpResponse httpResponse = httpClient.execute(httpPost);
+          }
+      }
+    after: |
+      import org.apache.http.HttpResponse;
+      import org.apache.http.client.methods.HttpPost;
+      import org.apache.http.impl.client.CloseableHttpClient;
+      import org.apache.http.impl.client.HttpClients;
+
+      import java.io.IOException;
+
+      class A {
+          void method() throws IOException {
+              CloseableHttpClient httpClient = HttpClients.createDefault();
+              HttpPost httpPost = new HttpPost("https://moderne.io");
+              HttpResponse httpResponse = httpClient.execute(httpPost);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.client.params.CookiePolicy;
+
+      class A {
+          void method() {
+              String c1 = CookiePolicy.BROWSER_COMPATIBILITY;
+              String c2 = CookiePolicy.NETSCAPE;
+              String c3 = CookiePolicy.RFC_2109;
+              String c4 = CookiePolicy.RFC_2965;
+              String c5 = CookiePolicy.BEST_MATCH;
+              String c6 = CookiePolicy.IGNORE_COOKIES;
+          }
+      }
+    after: |
+      import org.apache.http.client.config.CookieSpecs;
+
+      class A {
+          void method() {
+              String c1 = CookieSpecs.BROWSER_COMPATIBILITY;
+              String c2 = CookieSpecs.NETSCAPE;
+              String c3 = CookieSpecs.STANDARD;
+              String c4 = CookieSpecs.STANDARD_STRICT;
+              String c5 = CookieSpecs.BEST_MATCH;
+              String c6 = CookieSpecs.IGNORE_COOKIES;
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.HttpEntity;
+      import org.apache.http.client.methods.HttpGet;
+      import org.apache.http.client.methods.HttpUriRequest;
+      import org.apache.http.util.EntityUtils;
+
+      class A {
+          void method(HttpEntity entity, String urlStr) throws Exception {
+              HttpUriRequest getRequest = new HttpGet(urlStr);
+              EntityUtils.consume(entity);
+          }
+      }
+    after: |
+      import org.apache.hc.core5.http.io.entity.EntityUtils;
+      import org.apache.hc.core5.http.HttpEntity;
+      import org.apache.hc.client5.http.classic.methods.HttpGet;
+      import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+
+      class A {
+          void method(HttpEntity entity, String urlStr) throws Exception {
+              HttpUriRequest getRequest = new HttpGet(urlStr);
+              EntityUtils.consume(entity);
+          }
+      }
+    language: java
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.auth.AuthScope;
+
+      class A {
+          void method() {
+              AuthScope any = AuthScope.ANY;
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.auth.AuthScope;
+
+      class A {
+          void method() {
+              AuthScope any = new AuthScope(null, -1);
+          }
+      }
+    language: java
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.client.config.CookieSpecs;
+
+      class A {
+          void method() {
+              String c1 = CookieSpecs.IGNORE_COOKIES;
+              String c2 = CookieSpecs.STANDARD;
+              String c3 = CookieSpecs.STANDARD_STRICT;
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.cookie.StandardCookieSpec;
+
+      class A {
+          void method() {
+              String c1 = StandardCookieSpec.IGNORE;
+              String c2 = StandardCookieSpec.RELAXED;
+              String c3 = StandardCookieSpec.STRICT;
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.maven.shared.MavenSharedStringUtilsRecipes
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.maven.shared.utils.StringUtils;
+
+      class Foo {
+          void bar(String in, CharSequence cs) {
+              // Reuse output variables for readability
+              String[] array;
+              boolean bool;
+              String string;
+
+              // Test all methods in alphabetical order to only execute the slow recipes once
+              string = StringUtils.abbreviate(in, 10);
+              string = StringUtils.capitalise(in);
+              string = StringUtils.defaultString(in);
+              string = StringUtils.defaultString(in, "nil");
+              string = StringUtils.deleteWhitespace(in);
+
+              bool = StringUtils.equalsIgnoreCase(in, "other");
+              bool = StringUtils.equals(in, "other");
+              //bool = StringUtils.equals(cs, "other");
+              bool = StringUtils.isEmpty(in);
+
+              string = StringUtils.lowerCase(in);
+              string = StringUtils.replace(in, "search", "replacement");
+              string = StringUtils.reverse(in);
+              array = StringUtils.split(in);
+              string = StringUtils.strip(in);
+              string = StringUtils.trim(in);
+              string = StringUtils.upperCase(in);
+          }
+      }
+    after: |
+      import org.apache.maven.shared.utils.StringUtils;
+
+      import java.util.Objects;
+
+      class Foo {
+          void bar(String in, CharSequence cs) {
+              // Reuse output variables for readability
+              String[] array;
+              boolean bool;
+              String string;
+
+              // Test all methods in alphabetical order to only execute the slow recipes once
+              string = in.length() <= 10 ? in : in.substring(0, 10 - 3) + "...";
+              string = in == null || in.isEmpty() ? in : Character.toTitleCase(in.charAt(0)) + in.substring(1);
+              string = Objects.toString(in, "");
+              string = Objects.toString(in, "nil");
+              string = in.replaceAll("\\s+", "");
+
+              bool = in == null ? false : in.equalsIgnoreCase("other");
+              bool = Objects.equals(in, "other");
+              //bool = StringUtils.equals(cs, "other");
+              bool = StringUtils.isEmpty(in);
+
+              string = in == null ? null : in.toLowerCase();
+              string = in == null || in.isEmpty() ? in : in.replace("search", "replacement");
+              string = in == null ? null : new StringBuffer(in).reverse().toString();
+              array = in.split("\\s+");
+              string = in == null ? null : in.trim();
+              string = in == null ? null : in.trim();
+              string = in == null ? null : in.toUpperCase();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBold
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.poi.ss.usermodel.Font;
+
+      class Test {
+          void method(Font font) {
+              font.setBoldweight((short) 700);
+              font.setBoldweight(font.BOLDWEIGHT_BOLD);
+              font.setBoldweight(Font.BOLDWEIGHT_BOLD);
+
+              font.setBoldweight((short) 400);
+              font.setBoldweight(font.BOLDWEIGHT_NORMAL);
+              font.setBoldweight(Font.BOLDWEIGHT_NORMAL);
+          }
+      }
+    after: |
+      import org.apache.poi.ss.usermodel.Font;
+
+      class Test {
+          void method(Font font) {
+              font.setBold(true);
+              font.setBold(true);
+              font.setBold(true);
+
+              font.setBold(false);
+              font.setBold(false);
+              font.setBold(false);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.poi.ReplaceSetCellType
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.poi.ss.usermodel.Cell;
+
+      class Test {
+          void method(Cell cell) {
+              cell.setCellType(0);
+              cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+              cell.setCellType(cell.CELL_TYPE_NUMERIC);
+          }
+      }
+    after: |
+      import org.apache.poi.ss.usermodel.Cell;
+      import org.apache.poi.ss.usermodel.CellType;
+
+      class Test {
+          void method(Cell cell) {
+              cell.setCellType(CellType.NUMERIC);
+              cell.setCellType(CellType.NUMERIC);
+              cell.setCellType(CellType.NUMERIC);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.codehaus.plexus.AbstractLogEnabledToSlf4j
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.codehaus.plexus.logging.AbstractLogEnabled;
+      import org.codehaus.plexus.logging.Logger;
+
+      class A extends AbstractLogEnabled {
+          void method() {
+              getLogger().info("Hello");
+          }
+          void method2() {
+              Logger log = getLogger();
+              log.info("Hello");
+          }
+      }
+    after: |
+      import org.slf4j.Logger;
+      import org.slf4j.LoggerFactory;
+
+      class A {
+          private static final Logger LOGGER = LoggerFactory.getLogger(A.class);
+
+          void method() {
+              LOGGER.info("Hello");
+          }
+          void method2() {
+              Logger log = LOGGER;
+              log.info("Hello");
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.codehaus.plexus.PlexusStringUtilsRecipes
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.codehaus.plexus.util.StringUtils;
+
+      class Foo {
+          void bar(String in, CharSequence cs) {
+              // Reuse output variables for readability
+              String[] array;
+              boolean bool;
+              String string;
+
+              // Test all methods in alphabetical order to only execute the slow recipes once
+              string = StringUtils.abbreviate(in, 10);
+              string = StringUtils.capitalise(in);
+              string = StringUtils.defaultString(in);
+              string = StringUtils.defaultString(in, "nil");
+              string = StringUtils.deleteWhitespace(in);
+
+              bool = StringUtils.equalsIgnoreCase(in, "other");
+              bool = StringUtils.equals(in, "other");
+              //bool = StringUtils.equals(cs, "other");
+
+              bool = StringUtils.isAlphanumeric(in);
+              bool = StringUtils.isAlpha(in);
+              bool = StringUtils.isEmpty(in);
+
+              string = StringUtils.lowerCase(in);
+              string = StringUtils.replace(in, "search", "replacement");
+              string = StringUtils.reverse(in);
+              array = StringUtils.split(in);
+              string = StringUtils.strip(in);
+              string = StringUtils.trim(in);
+              string = StringUtils.upperCase(in);
+          }
+      }
+    after: |
+      import org.codehaus.plexus.util.StringUtils;
+
+      import java.util.Objects;
+
+      class Foo {
+          void bar(String in, CharSequence cs) {
+              // Reuse output variables for readability
+              String[] array;
+              boolean bool;
+              String string;
+
+              // Test all methods in alphabetical order to only execute the slow recipes once
+              string = in.length() <= 10 ? in : in.substring(0, 10 - 3) + "...";
+              string = in == null || in.isEmpty() ? in : Character.toTitleCase(in.charAt(0)) + in.substring(1);
+              string = Objects.toString(in, "");
+              string = Objects.toString(in, "nil");
+              string = in.replaceAll("\\s+", "");
+
+              bool = in == null ? false : in.equalsIgnoreCase("other");
+              bool = Objects.equals(in, "other");
+              //bool = StringUtils.equals(cs, "other");
+
+              bool = StringUtils.isAlphanumeric(in);
+              bool = StringUtils.isAlpha(in);
+              bool = StringUtils.isEmpty(in);
+
+              string = in == null ? null : in.toLowerCase();
+              string = in == null || in.isEmpty() ? in : in.replace("search", "replacement");
+              string = in == null ? null : new StringBuilder(in).reverse().toString();
+              array = in.split("\\s+");
+              string = in == null ? null : in.trim();
+              string = in == null ? null : in.trim();
+              string = in == null ? null : in.toUpperCase();
+          }
+      }
+    language: java
