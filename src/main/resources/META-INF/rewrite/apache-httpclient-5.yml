@@ -487,6 +487,9 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.http.HttpMessage getAllHeaders()
       newMethodName: getHeaders
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.client5.http.classic.methods.HttpPost getURI()
+      newMethodName: getUri
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
