@@ -464,4 +464,35 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void getAllHeadersToGetHeaders() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+                import org.apache.http.client.methods.CloseableHttpResponse;
+
+                class A {
+
+                    private void a() {
+                        CloseableHttpResponse httpResponse = null;
+                        httpResponse.getAllHeaders();
+                    }
+                }
+              """,
+          """
+                import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+
+                class A {
+
+                    private void a() {
+                        CloseableHttpResponse httpResponse = null;
+                        httpResponse.getHeaders();
+                    }
+                }
+              """
+          )
+        );
+    }
 }
