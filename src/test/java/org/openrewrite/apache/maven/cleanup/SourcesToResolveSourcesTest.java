@@ -90,7 +90,7 @@ class SourcesToResolveSourcesTest implements RewriteTest {
     }
 
     @Test
-    void noChange() {
+    void noChangeForOlderVersions() {
         rewriteRun(
           mavenProject("foo",
             //language=xml
@@ -111,6 +111,40 @@ class SourcesToResolveSourcesTest implements RewriteTest {
                                     <execution>
                                         <goals>
                                             <goal>sources</goal>
+                                        </goals>
+                                    </execution>
+                                </executions>
+                            </plugin>
+                        </plugins>
+                    </build>
+                </project>
+                """
+            ))
+        );
+    }
+
+    @Test
+    void noChangesForResolveSources() {
+        rewriteRun(
+          mavenProject("foo",
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.mycompany.app</groupId>
+                    <artifactId>my-app</artifactId>
+                    <version>1</version>
+                    <build>
+                        <plugins>
+                            <plugin>
+                                <groupId>org.apache.maven.plugins</groupId>
+                                <artifactId>maven-dependency-plugin</artifactId>
+                                <version>3.7.0</version>
+                                <executions>
+                                    <execution>
+                                        <goals>
+                                            <goal>resolve-sources</goal>
                                         </goals>
                                     </execution>
                                 </executions>

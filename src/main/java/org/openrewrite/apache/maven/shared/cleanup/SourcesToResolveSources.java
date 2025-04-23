@@ -15,10 +15,11 @@
  */
 package org.openrewrite.apache.maven.shared.cleanup;
 
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Recipe;
-import org.openrewrite.TreeVisitor;
+import org.openrewrite.*;
 import org.openrewrite.maven.MavenVisitor;
+import org.openrewrite.semver.Semver;
+import org.openrewrite.semver.VersionComparator;
+import org.openrewrite.xml.XPathMatcher;
 import org.openrewrite.xml.tree.Xml;
 
 @SuppressWarnings("ALL")
@@ -33,12 +34,40 @@ public class SourcesToResolveSources extends Recipe {
         return "Migrate from `sources` to `resolve-sources` for the `maven-dependency-plugin`.";
     }
 
+    private static final XPathMatcher xPathMatcher = new XPathMatcher("//plugin[artifactId='maven-dependency-plugin']/executions/execution/goals[goal='sources']/goal");
+    private static final String minimumVersion = "3.7.0";
+
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
+
         return new MavenVisitor<ExecutionContext>() {
             @Override
-            public Xml visitTag(Xml.Tag tag, ExecutionContext ctx) {
-                return super.visitTag(tag, ctx);
+            public Xml.Tag visitTag(Xml.Tag tag, ExecutionContext ctx) {
+                Xml.Tag t = (Xml.Tag) super.visitTag(tag, ctx);
+
+                if (!xPathMatcher.matches(getCursor())) {
+                    return t;
+                }
+
+                if (isPlugInVersionInRange()) {
+                    return tag.withValue("resolve-sources");
+                }
+                return t;
+            }
+
+            private boolean isPlugInVersionInRange() {
+                Cursor pluginCursor = getCursor().dropParentUntil(i -> {
+                    return i instanceof Xml.Tag && ((Xml.Tag) i).getName().equals("plugin");
+                });
+                Xml.Tag MavenPluginTag = pluginCursor.getValue();
+
+                String currentVersion = MavenPluginTag.getChildValue("version").orElse(null);
+                if (currentVersion == null || !Semver.validate(currentVersion, null).isValid()) {
+                    return false;
+                }
+
+                VersionComparator comparator = Semver.validate(minimumVersion, null).getValue();
+                return comparator != null && comparator.compare(null, currentVersion, minimumVersion) >= 0;
             }
         };
     }
