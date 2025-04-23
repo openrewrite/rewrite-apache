@@ -59,9 +59,7 @@ public class SourcesToResolveSources extends Recipe {
             }
 
             private boolean isPlugInVersionInRange() {
-                Cursor pluginCursor = getCursor().dropParentUntil(i -> {
-                    return i instanceof Xml.Tag && ((Xml.Tag) i).getName().equals("plugin");
-                });
+                Cursor pluginCursor = getCursor().dropParentUntil(i -> i instanceof Xml.Tag && ((Xml.Tag) i).getName().equals("plugin"));
                 Xml.Tag MavenPluginTag = pluginCursor.getValue();
 
                 String currentVersion = MavenPluginTag.getChildValue("version").orElse(null);
