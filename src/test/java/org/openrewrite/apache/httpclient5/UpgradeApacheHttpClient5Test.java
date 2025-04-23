@@ -471,26 +471,26 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
           //language=java
           java(
             """
-                import org.apache.http.client.methods.CloseableHttpResponse;
+              import org.apache.http.client.methods.CloseableHttpResponse;
 
-                class A {
+              class A {
 
-                    private void a() {
-                        CloseableHttpResponse httpResponse = null;
-                        httpResponse.getAllHeaders();
-                    }
-                }
+                  private void a() {
+                      CloseableHttpResponse httpResponse = null;
+                      httpResponse.getAllHeaders();
+                  }
+              }
               """,
           """
-                import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 
-                class A {
+              class A {
 
-                    private void a() {
-                        CloseableHttpResponse httpResponse = null;
-                        httpResponse.getHeaders();
-                    }
-                }
+                  private void a() {
+                      CloseableHttpResponse httpResponse = null;
+                      httpResponse.getHeaders();
+                  }
+              }
               """
           )
         );
@@ -502,28 +502,28 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
           //language=java
           java(
             """
-                import java.net.URISyntaxException;
-                import org.apache.http.client.methods.HttpPost;
+              import java.net.URISyntaxException;
+              import org.apache.http.client.methods.HttpPost;
 
-                class A {
+              class A {
 
-                    private void a() throws URISyntaxException {
-                        HttpPost httpPost = new HttpPost("");
-                        httpPost.getURI();
-                    }
-                }
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.getURI();
+                  }
+              }
               """,
           """
-                import java.net.URISyntaxException;
-                import org.apache.hc.client5.http.classic.methods.HttpPost;
+              import java.net.URISyntaxException;
+              import org.apache.hc.client5.http.classic.methods.HttpPost;
 
-                class A {
+              class A {
 
-                    private void a() throws URISyntaxException {
-                        HttpPost httpPost = new HttpPost("");
-                        httpPost.getUri();
-                    }
-                }
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.getUri();
+                  }
+              }
               """
           )
         );
