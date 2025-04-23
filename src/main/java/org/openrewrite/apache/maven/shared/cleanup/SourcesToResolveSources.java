@@ -15,7 +15,10 @@
  */
 package org.openrewrite.apache.maven.shared.cleanup;
 
-import org.openrewrite.*;
+import org.openrewrite.Cursor;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
 import org.openrewrite.maven.MavenVisitor;
 import org.openrewrite.semver.Semver;
 import org.openrewrite.semver.VersionComparator;
