@@ -464,4 +464,68 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void getAllHeadersToGetHeaders() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.methods.CloseableHttpResponse;
+
+              class A {
+
+                  private void a() {
+                      CloseableHttpResponse httpResponse = null;
+                      httpResponse.getAllHeaders();
+                  }
+              }
+              """,
+          """
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+
+              class A {
+
+                  private void a() {
+                      CloseableHttpResponse httpResponse = null;
+                      httpResponse.getHeaders();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void getURIToGetUri() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.net.URISyntaxException;
+              import org.apache.http.client.methods.HttpPost;
+
+              class A {
+
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.getURI();
+                  }
+              }
+              """,
+          """
+              import java.net.URISyntaxException;
+              import org.apache.hc.client5.http.classic.methods.HttpPost;
+
+              class A {
+
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.getUri();
+                  }
+              }
+              """
+          )
+        );
+    }
 }
