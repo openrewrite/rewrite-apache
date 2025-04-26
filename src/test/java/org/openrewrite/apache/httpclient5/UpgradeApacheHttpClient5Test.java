@@ -41,6 +41,42 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
+    @DocumentExample
+    @Test
+    void importReplacementsInGroupsWithSomeSpecificMappings() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpEntity;
+              import org.apache.http.client.methods.HttpGet;
+              import org.apache.http.client.methods.HttpUriRequest;
+              import org.apache.http.util.EntityUtils;
+
+              class A {
+                  void method(HttpEntity entity, String urlStr) throws Exception {
+                      HttpUriRequest getRequest = new HttpGet(urlStr);
+                      EntityUtils.consume(entity);
+                  }
+              }
+              """,
+          """
+              import org.apache.hc.core5.http.io.entity.EntityUtils;
+              import org.apache.hc.core5.http.HttpEntity;
+              import org.apache.hc.client5.http.classic.methods.HttpGet;
+              import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+
+              class A {
+                  void method(HttpEntity entity, String urlStr) throws Exception {
+                      HttpUriRequest getRequest = new HttpGet(urlStr);
+                      EntityUtils.consume(entity);
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Test
     void migrateDependencies() {
         rewriteRun(
@@ -80,42 +116,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   </project>
                   """.formatted(version.group(0));
             })));
-    }
-
-    @DocumentExample
-    @Test
-    void importReplacementsInGroupsWithSomeSpecificMappings() {
-        rewriteRun(
-          //language=java
-          java(
-            """
-              import org.apache.http.HttpEntity;
-              import org.apache.http.client.methods.HttpGet;
-              import org.apache.http.client.methods.HttpUriRequest;
-              import org.apache.http.util.EntityUtils;
-
-              class A {
-                  void method(HttpEntity entity, String urlStr) throws Exception {
-                      HttpUriRequest getRequest = new HttpGet(urlStr);
-                      EntityUtils.consume(entity);
-                  }
-              }
-              """,
-          """
-              import org.apache.hc.core5.http.io.entity.EntityUtils;
-              import org.apache.hc.core5.http.HttpEntity;
-              import org.apache.hc.client5.http.classic.methods.HttpGet;
-              import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
-
-              class A {
-                  void method(HttpEntity entity, String urlStr) throws Exception {
-                      HttpUriRequest getRequest = new HttpGet(urlStr);
-                      EntityUtils.consume(entity);
-                  }
-              }
-              """
-          )
-        );
     }
 
     @Test
