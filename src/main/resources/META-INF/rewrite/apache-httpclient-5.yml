@@ -258,13 +258,17 @@ recipeList:
       oldFullyQualifiedTypeName: org.apache.http.client.utils.DateUtils
       newFullyQualifiedTypeName: org.apache.hc.client5.http.utils.DateUtils
 
+  # CredentialsProvider was split into CredentialsStore and CredentialsProvider
+  - org.openrewrite.apache.httpclient5.CredentialsStoreSetCredentials
+  - org.openrewrite.apache.httpclient5.CredentialsStoreClear
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.client.CredentialsProvider
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.CredentialsProvider
+
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.client
       newPackageName: org.apache.hc.client5.http
   # Fixing specific mappings
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.hc.client5.http.CredentialsProvider
-      newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.CredentialsProvider
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.AuthCache
       newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.AuthCache
@@ -522,3 +526,27 @@ recipeList:
       methodPatternChain: [ 'org.apache.hc.core5.http.HttpResponse getStatusLine()', 'org.apache.hc.core5.http.message.StatusLine getProtocolVersion()' ]
       newMethodName: getVersion
   - org.openrewrite.apache.httpclient5.NewStatusLine
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.CredentialsStoreSetCredentials
+displayName: Migrate `setCredentials` to ApacheHttpClient 5.x `CredentialsStore`
+description: Migrates `BasicCredentialsProvider` methods`setCredentials` to the new `CredentialsStore` interface.
+preconditions:
+  - org.openrewrite.java.search.FindMethods:
+      methodPattern: org.apache.http.client.CredentialsProvider setCredentials(..)
+recipeList:
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.client.CredentialsProvider
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.CredentialsStore
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.CredentialsStoreClear
+displayName: Migrate `clear` to ApacheHttpClient 5.x `CredentialsStore`
+description: Migrates `BasicCredentialsProvider` methods`clear` to the new `CredentialsStore` interface.
+preconditions:
+  - org.openrewrite.java.search.FindMethods:
+      methodPattern: org.apache.http.client.CredentialsProvider clear(..)
+recipeList:
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.client.CredentialsProvider
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.CredentialsStore
