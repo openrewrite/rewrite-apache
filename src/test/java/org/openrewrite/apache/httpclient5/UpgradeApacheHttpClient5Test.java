@@ -60,7 +60,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   }
               }
               """,
-          """
+            """
               import org.apache.hc.core5.http.io.entity.EntityUtils;
               import org.apache.hc.core5.http.HttpEntity;
               import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -450,7 +450,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   }
               }
               """,
-          """
+            """
               import org.apache.hc.client5.http.HttpRequestRetryStrategy;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 
@@ -481,7 +481,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   }
               }
               """,
-          """
+            """
               import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 
               class A {
@@ -513,7 +513,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   }
               }
               """,
-          """
+            """
               import java.net.URISyntaxException;
               import org.apache.hc.client5.http.classic.methods.HttpPost;
 
@@ -522,6 +522,77 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   private void a() throws URISyntaxException {
                       HttpPost httpPost = new HttpPost("");
                       httpPost.getUri();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Issue("https://github.com/openrewrite/rewrite-apache/issues/67")
+    @Test
+    void credentialsProviderToStore() {
+        rewriteRun(
+          java(
+            """
+              import org.apache.http.client.CredentialsProvider;
+              import org.apache.http.impl.client.BasicCredentialsProvider;
+
+              class ChangeSet {
+                  void foo() {
+                      CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                      credentialsProvider.setCredentials(null, null);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.auth.CredentialsStore;
+              import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+
+              class ChangeSet {
+                  void foo() {
+                      CredentialsStore credentialsProvider = new BasicCredentialsProvider();
+                      credentialsProvider.setCredentials(null, null);
+                  }
+              }
+              """
+          ),
+          java(
+            """
+              import org.apache.http.client.CredentialsProvider;
+
+              class ChangeClear {
+                  void foo(CredentialsProvider cred) {
+                      cred.clear();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.auth.CredentialsStore;
+
+              class ChangeClear {
+                  void foo(CredentialsStore cred) {
+                      cred.clear();
+                  }
+              }
+              """
+          ),
+          java(
+            """
+              import org.apache.http.client.CredentialsProvider;
+
+              class KeepProviderForGet {
+                  void foo(CredentialsProvider cred) {
+                      cred.getCredentials(null, null);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.auth.CredentialsProvider;
+
+              class KeepProviderForGet {
+                  void foo(CredentialsProvider cred) {
+                      cred.getCredentials(null, null);
                   }
               }
               """
