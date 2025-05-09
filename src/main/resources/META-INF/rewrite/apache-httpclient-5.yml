@@ -43,12 +43,12 @@ recipeList:
       newVersion: 5.3.x
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
+  - org.openrewrite.apache.httpclient5.MigrateStringEntity
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
   - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
-  - org.openrewrite.apache.httpclient5.MigrateStringEntity
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
