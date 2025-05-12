@@ -599,4 +599,73 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void migrateDependenciesForTransitive() {
+        rewriteRun(
+          //language=xml
+          pomXml(
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.solr</groupId>
+                          <artifactId>solr-solrj</artifactId>
+                          <version>8.11.3</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
+            spec -> spec.after(pom -> {
+                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                return """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                      <dependencies>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents.client5</groupId>
+                              <artifactId>httpclient5</artifactId>
+                              <version>%s</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.solr</groupId>
+                              <artifactId>solr-solrj</artifactId>
+                              <version>8.11.3</version>
+                          </dependency>
+                      </dependencies>
+                  </project>
+                  """.formatted(version.group(0));
+            })));
+    }
+
+    @Test
+    void ignoresExistingDependency() {
+        rewriteRun(
+          //language=xml
+          pomXml(
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents.client5</groupId>
+                          <artifactId>httpclient5</artifactId>
+                          <version>5.1</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """
+          ));
+    }
 }
