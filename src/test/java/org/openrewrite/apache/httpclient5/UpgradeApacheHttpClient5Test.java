@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.java.Assertions.*;
 import static org.openrewrite.maven.Assertions.pomXml;
 
 class UpgradeApacheHttpClient5Test implements RewriteTest {
@@ -603,47 +603,71 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void migrateDependenciesForTransitive() {
         rewriteRun(
-          //language=xml
-          pomXml(
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-                  <dependencies>
-                      <dependency>
-                          <groupId>org.apache.solr</groupId>
-                          <artifactId>solr-solrj</artifactId>
-                          <version>8.11.3</version>
-                      </dependency>
-                  </dependencies>
-              </project>
-              """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.client5</groupId>
-                              <artifactId>httpclient5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.solr</groupId>
-                              <artifactId>solr-solrj</artifactId>
-                              <version>8.11.3</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(version.group(0));
-            })));
+          mavenProject("project",
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.http.impl.client.CloseableHttpClient;
+                  import org.apache.http.impl.client.HttpClients;
+                  public class A {
+                      CloseableHttpClient getClient() {
+                          return HttpClients.createDefault();
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+                  import org.apache.hc.client5.http.impl.classic.HttpClients;
+                  public class A {
+                      CloseableHttpClient getClient() {
+                          return HttpClients.createDefault();
+                      }
+                  }
+                  """
+              )
+            ),
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.solr</groupId>
+                            <artifactId>solr-solrj</artifactId>
+                            <version>8.11.3</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """,
+              spec -> spec.after(pom -> {
+                  Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                  assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                  return """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents.client5</groupId>
+                                <artifactId>httpclient5</artifactId>
+                                <version>%s</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.solr</groupId>
+                                <artifactId>solr-solrj</artifactId>
+                                <version>8.11.3</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """.formatted(version.group(0));
+              }))));
     }
 
     @Test
