@@ -41,6 +41,11 @@ recipeList:
       newGroupId: org.apache.httpcomponents.core5
       newArtifactId: httpcore5
       newVersion: 5.3.x
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.httpcomponents.client5
+      artifactId: httpclient5
+      version: 5.4.x
+      onlyIfUsing: org.apache.http.impl.client.*
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
