@@ -207,6 +207,13 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.io.entity.ContentType
       newFullyQualifiedTypeName: org.apache.hc.core5.http.ContentType
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.MinimalField
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.MimeField
+  # Is needed when change package has bailed early
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.entity.mime.MinimalField
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.MimeField
 
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.impl.bootstrap

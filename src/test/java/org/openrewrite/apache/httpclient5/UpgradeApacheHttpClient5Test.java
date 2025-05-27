@@ -52,6 +52,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               import org.apache.http.client.methods.HttpGet;
               import org.apache.http.client.methods.HttpUriRequest;
               import org.apache.http.entity.ContentType;
+              import org.apache.http.entity.mime.MinimalField;
               import org.apache.http.entity.mime.MultipartEntityBuilder;
               import org.apache.http.entity.mime.content.StringBody;
               import org.apache.http.util.EntityUtils;
@@ -61,6 +62,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       HttpUriRequest getRequest = new HttpGet(urlStr);
                       MultipartEntityBuilder builder = MultipartEntityBuilder.create();
                       StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      MinimalField field = new MinimalField("A", "B");
                       EntityUtils.consume(entity);
                   }
               }
@@ -71,6 +73,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               import org.apache.hc.core5.http.HttpEntity;
               import org.apache.hc.client5.http.classic.methods.HttpGet;
               import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+              import org.apache.hc.client5.http.entity.mime.MimeField;
               import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
               import org.apache.hc.client5.http.entity.mime.StringBody;
 
@@ -79,6 +82,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       HttpUriRequest getRequest = new HttpGet(urlStr);
                       MultipartEntityBuilder builder = MultipartEntityBuilder.create();
                       StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      MimeField field = new MimeField("A", "B");
                       EntityUtils.consume(entity);
                   }
               }
@@ -107,6 +111,33 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       MultipartEntityBuilder builder = MultipartEntityBuilder.create();
                       StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
                       EntityUtils.consume(entity);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesMimeMinimalFieldToMimeField() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.mime.MinimalField;
+
+              class A {
+                  void method() {
+                      MinimalField field = new MinimalField("A", "B");
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.entity.mime.MimeField;
+
+              class A {
+                  void method() {
+                      MimeField field = new MimeField("A", "B");
                   }
               }
               """
