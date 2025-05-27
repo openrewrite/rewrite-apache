@@ -36,7 +36,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpath(
-            "httpclient", "httpcore",
+            "httpclient", "httpcore", "httpmime",
             "httpclient5", "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
@@ -51,24 +51,38 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               import org.apache.http.HttpEntity;
               import org.apache.http.client.methods.HttpGet;
               import org.apache.http.client.methods.HttpUriRequest;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.entity.mime.MinimalField;
+              import org.apache.http.entity.mime.MultipartEntityBuilder;
+              import org.apache.http.entity.mime.content.StringBody;
               import org.apache.http.util.EntityUtils;
 
               class A {
                   void method(HttpEntity entity, String urlStr) throws Exception {
                       HttpUriRequest getRequest = new HttpGet(urlStr);
+                      MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                      StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      MinimalField field = new MinimalField("A", "B");
                       EntityUtils.consume(entity);
                   }
               }
               """,
             """
+              import org.apache.hc.core5.http.ContentType;
               import org.apache.hc.core5.http.io.entity.EntityUtils;
               import org.apache.hc.core5.http.HttpEntity;
               import org.apache.hc.client5.http.classic.methods.HttpGet;
               import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+              import org.apache.hc.client5.http.entity.mime.MimeField;
+              import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+              import org.apache.hc.client5.http.entity.mime.StringBody;
 
               class A {
                   void method(HttpEntity entity, String urlStr) throws Exception {
                       HttpUriRequest getRequest = new HttpGet(urlStr);
+                      MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                      StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      MimeField field = new MimeField("A", "B");
                       EntityUtils.consume(entity);
                   }
               }
@@ -78,10 +92,127 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
+    void doesNotMigrateAlreadyCorrectPackage() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.core5.http.ContentType;
+              import org.apache.hc.core5.http.io.entity.EntityUtils;
+              import org.apache.hc.core5.http.HttpEntity;
+              import org.apache.hc.client5.http.classic.methods.HttpGet;
+              import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+              import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+              import org.apache.hc.client5.http.entity.mime.StringBody;
+
+              class A {
+                  void method(HttpEntity entity, String urlStr) throws Exception {
+                      HttpUriRequest getRequest = new HttpGet(urlStr);
+                      MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                      StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      EntityUtils.consume(entity);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesMimeMinimalFieldToMimeField() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.mime.MinimalField;
+
+              class A {
+                  void method() {
+                      MinimalField field = new MinimalField("A", "B");
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.entity.mime.MimeField;
+
+              class A {
+                  void method() {
+                      MimeField field = new MimeField("A", "B");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migrateDependenciesWhenTwoBecomeOne() {
+        rewriteRun(
+          pomXml(
+            //language=xml
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpmime</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpclient</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
+            spec -> spec.after(pom -> {
+                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                //language=xml
+                return """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                      <dependencies>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents.client5</groupId>
+                              <artifactId>httpclient5</artifactId>
+                              <version>%s</version>
+                          </dependency>
+                      </dependencies>
+                  </project>
+                  """.formatted(version.group(0));
+            })));
+    }
+
+    @Test
     void migrateDependencies() {
         rewriteRun(
-          //language=xml
           pomXml(
+            //language=xml
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpmime</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
+            //language=xml
             """
               <project>
                   <modelVersion>4.0.0</modelVersion>
@@ -100,6 +231,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             spec -> spec.after(pom -> {
                 Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
                 assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                //language=xml
                 return """
                   <project>
                       <modelVersion>4.0.0</modelVersion>
