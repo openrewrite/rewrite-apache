@@ -661,6 +661,39 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         );
     }
 
+    @Test
+    void releaseConnectionToReset() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.net.URISyntaxException;
+              import org.apache.http.client.methods.HttpPost;
+
+              class A {
+
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.releaseConnection();
+                  }
+              }
+              """,
+            """
+              import java.net.URISyntaxException;
+              import org.apache.hc.client5.http.classic.methods.HttpPost;
+
+              class A {
+
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.reset();
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Issue("https://github.com/openrewrite/rewrite-apache/issues/67")
     @Test
     void credentialsProviderToStore() {
