@@ -38,3 +38,6 @@ recipeList:
       oldPackageName: org.apache.commons.lang
       newPackageName: org.apache.commons.lang3
       recursive: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.lang3.exception.ExceptionUtils getFullStackTrace(..)
+      newMethodName: getStackTrace
