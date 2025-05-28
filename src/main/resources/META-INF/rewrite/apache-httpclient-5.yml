@@ -554,6 +554,7 @@ recipeList:
       methodPatternChain: [ 'org.apache.hc.core5.http.HttpResponse getStatusLine()', 'org.apache.hc.core5.http.message.StatusLine getProtocolVersion()' ]
       newMethodName: getVersion
   - org.openrewrite.apache.httpclient5.NewStatusLine
+  - org.openrewrite.apache.httpclient5.NewRequestLine
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.CredentialsStoreSetCredentials
