@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 the original author or authors.
+ * Copyright 2025 the original author or authors.
  * <p>
  * Licensed under the Moderne Source Available License (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,33 +30,35 @@ import org.openrewrite.java.tree.J;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
-public class NewStatusLine extends Recipe {
+public class NewRequestLine extends Recipe {
 
     @Override
     public String getDisplayName() {
-        return "Replaces deprecated `HttpResponse::getStatusLine()`";
+        return "Replaces deprecated `HttpRequestBase::getRequestLine()`";
     }
 
     @Override
     public String getDescription() {
-        return "`HttpResponse::getStatusLine()` was deprecated in 4.x, so we replace it for `new StatusLine(HttpResponse)`. " +
-                "Ideally we will try to simplify method chains for `getStatusCode`, `getProtocolVersion` and `getReasonPhrase`, " +
-                "but there are some scenarios where the `StatusLine` object is assigned or used directly, and we need to " +
+        return "`HttpRequestBase::getStatusLine()` was removed in 5.x when `HttpRequestBase` was migrated to `HttpUriRequestBase`, " +
+                "so we replace it with `new RequestLine(HttpRequest)`. " +
+                "Ideally we will try to simply method chains for `getMethod`, `getUri` and `getProtocolVersion`, " +
+                "but there are some scenarios where `RequestLine` object is assigned or used directly, and we need to " +
                 "instantiate the object.";
     }
 
-    private static final MethodMatcher MATCHER = new MethodMatcher("org.apache.hc.core5.http.HttpResponse getStatusLine()");
+    private static final MethodMatcher MATCHER = new MethodMatcher("org.apache.hc.client5.http.classic.methods.HttpUriRequestBase getRequestLine()");
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(new UsesMethod<>(MATCHER), new JavaVisitor<ExecutionContext>() {
+
             @Override
             public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
                 if (MATCHER.matches(m)) {
-                    maybeAddImport("org.apache.hc.core5.http.message.StatusLine");
-                    return JavaTemplate.builder("new StatusLine(#{any(org.apache.hc.core5.http.HttpResponse)})")
-                            .imports("org.apache.hc.core5.http.message.StatusLine")
+                    maybeAddImport("org.apache.hc.core5.http.message.RequestLine");
+                    return JavaTemplate.builder("new RequestLine(#{any(org.apache.hc.core5.http.HttpRequest)})")
+                            .imports("org.apache.hc.core5.http.message.RequestLine")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
                             .build()
                             .apply(updateCursor(m), m.getCoordinates().replace(), m.getSelect());
