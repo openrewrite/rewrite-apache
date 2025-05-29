@@ -28,49 +28,41 @@ import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
-import org.openrewrite.java.tree.J.CompilationUnit;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class MigrateStringEntity extends Recipe {
 
-    private static final String METHOD_PATTERN = "org.apache.http.entity.StringEntity setContentEncoding(..)";
-    private static final MethodMatcher METHOD_MATCHER = new MethodMatcher(METHOD_PATTERN);
+    private static final String METHOD_PATTERN = "org.apache.http.entity.AbstractHttpEntity setContentEncoding(..)";
+    private static final MethodMatcher MATCHER = new MethodMatcher(METHOD_PATTERN);
 
     @Override
     public String getDisplayName() {
-        return "Migrates StringEntity.setContentEncoding()";
+        return "Migrates `StringEntity.setContentEncoding()`";
     }
 
     @Override
     public String getDescription() {
-        return "Replace `org.apache.http.entity.StringEntity.setContentEncoding` with constructor arg.";
+        return "Replace `org.apache.http.entity.StringEntity#setContentEncoding(..)` with constructor arguments.";
     }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(
-                new UsesMethod<>(METHOD_MATCHER),
-                new JavaVisitor<ExecutionContext>() {
-                    @Override
-                    public J visitCompilationUnit(CompilationUnit cu, ExecutionContext ctx) {
-                        return super.visitCompilationUnit(cu, ctx);
-                        return super.visitCompilationUnit(cu, p);
-                    }
-                    @Override
-                    public J visitFieldAccess(J.FieldAccess fieldAccess, ExecutionContext ctx) {
-                        J.FieldAccess f = (J.FieldAccess) super.visitFieldAccess(fieldAccess, ctx);
-                        // Type was already relocated by previous recipe
-                        if ("ANY".equals(f.getSimpleName()) && TypeUtils.isOfClassType(f.getTarget().getType(), "org.apache.hc.client5.http.auth.AuthScope")) {
-                            maybeAddImport("org.apache.hc.client5.http.auth.AuthScope");
-                            return JavaTemplate.builder("new AuthScope(null, -1)")
-                                    .imports("org.apache.hc.client5.http.auth.AuthScope")
-                                    .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
-                                    .build()
-                                    .apply(updateCursor(f), f.getCoordinates().replace());
-                        }
-                        return f;
-                    }
-                });
+        return Preconditions.check(new UsesMethod<>(MATCHER), new JavaVisitor<ExecutionContext>() {
+            @Override
+            public J visitFieldAccess(J.FieldAccess fieldAccess, ExecutionContext ctx) {
+                J.FieldAccess f = (J.FieldAccess) super.visitFieldAccess(fieldAccess, ctx);
+                // Type was already relocated by previous recipe
+                if ("ANY".equals(f.getSimpleName()) && TypeUtils.isOfClassType(f.getTarget().getType(), "org.apache.hc.client5.http.auth.AuthScope")) {
+                    maybeAddImport("org.apache.hc.client5.http.auth.AuthScope");
+                    return JavaTemplate.builder("new AuthScope(null, -1)")
+                            .imports("org.apache.hc.client5.http.auth.AuthScope")
+                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
+                            .build()
+                            .apply(updateCursor(f), f.getCoordinates().replace());
+                }
+                return f;
+            }
+        });
     }
 }

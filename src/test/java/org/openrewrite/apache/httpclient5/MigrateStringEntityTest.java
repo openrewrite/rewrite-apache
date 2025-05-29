@@ -72,7 +72,7 @@ class MigrateStringEntityTest implements RewriteTest {
         );
     }
 
-    // @Test
+     @Test
     void setContentEncodingToConstructorArgWithBasicHeader() {
         rewriteRun(
           //language=java
