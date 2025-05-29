@@ -96,8 +96,6 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                             }.visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
 
                             // Add a logger field
-                            maybeAddImport("org.slf4j.Logger");
-                            maybeAddImport("org.slf4j.LoggerFactory");
                             cd = (J.ClassDeclaration) AddLogger.addSlf4jLogger(cd, LOGGER_VARIABLE_NAME, ctx)
                                     .visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
                             AtomicReference<J.Identifier> loggerFieldReference = new AtomicReference<>();
@@ -138,6 +136,9 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                             maybeRemoveImport(PLEXUS_LOGGER);
                             cd = (J.ClassDeclaration) new ChangeType(PLEXUS_LOGGER, "org.slf4j.Logger", false)
                                     .getVisitor().visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
+
+                            maybeAddImport("org.slf4j.Logger");
+                            maybeAddImport("org.slf4j.LoggerFactory");
 
                         }
                         return super.visitClassDeclaration(cd, ctx);

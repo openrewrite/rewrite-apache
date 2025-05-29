@@ -31,6 +31,12 @@ recipeList:
   - org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
   - org.openrewrite.java.dependencies.ChangeDependency:
       oldGroupId: org.apache.httpcomponents
+      oldArtifactId: httpmime
+      newGroupId: org.apache.httpcomponents.client5
+      newArtifactId: httpclient5
+      newVersion: 5.4.x
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.apache.httpcomponents
       oldArtifactId: httpclient
       newGroupId: org.apache.httpcomponents.client5
       newArtifactId: httpclient5
@@ -41,6 +47,12 @@ recipeList:
       newGroupId: org.apache.httpcomponents.core5
       newArtifactId: httpcore5
       newVersion: 5.3.x
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.httpcomponents.client5
+      artifactId: httpclient5
+      version: 5.4.x
+      onlyIfUsing: org.apache.http.impl.client.*
+  - org.openrewrite.maven.RemoveDuplicateDependencies
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
   - org.openrewrite.apache.httpclient5.MigrateStringEntity
@@ -183,6 +195,12 @@ recipeList:
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.entity
       newPackageName: org.apache.hc.core5.http.io.entity
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.hc.core5.http.io.entity.mime
+      newPackageName: org.apache.hc.client5.http.entity.mime
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.hc.client5.http.entity.mime.content
+      newPackageName: org.apache.hc.client5.http.entity.mime
   # Fixing specific mappings
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.io.entity.ContentLengthStrategy
@@ -190,6 +208,13 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.io.entity.ContentType
       newFullyQualifiedTypeName: org.apache.hc.core5.http.ContentType
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.MinimalField
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.MimeField
+  # Is needed when change package has bailed early
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.entity.mime.MinimalField
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.MimeField
 
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.impl.bootstrap
@@ -495,6 +520,9 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.hc.client5.http.classic.methods.HttpUriRequestBase getURI()
       newMethodName: getUri
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.client5.http.classic.methods.HttpUriRequestBase releaseConnection()
+      newMethodName: reset
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
@@ -527,6 +555,7 @@ recipeList:
       methodPatternChain: [ 'org.apache.hc.core5.http.HttpResponse getStatusLine()', 'org.apache.hc.core5.http.message.StatusLine getProtocolVersion()' ]
       newMethodName: getVersion
   - org.openrewrite.apache.httpclient5.NewStatusLine
+  - org.openrewrite.apache.httpclient5.NewRequestLine
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.CredentialsStoreSetCredentials

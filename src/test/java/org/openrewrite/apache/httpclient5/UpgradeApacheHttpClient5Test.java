@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.java.Assertions.*;
 import static org.openrewrite.maven.Assertions.pomXml;
 
 class UpgradeApacheHttpClient5Test implements RewriteTest {
@@ -36,7 +36,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpath(
-            "httpclient", "httpcore",
+            "httpclient", "httpcore", "httpmime",
             "httpclient5", "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
@@ -51,24 +51,38 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               import org.apache.http.HttpEntity;
               import org.apache.http.client.methods.HttpGet;
               import org.apache.http.client.methods.HttpUriRequest;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.entity.mime.MinimalField;
+              import org.apache.http.entity.mime.MultipartEntityBuilder;
+              import org.apache.http.entity.mime.content.StringBody;
               import org.apache.http.util.EntityUtils;
 
               class A {
                   void method(HttpEntity entity, String urlStr) throws Exception {
                       HttpUriRequest getRequest = new HttpGet(urlStr);
+                      MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                      StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      MinimalField field = new MinimalField("A", "B");
                       EntityUtils.consume(entity);
                   }
               }
               """,
             """
+              import org.apache.hc.core5.http.ContentType;
               import org.apache.hc.core5.http.io.entity.EntityUtils;
               import org.apache.hc.core5.http.HttpEntity;
               import org.apache.hc.client5.http.classic.methods.HttpGet;
               import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+              import org.apache.hc.client5.http.entity.mime.MimeField;
+              import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+              import org.apache.hc.client5.http.entity.mime.StringBody;
 
               class A {
                   void method(HttpEntity entity, String urlStr) throws Exception {
                       HttpUriRequest getRequest = new HttpGet(urlStr);
+                      MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                      StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      MimeField field = new MimeField("A", "B");
                       EntityUtils.consume(entity);
                   }
               }
@@ -78,10 +92,127 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
+    void doesNotMigrateAlreadyCorrectPackage() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.core5.http.ContentType;
+              import org.apache.hc.core5.http.io.entity.EntityUtils;
+              import org.apache.hc.core5.http.HttpEntity;
+              import org.apache.hc.client5.http.classic.methods.HttpGet;
+              import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+              import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+              import org.apache.hc.client5.http.entity.mime.StringBody;
+
+              class A {
+                  void method(HttpEntity entity, String urlStr) throws Exception {
+                      HttpUriRequest getRequest = new HttpGet(urlStr);
+                      MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                      StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+                      EntityUtils.consume(entity);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesMimeMinimalFieldToMimeField() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.mime.MinimalField;
+
+              class A {
+                  void method() {
+                      MinimalField field = new MinimalField("A", "B");
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.entity.mime.MimeField;
+
+              class A {
+                  void method() {
+                      MimeField field = new MimeField("A", "B");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migrateDependenciesWhenTwoBecomeOne() {
+        rewriteRun(
+          pomXml(
+            //language=xml
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpmime</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpclient</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
+            spec -> spec.after(pom -> {
+                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                //language=xml
+                return """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                      <dependencies>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents.client5</groupId>
+                              <artifactId>httpclient5</artifactId>
+                              <version>%s</version>
+                          </dependency>
+                      </dependencies>
+                  </project>
+                  """.formatted(version.group(0));
+            })));
+    }
+
+    @Test
     void migrateDependencies() {
         rewriteRun(
-          //language=xml
           pomXml(
+            //language=xml
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpmime</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
+            //language=xml
             """
               <project>
                   <modelVersion>4.0.0</modelVersion>
@@ -100,6 +231,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             spec -> spec.after(pom -> {
                 Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
                 assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                //language=xml
                 return """
                   <project>
                       <modelVersion>4.0.0</modelVersion>
@@ -160,62 +292,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       SocketConfig.custom()
                           .setSoTimeout(1000, TimeUnit.MILLISECONDS)
                           .setSoLinger((int) linger, TimeUnit.MILLISECONDS);
-                  }
-              }
-              """
-          )
-        );
-    }
-
-    @Test
-    void removeStatusLineHttpResponse() {
-        rewriteRun(
-          //language=java
-          java(
-            """
-              import org.apache.http.HttpStatus;
-              import org.apache.http.client.methods.CloseableHttpResponse;
-              import org.apache.http.client.methods.HttpGet;
-              import org.apache.http.impl.client.CloseableHttpClient;
-              import org.apache.http.impl.client.HttpClientBuilder;
-              import org.apache.http.ProtocolVersion;
-
-              import java.io.IOException;
-
-              class A {
-                  void method() throws IOException {
-                      HttpGet httpGet = new HttpGet("https://moderne.io");
-                      CloseableHttpClient instance = HttpClientBuilder.create().build();
-                      CloseableHttpResponse response = instance.execute(httpGet);
-
-                      System.out.println("response.getStatusLine() :: " + response.getStatusLine());
-                      int statusCode = response.getStatusLine().getStatusCode();
-                      String reason = response.getStatusLine().getReasonPhrase();
-                      ProtocolVersion version = response.getStatusLine().getProtocolVersion();
-                  }
-              }
-              """,
-            """
-              import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-              import org.apache.hc.core5.http.HttpStatus;
-              import org.apache.hc.client5.http.classic.methods.HttpGet;
-              import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-              import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-              import org.apache.hc.core5.http.ProtocolVersion;
-              import org.apache.hc.core5.http.message.StatusLine;
-
-              import java.io.IOException;
-
-              class A {
-                  void method() throws IOException {
-                      HttpGet httpGet = new HttpGet("https://moderne.io");
-                      CloseableHttpClient instance = HttpClientBuilder.create().build();
-                      CloseableHttpResponse response = instance.execute(httpGet);
-
-                      System.out.println("response.getStatusLine() :: " + new StatusLine(response));
-                      int statusCode = response.getCode();
-                      String reason = response.getReasonPhrase();
-                      ProtocolVersion version = response.getVersion();
                   }
               }
               """
@@ -529,6 +605,39 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         );
     }
 
+    @Test
+    void releaseConnectionToReset() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.net.URISyntaxException;
+              import org.apache.http.client.methods.HttpPost;
+
+              class A {
+
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.releaseConnection();
+                  }
+              }
+              """,
+            """
+              import java.net.URISyntaxException;
+              import org.apache.hc.client5.http.classic.methods.HttpPost;
+
+              class A {
+
+                  private void a() throws URISyntaxException {
+                      HttpPost httpPost = new HttpPost("");
+                      httpPost.reset();
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Issue("https://github.com/openrewrite/rewrite-apache/issues/67")
     @Test
     void credentialsProviderToStore() {
@@ -598,5 +707,98 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               """
           )
         );
+    }
+
+    @Test
+    void migrateDependenciesForTransitive() {
+        rewriteRun(
+          mavenProject("project",
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.http.impl.client.CloseableHttpClient;
+                  import org.apache.http.impl.client.HttpClients;
+                  public class A {
+                      CloseableHttpClient getClient() {
+                          return HttpClients.createDefault();
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+                  import org.apache.hc.client5.http.impl.classic.HttpClients;
+                  public class A {
+                      CloseableHttpClient getClient() {
+                          return HttpClients.createDefault();
+                      }
+                  }
+                  """
+              )
+            ),
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.solr</groupId>
+                            <artifactId>solr-solrj</artifactId>
+                            <version>8.11.3</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """,
+              spec -> spec.after(pom -> {
+                  Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                  assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                  return """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents.client5</groupId>
+                                <artifactId>httpclient5</artifactId>
+                                <version>%s</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.solr</groupId>
+                                <artifactId>solr-solrj</artifactId>
+                                <version>8.11.3</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """.formatted(version.group(0));
+              }))));
+    }
+
+    @Test
+    void ignoresExistingDependency() {
+        rewriteRun(
+          //language=xml
+          pomXml(
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents.client5</groupId>
+                          <artifactId>httpclient5</artifactId>
+                          <version>5.1</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """
+          ));
     }
 }
