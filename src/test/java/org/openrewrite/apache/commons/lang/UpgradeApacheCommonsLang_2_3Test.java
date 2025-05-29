@@ -73,4 +73,31 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void exceptionUtilsGetFullStackTraceToGetStackTrace() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.exception.ExceptionUtils;
+
+              class A {
+                  String doSomething(Throwable t) {
+                     return ExceptionUtils.getFullStackTrace(t);
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.lang3.exception.ExceptionUtils;
+
+              class A {
+                  String doSomething(Throwable t) {
+                     return ExceptionUtils.getStackTrace(t);
+                  }
+              }
+              """
+          )
+        );
+    }
 }
