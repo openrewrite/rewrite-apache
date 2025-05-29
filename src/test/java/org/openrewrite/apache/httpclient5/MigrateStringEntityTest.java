@@ -39,6 +39,7 @@ class MigrateStringEntityTest implements RewriteTest {
           );
     }
 
+    @DocumentExample
     @Test
     void setContentEncodingToConstructorArg() {
         rewriteRun(

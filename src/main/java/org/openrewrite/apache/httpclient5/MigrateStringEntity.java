@@ -53,8 +53,8 @@ public class MigrateStringEntity extends Recipe {
                 new UsesMethod<>(METHOD_MATCHER),
                 new JavaVisitor<ExecutionContext>() {
                     @Override
-                    public J visitCompilationUnit(CompilationUnit cu, ExecutionContext p) {
-                        // TODO Auto-generated method stub
+                    public J visitCompilationUnit(CompilationUnit cu, ExecutionContext ctx) {
+                        return super.visitCompilationUnit(cu, ctx);
                         return super.visitCompilationUnit(cu, p);
                     }
                     @Override
