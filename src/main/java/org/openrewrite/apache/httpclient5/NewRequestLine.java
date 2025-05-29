@@ -18,12 +18,14 @@ package org.openrewrite.apache.httpclient5;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.J;
 
 @Value
@@ -44,15 +46,16 @@ public class NewRequestLine extends Recipe {
                 "instantiate the object.";
     }
 
+    private static final MethodMatcher MATCHER = new MethodMatcher("org.apache.hc.client5.http.classic.methods.HttpUriRequestBase getRequestLine()");
+
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new JavaVisitor<ExecutionContext>() {
-            final MethodMatcher matcher = new MethodMatcher("org.apache.hc.client5.http.classic.methods.HttpUriRequestBase getRequestLine()");
+        return Preconditions.check(new UsesMethod<>(MATCHER), new JavaVisitor<ExecutionContext>() {
 
             @Override
             public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
-                if (matcher.matches(m)) {
+                if (MATCHER.matches(m)) {
                     maybeAddImport("org.apache.hc.core5.http.message.RequestLine");
                     return JavaTemplate.builder("new RequestLine(#{any(org.apache.hc.core5.http.HttpRequest)})")
                             .imports("org.apache.hc.core5.http.message.RequestLine")
@@ -62,6 +65,6 @@ public class NewRequestLine extends Recipe {
                 }
                 return m;
             }
-        };
+        });
     }
 }
