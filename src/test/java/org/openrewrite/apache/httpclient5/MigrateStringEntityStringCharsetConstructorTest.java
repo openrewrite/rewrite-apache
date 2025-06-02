@@ -16,7 +16,8 @@
 package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
-import org.openrewrite.java.JavaParser;
+import org.openrewrite.DocumentExample;
+class MigrateStringEntityStringCharsetConstructorTest implements RewriteTest {
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -30,6 +31,7 @@ public class MigrateStringEntityStringCharsetConstructorTest implements RewriteT
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
+    @DocumentExample
     @Test
     void migratesWithin4xIfNotAlreadyMigratedTo5x() {
         rewriteRun(
