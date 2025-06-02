@@ -56,7 +56,8 @@ public class MigrateStringEntityStringCharsetConstructor extends Recipe {
                 if (!is4x && !is5x) {
                     return nc;
                 }
-                nc = nc.withArguments(ListUtils.mapLast(nc.getArguments(), arg -> {
+                maybeAddImport("java.nio.charset.StandardCharsets");
+                return nc.withArguments(ListUtils.mapLast(nc.getArguments(), arg -> {
                     if (arg instanceof J.Literal) {
                         J.Literal argLiteral = (J.Literal) arg;
                         String argValue = (String) argLiteral.getValue();
@@ -68,13 +69,6 @@ public class MigrateStringEntityStringCharsetConstructor extends Recipe {
                     }
                     return arg;
                 }));
-                maybeAddImport("java.nio.charset.StandardCharsets");
-                nc = JavaTemplate.builder("new StringEntity(#{any(java.lang.String)}, #{any(java.nio.charset.Charset)})")
-                        .javaParser(JavaParser.fromJavaVersion().classpath(is4x ? "httpcore" : "httpcore5"))
-                        .imports(is4x ? "org.apache.http.entity.StringEntity" : "org.apache.hc.core5.http.io.entity.StringEntity")
-                        .build()
-                        .apply(getCursor(), nc.getCoordinates().replace(), nc.getArguments().get(0), nc.getArguments().get(1));
-                return nc;
             }
 
             private J.FieldAccess writeAsFieldAccess(String charsetName, Space prefix) {
