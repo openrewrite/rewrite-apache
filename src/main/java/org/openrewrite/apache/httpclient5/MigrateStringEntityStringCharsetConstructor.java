@@ -18,18 +18,12 @@ package org.openrewrite.apache.httpclient5;
 import org.openrewrite.*;
 import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JLeftPadded;
-import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.java.tree.Space;
-import org.openrewrite.marker.Markers;
 
 import java.nio.charset.Charset;
-import java.util.Collections;
 
 public class MigrateStringEntityStringCharsetConstructor extends Recipe {
     @Override
@@ -58,23 +52,15 @@ public class MigrateStringEntityStringCharsetConstructor extends Recipe {
                 }
                 maybeAddImport("java.nio.charset.StandardCharsets");
                 return nc.withArguments(ListUtils.mapLast(nc.getArguments(), arg -> {
-                    if (arg instanceof J.Literal) {
-                        J.Literal argLiteral = (J.Literal) arg;
-                        String argValue = (String) argLiteral.getValue();
-                        Charset argCharset = Charset.defaultCharset();
-                        if (argValue != null && Charset.isSupported(argValue)) {
-                            argCharset = Charset.forName(argValue);
+                    if (arg instanceof J.Literal && ((J.Literal) arg).getValue() instanceof String) {
+                        String argValue = (String) ((J.Literal) arg).getValue();
+                        if (Charset.isSupported(argValue)) {
+                            String name = Charset.forName(argValue).name().replace("-", "_");
+                            return JavaTemplate.apply("java.nio.charset.StandardCharsets." + name, new Cursor(getCursor(), arg), arg.getCoordinates().replace());
                         }
-                        return writeAsFieldAccess(argCharset.name(), argLiteral.getPrefix());
                     }
                     return arg;
                 }));
-            }
-
-            private J.FieldAccess writeAsFieldAccess(String charsetName, Space prefix) {
-                J.Identifier newCharsetIdentifier = new J.Identifier(Tree.randomId(), Space.EMPTY, Markers.EMPTY, Collections.emptyList(), charsetName.replace("-", "_"), JavaType.buildType("java.nio.charset.Charset"), null);
-                J.Identifier standardCharsetsIdentifier = new J.Identifier(Tree.randomId(), Space.EMPTY, Markers.EMPTY, Collections.emptyList(), "StandardCharsets", JavaType.buildType("java.nio.charset.StandardCharsets"), null);
-                return new J.FieldAccess(Tree.randomId(), prefix, Markers.EMPTY, standardCharsetsIdentifier, new JLeftPadded<>(Space.EMPTY, newCharsetIdentifier, Markers.EMPTY), JavaType.buildType("java.nio.charset.Charset"));
             }
         });
     }
