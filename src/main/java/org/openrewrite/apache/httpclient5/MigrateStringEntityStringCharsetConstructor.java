@@ -45,22 +45,23 @@ public class MigrateStringEntityStringCharsetConstructor extends Recipe {
             @Override
             public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
                 J.NewClass nc = super.visitNewClass(newClass, ctx);
-                boolean is4x = MATCHER_FOR_4x.matches(nc);
-                boolean is5x = MATCHER_FOR_5x.matches(nc);
-                if (!is4x && !is5x) {
-                    return nc;
-                }
-                maybeAddImport("java.nio.charset.StandardCharsets");
-                return nc.withArguments(ListUtils.mapLast(nc.getArguments(), arg -> {
-                    if (arg instanceof J.Literal && ((J.Literal) arg).getValue() instanceof String) {
-                        String argValue = (String) ((J.Literal) arg).getValue();
-                        if (Charset.isSupported(argValue)) {
-                            String name = Charset.forName(argValue).name().replace("-", "_");
-                            return JavaTemplate.apply("java.nio.charset.StandardCharsets." + name, new Cursor(getCursor(), arg), arg.getCoordinates().replace());
+                if (MATCHER_FOR_4x.matches(nc) || MATCHER_FOR_5x.matches(nc)) {
+                    return nc.withArguments(ListUtils.mapLast(nc.getArguments(), arg -> {
+                        if (arg instanceof J.Literal && ((J.Literal) arg).getValue() instanceof String) {
+                            String argValue = (String) ((J.Literal) arg).getValue();
+                            if (Charset.isSupported(argValue)) {
+                                String name = Charset.forName(argValue).name().replace("-", "_");
+                                maybeAddImport("java.nio.charset.StandardCharsets");
+                                return JavaTemplate.apply(
+                                        "java.nio.charset.StandardCharsets." + name,
+                                        new Cursor(getCursor(), arg),
+                                        arg.getCoordinates().replace());
+                            }
                         }
-                    }
-                    return arg;
-                }));
+                        return arg;
+                    }));
+                }
+                return nc;
             }
         });
     }
