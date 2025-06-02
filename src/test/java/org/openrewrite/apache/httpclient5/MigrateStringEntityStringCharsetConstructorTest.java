@@ -23,11 +23,11 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
-public class MigrateStringEntityStringCharsetConstructorTest implements RewriteTest {
+class MigrateStringEntityStringCharsetConstructorTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpath("httpclient", "httpcore", "httpclient5", "httpcore5"))
+          .parser(JavaParser.fromJavaVersion().classpath("httpcore"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
