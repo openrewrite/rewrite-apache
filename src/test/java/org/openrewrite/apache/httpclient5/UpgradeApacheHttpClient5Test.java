@@ -333,8 +333,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
 
               class A {
                   void method() throws IOException {
-                      ClassicRequestBuilder requestBuilder = ClassicRequestBuilder.get("https://moderne.io");
-                      HttpUriRequest request = requestBuilder.build();
+                      ClassicRequestBuilder classicRequestBuilder = ClassicRequestBuilder.get("https://moderne.io");
+                      HttpUriRequest request = classicRequestBuilder.build();
                       CloseableHttpClient instance = HttpClientBuilder.create().build();
                       CloseableHttpResponse response = instance.execute(request);
                   }
@@ -660,8 +660,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
 
               class ChangeSet {
                   void foo() {
-                      CredentialsStore credentialsProvider = new BasicCredentialsProvider();
-                      credentialsProvider.setCredentials(null, null);
+                      CredentialsStore credentialsStore = new BasicCredentialsProvider();
+                      credentialsStore.setCredentials(null, null);
                   }
               }
               """
