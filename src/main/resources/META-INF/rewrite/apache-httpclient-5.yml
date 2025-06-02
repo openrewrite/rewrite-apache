@@ -214,6 +214,7 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.entity.mime.MinimalField
       newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.MimeField
+  - org.openrewrite.apache.httpclient5.MigrateStringEntityStringCharsetConstructor
 
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.impl.bootstrap
