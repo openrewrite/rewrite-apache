@@ -100,4 +100,29 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void nullArgumentExceptionChangesToNullPointerException() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.NullArgumentException;
+
+              class A {
+                  boolean doSomething(Throwable t) {
+                     return t instanceof NullArgumentException;
+                  }
+              }
+              """,
+            """
+              class A {
+                  boolean doSomething(Throwable t) {
+                     return t instanceof NullPointerException;
+                  }
+              }
+              """
+          )
+        );
+    }
 }
