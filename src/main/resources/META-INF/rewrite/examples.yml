@@ -103,7 +103,7 @@ examples:
           static void helloApacheCollections() {
               Object[] input = new Object[] { "one", "two" };
               CollectionUtils.reverseArray(input);
-              IdentityHashMap identityMap = new IdentityHashMap();
+              IdentityHashMap identityHashMap = new IdentityHashMap();
               Map emptyMap = Collections.emptyMap();
               CopyOnWriteArrayList fastList = new CopyOnWriteArrayList(100);
               List emptyList = Collections.emptyList();
@@ -693,6 +693,35 @@ examples:
               String c4 = CookieSpecs.STANDARD_STRICT;
               String c5 = CookieSpecs.BEST_MATCH;
               String c6 = CookieSpecs.IGNORE_COOKIES;
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient5.MigrateStringEntityStringCharsetConstructor
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.entity.StringEntity;
+
+      class A {
+          void method() {
+              StringEntity utf8Entity = new StringEntity("a", "utf-8");
+              StringEntity utf16Entity = new StringEntity("b", "utf-16");
+              StringEntity anotherEntity = new StringEntity("utf-8", "utf-8");
+          }
+      }
+    after: |
+      import org.apache.http.entity.StringEntity;
+
+      import java.nio.charset.StandardCharsets;
+
+      class A {
+          void method() {
+              StringEntity utf8Entity = new StringEntity("a", StandardCharsets.UTF_8);
+              StringEntity utf16Entity = new StringEntity("b", StandardCharsets.UTF_16);
+              StringEntity anotherEntity = new StringEntity("utf-8", StandardCharsets.UTF_8);
           }
       }
     language: java
