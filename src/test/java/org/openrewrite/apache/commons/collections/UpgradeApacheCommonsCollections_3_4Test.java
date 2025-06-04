@@ -72,7 +72,7 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
                   static void helloApacheCollections() {
                       Object[] input = new Object[] { "one", "two" };
                       CollectionUtils.reverseArray(input);
-                      IdentityHashMap identityHashMap = new IdentityHashMap();
+                      IdentityHashMap identityMap = new IdentityHashMap();
                       Map emptyMap = Collections.emptyMap();
                       CopyOnWriteArrayList fastList = new CopyOnWriteArrayList(100);
                       List emptyList = Collections.emptyList();
