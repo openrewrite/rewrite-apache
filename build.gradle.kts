@@ -42,6 +42,7 @@ dependencies {
 
     testRuntimeOnly("org.apache.httpcomponents:httpclient:4.5.14")
     testRuntimeOnly("org.apache.httpcomponents:httpmime:4.5.14")
+    testRuntimeOnly("org.apache.httpcomponents:httpcore-nio:4.4.16")
     testRuntimeOnly("org.apache.httpcomponents.client5:httpclient5:5.2.+")
 
     testImplementation("commons-collections:commons-collections:3.2.2")

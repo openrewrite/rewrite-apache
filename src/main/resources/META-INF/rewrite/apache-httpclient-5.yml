@@ -55,11 +55,55 @@ recipeList:
   - org.openrewrite.maven.RemoveDuplicateDependencies
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
+  - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_NioClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
   - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_NioClassMapping
+displayName: Migrate to ApacheHttpClient 5.x Classes Namespace from 4.x Core Nio
+description: Mapping of all the compatible classes of ApacheHttpClient 5.x from 4.x Core Nio.
+recipeList:
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.http.nio.util.DirectByteBufferAllocator allocate(int)
+      newMethodName: allocateDirect
+  - org.openrewrite.java.ChangeMethodTargetToStatic:
+      methodPattern: org.apache.http.nio.util.DirectByteBufferAllocator allocateDirect(int)
+      fullyQualifiedTargetTypeName: java.nio.ByteBuffer
+  - org.openrewrite.java.ChangeMethodTargetToStatic:
+      methodPattern: org.apache.http.nio.util.HeapByteBufferAllocator allocate(int)
+      fullyQualifiedTargetTypeName: java.nio.ByteBuffer
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.ExpandableBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.impl.nio.ExpandableBuffer
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.impl.nio.ExpandableBuffer <constructor>(int,org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.SharedInputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer
+  # Already deprecated by 4.3
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer <constructor>(int,org.apache.http.nio.IOControl,org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer <constructor>(int,org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.SharedOutputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer <constructor>(int,org.apache.http.nio.IOControl,org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer <constructor>(int,org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+#  - org.openrewrite.java.RemoveMethodInvocations:
+#      methodPattern: org.apache.http.nio.util.HeapByteBufferAllocator <constructor>()
+  - org.openrewrite.java.RemoveUnusedImports
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
