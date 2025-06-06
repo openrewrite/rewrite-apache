@@ -17,20 +17,87 @@ public class MigrateApacheHttpCoreNioTest implements RewriteTest {
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
-    /*
+    @Test
+    void nioSimplePackageChangesMigrated() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.nio.bootstrap.ServerBootstrap;
+              import org.apache.http.impl.nio.codecs.DefaultHttpRequestParserFactory;
 
-    //              import org.apache.http.nio.util.BufferInfo;
-              import org.apache.http.nio.util.ByteBufferAllocator;
-//              import org.apache.http.nio.util.ContentInputBuffer;
-//              import org.apache.http.nio.util.ContentOutputBuffer;
-//              import org.apache.http.nio.util.DirectByteBufferAllocator;
-              import org.apache.http.nio.util.ExpandableBuffer;
-//              import org.apache.http.nio.util.HeapByteBufferAllocator;
-//              import org.apache.http.nio.util.SharedInputBuffer;
-//              import org.apache.http.nio.util.SharedOutputBuffer;
-//              import org.apache.http.nio.util.SimpleInputBuffer;
-//              import org.apache.http.nio.util.SimpleOutputBuffer;
-     */
+              class A {
+                  void method() {
+                      ServerBootstrap bootstrap = ServerBootstrap.bootstrap();
+                      DefaultHttpRequestParserFactory requestParserFactory = new DefaultHttpRequestParserFactory();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.impl.bootstrap.ServerBootstrap;
+              import org.apache.hc.core5.http.impl.nio.DefaultHttpRequestParserFactory;
+
+              class A {
+                  void method() {
+                      ServerBootstrap bootstrap = ServerBootstrap.bootstrap();
+                      DefaultHttpRequestParserFactory requestParserFactory = new DefaultHttpRequestParserFactory();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    // TODO: DefaultListeningIOReactor, BasicNIOConnPool
+    @Test
+    void nioReactorImplementationImportsMigrated() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+              import org.apache.http.impl.nio.reactor.IOReactorConfig;
+              import org.apache.http.impl.nio.reactor.IOReactorConfig.Builder;
+              import org.apache.http.impl.nio.reactor.SessionInputBufferImpl;
+              import org.apache.http.impl.nio.reactor.SessionOutputBufferImpl;
+              import org.apache.http.nio.reactor.IOEventDispatch;
+              import org.apache.http.nio.reactor.IOReactor;
+
+              class A {
+                  void method(int bufferSize, IOEventDispatch eventDispatch) {
+                      IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+                      IOReactorConfig ioReactorConfig = builder.build();
+                      SessionInputBufferImpl sessionInputBufferImpl = new SessionInputBufferImpl(bufferSize);
+                      SessionOutputBufferImpl sessionOutputBufferImpl = new SessionOutputBufferImpl(bufferSize);
+                      ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor();
+                      ioReactor.execute(eventDispatch);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.impl.nio.SessionInputBufferImpl;
+              import org.apache.hc.core5.http.impl.nio.SessionOutputBufferImpl;
+              import org.apache.hc.core5.reactor.DefaultConnectingIOReactor;
+              import org.apache.hc.core5.reactor.IOEventHandlerFactory;
+              import org.apache.hc.core5.reactor.IOReactor;
+              import org.apache.hc.core5.reactor.IOReactorConfig;
+              import org.apache.hc.core5.reactor.IOReactorConfig.Builder;
+
+              class A {
+                  void method(int bufferSize, IOEventHandlerFactory eventDispatch) {
+                      IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+                      IOReactorConfig ioReactorConfig = builder.build();
+                      SessionInputBufferImpl sessionInputBufferImpl = new SessionInputBufferImpl(bufferSize);
+                      SessionOutputBufferImpl sessionOutputBufferImpl = new SessionOutputBufferImpl(bufferSize);
+                      IOReactor ioReactor = new DefaultConnectingIOReactor(eventDispatch);
+                      ioReactor.execute();
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Test
     void nioUtilImportsMigrated() {
         rewriteRun(

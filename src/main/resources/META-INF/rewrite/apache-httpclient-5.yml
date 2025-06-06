@@ -67,6 +67,110 @@ name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_NioClassMappi
 displayName: Migrate to ApacheHttpClient 5.x Classes Namespace from 4.x Core Nio
 description: Mapping of all the compatible classes of ApacheHttpClient 5.x from 4.x Core Nio.
 recipeList:
+  # org.apache.http.impl.nio
+  ## DefaultClientIOEventDispatch (deprecated in 4.2)
+  ## DefaultHttpClientIODispatch<H extends NHttpClientEventHandler>
+  ## DefaultHttpServerIODispatch<H extends NHttpServerEventHandler>
+  ## DefaultNHttpClientConnection
+  ## DefaultNHttpClientConnectionFactory
+  ## DefaultNHttpServerConnection
+  ## DefaultNHttpServerConnectionFactory
+  ## DefaultSererIOEventDispatch (deprecated in 4.2)
+  ## NHttpConnectionBase
+  ## SSLClientIOEventDispatch (deprecated in 4.2)
+  ## SSLNHttpClientConnectionFactory
+  ## SSLNHttpServerConnectionFactory
+  ## SSLServerIOEventDispatch (deprecated in 4.2)
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.http.impl.nio.bootstrap
+      newPackageName: org.apache.hc.core5.http.impl.bootstrap
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.http.impl.nio.codecs
+      newPackageName: org.apache.hc.core5.http.impl.nio
+  # org.apache.http.impl.nio.pool
+  # org.apache.http.impl.nio.reactor
+  ## ListenerEndpointClosedCallback
+  ## SessionClosedCallback
+  ## SSLIOSessionHandler
+  ## SSLSetupHandler
+  ## AbstractIODispatch<T>
+  ## AbstractIOReactor
+  ## AbstractMultiworkerIOReactor
+  ## BaseIOReactor
+  ## ChannelEntry
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.DefaultConnectingIOReactor
+      # TODO: Signatures for constructors changed
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.DefaultListeningIOReactor
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.DefaultListeningIOReactor
+      # TODO: Signatures for constructors changed
+  ## ExceptionEvent
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.IOReactorConfig
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactorConfig
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.IOReactorConfig.Builder
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactorConfig.Builder
+  ## IOSessionImpl
+  ## ListenerEndpointImpl
+  ## SessionHandle (deprecated by 4.2)
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.SessionInputBufferImpl
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.impl.nio.SessionInputBufferImpl
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.SessionOutputBufferImpl
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.impl.nio.SessionOutputBufferImpl
+  ## SessionRequestHandle
+  ## SessionRequestImpl
+  # Already deprecated in 4.2
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.SSLIOSession
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.ssl.SSLIOSession
+  # Already deprecated in 4.2
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.SSLMode
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.ssl.SSLMode
+  # org.apache.http.impl.nio.ssl
+  # org.apache.http.nio
+  # org.apache.http.nio.entity
+  # org.apache.http.nio.protocol
+  # org.apache.http.nio.reactor
+  ## ConnectingIOReactor -> removed
+  ## EventMask
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.reactor.IOEventDispatch
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOEventHandlerFactory
+  ## IOReactor
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.reactor.IOReactor
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactor
+  ## IOReactorExceptionHandler
+  ## IOSession
+  ## ListenerEndpoint
+  ## ListeningIOReactor
+  ## SessionBufferStatus
+  ## SessionInputBuffer
+  ## SessionOutputBuffer
+  ## SessionRequest
+  ## SessionRequestCallback
+  ## SockerAccessor
+  ## IOReactorStatus
+  ## IOReactorException
+  # org.apache.http.nio.reactor.ssl
+  ## SSLBuffer
+  ## SSLBufferManagementStrategy
+  ## SSLSetupHandler
+  ## PermanentSSLBufferManagementStrategy
+  ## ReleasableSSLBufferManagementStrategy
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.ssl.SSLIOSession
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.ssl.SSLIOSession
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.reactor.ssl.SSLMode
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.ssl.SSLMode
+  # org.apache.http.nio.util
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.http.nio.util.DirectByteBufferAllocator allocate(int)
       newMethodName: allocateDirect
@@ -95,6 +199,7 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.nio.util.SharedOutputBuffer
       newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer
+  # Already deprecated by 4.3
   - org.openrewrite.java.DeleteMethodArgument:
       methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer <constructor>(int,org.apache.http.nio.IOControl,org.apache.http.nio.util.ByteBufferAllocator)
       argumentIndex: 1
