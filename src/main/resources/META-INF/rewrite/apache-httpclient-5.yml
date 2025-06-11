@@ -76,10 +76,19 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.IOReactorConfig
       newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactorConfig
+  - org.openrewrite.java.ChangeMethodInvocationReturnType:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig getSelectInterval()
+      newReturnType: org.apache.hc.core5.util.TimeValue
   - org.openrewrite.java.RemoveMethodInvocations:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig getShutdownGracePeriod()
   - org.openrewrite.java.RemoveMethodInvocations:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig isInterestOpQueued()
+  - org.openrewrite.java.ChangeMethodInvocationReturnType:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig getSoTimeout()
+      newReturnType: org.apache.hc.core5.util.Timeout
+  - org.openrewrite.java.ChangeMethodInvocationReturnType:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig getSoLinger()
+      newReturnType: org.apache.hc.core5.util.TimeValue
   - org.openrewrite.java.RemoveMethodInvocations:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig getConnectTimeout()
   - org.openrewrite.java.ChangeType:

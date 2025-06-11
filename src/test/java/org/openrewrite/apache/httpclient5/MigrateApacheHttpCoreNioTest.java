@@ -56,8 +56,11 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
                       builder.setSoLinger(200);
                       builder.setConnectTimeout(100);
                       IOReactorConfig ioReactorConfig = builder.build();
+                      long selectInterval = ioReactorConfig.getSelectInterval();
                       ioReactorConfig.getShutdownGracePeriod();
                       ioReactorConfig.isInterestOpQueued();
+                      int soTimeout = ioReactorConfig.getSoTimeout();
+                      int soLinger = ioReactorConfig.getSoLinger();
                       ioReactorConfig.getConnectTimeout();
                   }
               }
@@ -66,6 +69,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               import org.apache.hc.core5.reactor.IOReactorConfig;
               import org.apache.hc.core5.reactor.IOReactorConfig.Builder;
               import org.apache.hc.core5.util.TimeValue;
+              import org.apache.hc.core5.util.Timeout;
 
               import java.util.concurrent.TimeUnit;
 
@@ -76,6 +80,9 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
                       builder.setSoTimeout(300, TimeUnit.MILLISECONDS);
                       builder.setSoLinger(200, TimeUnit.MILLISECONDS);
                       IOReactorConfig ioReactorConfig = builder.build();
+                      TimeValue selectInterval = ioReactorConfig.getSelectInterval();
+                      Timeout soTimeout = ioReactorConfig.getSoTimeout();
+                      TimeValue soLinger = ioReactorConfig.getSoLinger();
                   }
               }
               """
