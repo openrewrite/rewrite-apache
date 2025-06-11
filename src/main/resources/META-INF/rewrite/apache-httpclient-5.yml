@@ -52,6 +52,7 @@ recipeList:
       artifactId: httpclient5
       version: 5.4.x
       onlyIfUsing: org.apache.http.impl.client.*
+  - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
   - org.openrewrite.maven.RemoveDuplicateDependencies
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
@@ -60,6 +61,42 @@ recipeList:
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
   - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
+displayName: Migrate to Apache HttpCore Nio Classes to Apache HttpCore 5.x
+description: Mapping of all the compatible classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.apache.httpcomponents
+      oldArtifactId: httpcore-nio
+      newGroupId: org.apache.httpcomponents.core5
+      newArtifactId: httpcore5
+      newVersion: 5.3.x
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.IOReactorConfig
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactorConfig
+  - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig getShutdownGracePeriod()
+  - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig isInterestOpQueued()
+  - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig getConnectTimeout()
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.IOReactorConfig.Builder
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactorConfig.Builder
+  - org.openrewrite.apache.httpclient5.ChangeArgumentToTimeValue:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setSelectInterval(long)
+  - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setShutdownGracePeriod(long)
+  - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setInterestOpQueued(boolean)
+  - org.openrewrite.apache.httpclient5.AddTimeUnitArgument:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setSoTimeout(int)
+  - org.openrewrite.apache.httpclient5.AddTimeUnitArgument:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setSoLinger(int)
+  - org.openrewrite.java.RemoveMethodInvocations:
+      methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setConnectTimeout(int)
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
