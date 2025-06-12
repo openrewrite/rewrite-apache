@@ -20,16 +20,17 @@ import lombok.Value;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Option;
+import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.search.UsesMethod;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Value
@@ -63,31 +64,29 @@ public class ChangeArgumentToTimeValue extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new JavaIsoVisitor<ExecutionContext>() {
-            final MethodMatcher matcher = new MethodMatcher(methodPattern);
-
+        final MethodMatcher matcher = new MethodMatcher(methodPattern);
+        return Preconditions.check(new UsesMethod<>(matcher), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
                 if (matcher.matches(m) && m.getArguments().size() == 1) {
                     JavaTemplate template = JavaTemplate
                             .builder("TimeValue.of(#{any()}, TimeUnit.#{})")
-                            .contextSensitive()
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
                             .imports("org.apache.hc.core5.util.TimeValue", "java.util.concurrent.TimeUnit")
                             .build();
-                    List<Object> arguments = new ArrayList<>(m.getArguments());
-                    arguments.add(timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS);
+                    Expression firstArg = m.getArguments().get(0);
                     m = template.apply(
                             updateCursor(m),
                             m.getCoordinates().replaceArguments(),
-                            arguments.toArray(new Object[0])
+                            firstArg,
+                            timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
                     );
                     maybeAddImport("org.apache.hc.core5.util.TimeValue");
                     maybeAddImport("java.util.concurrent.TimeUnit");
                 }
                 return m;
             }
-        };
+        });
     }
 }
