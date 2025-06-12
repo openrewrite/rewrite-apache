@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
 import org.openrewrite.java.*;
 import org.openrewrite.java.search.UsesMethod;
-import org.openrewrite.java.trait.Traits;
+import org.openrewrite.java.trait.MethodAccess;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
 import org.openrewrite.marker.SearchResult;
@@ -54,7 +54,7 @@ public class MigrateRequestConfig extends Recipe {
     }
 
     private static TreeVisitor<? extends Tree, ExecutionContext> callsSetStaleCheckEnabledFalse() {
-        return Traits.methodAccess(MATCHER_STALE_CHECK_ENABLED)
+        return new MethodAccess.Matcher(MATCHER_STALE_CHECK_ENABLED)
                 .asVisitor(access ->
                         J.Literal.isLiteralValue(access.getTree().getArguments().get(0), false) ?
                                 SearchResult.found(access.getTree()) : access.getTree());
