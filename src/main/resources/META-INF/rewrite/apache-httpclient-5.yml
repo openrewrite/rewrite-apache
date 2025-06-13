@@ -63,6 +63,24 @@ recipeList:
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
 ---
 type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping_Util
+displayName: Migrate to Apache HttpCore Nio Util Classes to Apache HttpCore 5.x
+description: Mapping of all the compatible utility classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
+recipeList:
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Check this usage, as implementation has changed to match that of old `.available()` method."
+      methodPattern: org.apache.http.nio.util.SharedInputBuffer capacity()
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.SharedInputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer <constructor>(int, org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer available()
+      newMethodName: capacity
+---
+type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
 displayName: Migrate to Apache HttpCore Nio Classes to Apache HttpCore 5.x
 description: Mapping of all the compatible classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
@@ -106,6 +124,7 @@ recipeList:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setSoLinger(int)
   - org.openrewrite.java.RemoveMethodInvocations:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setConnectTimeout(int)
+  - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping_Util
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
