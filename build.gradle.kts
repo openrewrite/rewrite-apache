@@ -15,7 +15,6 @@ recipeDependencies {
     parserClasspath("org.apache.httpcomponents:httpmime:4.5.14")
     parserClasspath("org.apache.httpcomponents:httpcore-nio:4.4.16")
     parserClasspath("org.apache.httpcomponents:httpcore:4.4.16")
-    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.2.+")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
