@@ -29,7 +29,7 @@ class CookieConstantsTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient", "httpcore", "httpclient5", "httpcore5"))
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient-4", "httpcore-4", "httpclient5", "httpcore5"))
           .recipe(Environment.builder()
             .scanRuntimeClasspath("org.openrewrite")
             .build()

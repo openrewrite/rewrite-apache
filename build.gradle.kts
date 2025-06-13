@@ -16,7 +16,6 @@ recipeDependencies {
     parserClasspath("org.apache.httpcomponents:httpcore-nio:4.4.16")
     parserClasspath("org.apache.httpcomponents:httpcore:4.4.16")
     parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.2.+")
-    parserClasspath("org.codehaus.plexus:plexus-container-default:2.+")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
@@ -54,6 +53,8 @@ dependencies {
 
     testImplementation("commons-lang:commons-lang:2.6")
     testImplementation("org.apache.commons:commons-lang3:3.+")
+
+    testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:latest.release")
 
