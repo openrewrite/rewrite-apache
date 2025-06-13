@@ -134,4 +134,178 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
           )
         );
     }
+
+    /*
+    ------------------------
+org.apache.http.nio.util
+------------------------
+BufferInfo -> *already deprecated, removed*
+ByteBufferAllocator -> *removed, implementations replaced by static calls*
+ContentInputBuffer -> org.apache.hc.core5.http.nio.support.classic.ContentInputBuffer
+ContentOutputBuffer -> org.apache.hc.core5.http.nio.support.classic.ContentOutputBuffer
+DirectByteBufferAllocator -> *removed*
+	java.nio.ByteBuffer allocate(int) -> java.nio.ByteBuffer.allocateDirect(int)
+ExpandableBuffer -> *internalized* org.apache.hc.core5.http.impl.nio.ExpandableBuffer
+	new(int, org.apache.http.nio.util.ByteBufferAllocator) -> *protected* new(int)
+HeapByteBufferAllocator -> *removed*
+	java.nio.ByteBuffer allocate(int) -> java.nio.ByteBuffer.allocate(int)
+SharedInputBuffer -> org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer
+	new(int, org.apache.http.nio.util.ByteBufferAllocator) -> new(int)
+	*other methods* -> ?
+SharedOutputBuffer -> org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer
+	new(int, org.apache.http.nio.util.ByteBufferAllocator) -> new(int)
+	*other methods* -> ?
+SimpleInputBuffer -> *removed ?*
+SimpleOutputBuffer -> *removed ?*
+     */
+
+    @Test
+    void migratesSharedInputBuffer() {
+        rewriteRun(
+            //language=java
+                java(
+                    """
+                      import org.apache.http.nio.util.DirectByteBufferAllocator;
+                      import org.apache.http.nio.util.SharedInputBuffer;
+
+                      class A {
+                          void method() {
+                              SharedInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                              SharedInputBuffer inBuffer2 = new SharedInputBuffer(2, DirectByteBufferAllocator.INSTANCE);
+                              inBuffer1.capacity();
+                              int available1 = inBuffer1.available();
+                              byte[] bArr = "testing".getBytes();
+                              int readCount = inBuffer2.read(bArr);
+                              inBuffer2.close();
+                              inBuffer2.shutdown();
+                          }
+                      }
+                      """,
+                    """
+                      import org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer;
+
+                      class A {
+                          void method() {
+                              SharedInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                              SharedInputBuffer inBuffer2 = new SharedInputBuffer(2);
+                              // TODO: Check this usage, as implementation has changed to match that of old `.available()` method.
+                              inBuffer1.capacity();
+                              int available1 = inBuffer1.capacity();
+                              byte[] bArr = "testing".getBytes();
+                              int readCount = inBuffer2.read(bArr, 0, bArr.length);
+                              inBuffer2.markEndStream();
+                              inBuffer2.abort();
+                          }
+                      }
+                      """
+                )
+        );
+    }
+
+    @Test
+    void migratesSharedOutputBuffer() {
+        rewriteRun(
+                //language=java
+                java(
+                    """
+                      import org.apache.http.nio.util.HeapByteBufferAllocator;
+                      import org.apache.http.nio.util.SharedOutputBuffer;
+
+                      class A {
+                          void method() {
+
+                              int readCount = inBuffer2.read(bArr);
+                              inBuffer2.close();
+                              inBuffer2.shutdown();
+                              SharedOutputBuffer outBuffer1 = new SharedOutputBuffer(3);
+                              SharedOutputBuffer outBuffer2 = new SharedOutputBuffer(4, HeapByteBufferAllocator.INSTANCE);
+                              outBuffer1.capacity();
+                              int available1 = outBuffer1.available();
+                              byte[] bArr = "testing".getBytes();
+                              int writeCount = outBuffer1.write(bArr);
+                              outBuffer2.close();
+                              outBuffer2.shutdown();
+                          }
+                      }
+                      """,
+                    """
+                      import org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer;
+
+                      class A {
+                          void method() {
+                              SharedOutputBuffer outBuffer1 = new SharedOutputBuffer(3);
+                              SharedOutputBuffer outBuffer2 = new SharedOutputBuffer(4);
+                              // TODO: Check this usage, as implementation has changed to match that of old `.available()` method.
+                              outBuffer1.capacity();
+                              int available1 = outBuffer1.capacity();
+                              byte[] bArr = "testing".getBytes();
+                              int writeCount = outBuffer1.write(bArr, 0, bArr.length);
+                              outBuffer2.abort();
+                              outBuffer2.abort();
+                          }
+                      }
+                      """
+                )
+        );
+    }
+
+    @Test
+    void migratesUtilClasses() {
+        rewriteRun(
+            //language=java
+            java(
+                """
+                  import org.apache.http.nio.util.BufferInfo;
+                  import org.apache.http.nio.util.ByteBufferAllocator;
+                  import org.apache.http.nio.util.ContentInputBuffer;
+                  import org.apache.http.nio.util.ContentOutputBuffer;
+                  import org.apache.http.nio.util.DirectByteBufferAllocator;
+                  import org.apache.http.nio.util.ExpandableBuffer;
+                  import org.apache.http.nio.util.HeapByteBufferAllocator;
+                  import org.apache.http.nio.util.SharedInputBuffer;
+                  import org.apache.http.nio.util.SharedOutputBuffer;
+                  import org.apache.http.nio.util.SimpleInputBuffer;
+                  import org.apache.http.nio.util.SimpleOutputBuffer;
+
+                  class A {
+                      void method() {
+                          SharedInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                          SharedInputBuffer inBuffer2 = new SharedInputBuffer(2, DirectByteBufferAllocator.INSTANCE);
+                          inBuffer1.capacity();
+                          int available1 = inBuffer1.available();
+                          byte[] bArr = "testing".getBytes();
+                          int readCount = inBuffer2.read(bArr);
+                          inBuffer2.close();
+                          inBuffer2.shutdown();
+                          SharedOutputBuffer outBuffer1 = new SharedOutputBuffer(3);
+                          SharedOutputBuffer outBuffer2 = new SharedOutputBuffer(4, HeapByteBufferAllocator.INSTANCE);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.hc.core5.http.nio.support.classic.ContentInputBuffer;
+                  import org.apache.hc.core5.http.nio.support.classic.ContentOutputBuffer;
+                  import org.apache.hc.core5.http.impl.nio.ExpandableBuffer;
+                  import org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer;
+                  import org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer;
+
+                  class A {
+                      void method() {
+                          SharedInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                          SharedInputBuffer inBuffer2 = new SharedInputBuffer(2);
+                          // TODO: Check this usage, as implementation has changed to match that of old `.available()` method.
+                          inBuffer1.capacity();
+                          int available1 = inBuffer1.capacity();
+                          byte[] bArr = "testing".getBytes();
+                          int readCount = inBuffer2.read(bArr, 0, bArr.length);
+                          inBuffer2.markEndStream();
+                          inBuffer2.abort();
+                          SharedOutputBuffer outBuffer1 = new SharedOutputBuffer(3);
+                          SharedOutputBuffer outBuffer2 = new SharedOutputBuffer(4);
+                      }
+                  }
+                  """
+            )
+        );
+    }
 }

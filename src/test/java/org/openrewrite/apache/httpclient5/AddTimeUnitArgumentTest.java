@@ -16,6 +16,7 @@
 package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.Recipe;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpecs;
 
@@ -28,31 +29,31 @@ class AddTimeUnitArgumentTest implements RewriteTest {
     private static final SourceSpecs stubCode = java(
             """
       import java.util.concurrent.TimeUnit;
-      
+
       class A {
           private long value;
           private float foo;
           private TimeUnit timeunit;
-          
+
           A method(int value) {
               this.value = value;
               this.timeunit = TimeUnit.MILLISECONDS;
               return this;
           }
-          
+
           A method(long value, TimeUnit timeunit) {
               this.value = value;
               this.timeunit = timeunit;
               return this;
           }
-          
+
           A method(int value, float foo) {
               this.value = value;
               this.foo = foo;
               this.timeunit = TimeUnit.MILLISECONDS;
               return this;
           }
-          
+
           A method(long value, float foo, TimeUnit timeunit) {
               this.value = value;
               this.foo = foo;
@@ -79,7 +80,7 @@ class AddTimeUnitArgumentTest implements RewriteTest {
             """,
           """
             import java.util.concurrent.TimeUnit;
-                        
+
             class B {
                 void test() {
                     A a = new A();
@@ -108,7 +109,7 @@ class AddTimeUnitArgumentTest implements RewriteTest {
             """,
           """
             import java.util.concurrent.TimeUnit;
-                        
+
             class B {
                 void test() {
                     A a = new A();
@@ -138,7 +139,7 @@ class AddTimeUnitArgumentTest implements RewriteTest {
             """,
           """
             import java.util.concurrent.TimeUnit;
-                        
+
             class B {
                 void test() {
                     A a = new A();
