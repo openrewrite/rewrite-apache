@@ -33,7 +33,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpcore", "httpcore-nio", "httpcore5"))
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpcore-4", "httpcore-nio-4", "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping");
     }
 
