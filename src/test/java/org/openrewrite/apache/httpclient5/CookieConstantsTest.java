@@ -17,6 +17,7 @@ package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -28,7 +29,7 @@ class CookieConstantsTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpath("httpclient", "httpcore", "httpclient5", "httpcore5"))
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient-4", "httpcore-4", "httpclient5", "httpcore5"))
           .recipe(Environment.builder()
             .scanRuntimeClasspath("org.openrewrite")
             .build()
@@ -44,7 +45,7 @@ class CookieConstantsTest implements RewriteTest {
           java(
             """
             import org.apache.http.client.config.CookieSpecs;
-            
+
             class A {
                 void method() {
                     String c1 = CookieSpecs.IGNORE_COOKIES;
@@ -55,7 +56,7 @@ class CookieConstantsTest implements RewriteTest {
             """,
           """
             import org.apache.hc.client5.http.cookie.StandardCookieSpec;
-            
+
             class A {
                 void method() {
                     String c1 = StandardCookieSpec.IGNORE;

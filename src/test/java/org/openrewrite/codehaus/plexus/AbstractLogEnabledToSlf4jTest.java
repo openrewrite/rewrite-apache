@@ -29,7 +29,7 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(new AbstractLogEnabledToSlf4j())
-          .parser(JavaParser.fromJavaVersion().classpath("plexus-container-default"));
+          .parser(JavaParser.fromJavaVersion().classpath( "plexus-container-default"));
     }
 
     @Test

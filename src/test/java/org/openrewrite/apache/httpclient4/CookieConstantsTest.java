@@ -17,6 +17,7 @@ package org.openrewrite.apache.httpclient4;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -28,7 +29,7 @@ class CookieConstantsTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpath("httpclient", "httpcore"))
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient-4", "httpcore-4"))
           .recipe(Environment.builder()
             .scanRuntimeClasspath("org.openrewrite")
             .build()
@@ -44,7 +45,7 @@ class CookieConstantsTest implements RewriteTest {
           java(
             """
             import org.apache.http.client.params.CookiePolicy;
-            
+
             class A {
                 void method() {
                     String c1 = CookiePolicy.BROWSER_COMPATIBILITY;
@@ -58,7 +59,7 @@ class CookieConstantsTest implements RewriteTest {
             """,
           """
             import org.apache.http.client.config.CookieSpecs;
-            
+
             class A {
                 void method() {
                     String c1 = CookieSpecs.BROWSER_COMPATIBILITY;

@@ -52,10 +52,6 @@ public class MigrateDefaultHttpClient extends Recipe {
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(new UsesType<>("org.apache.http.impl.client.DefaultHttpClient", false), new JavaVisitor<ExecutionContext>() {
             final MethodMatcher noArgsMatcher = new MethodMatcher("org.apache.http.impl.client.DefaultHttpClient <constructor>()");
-            final JavaTemplate noArgsTemplate = JavaTemplate.builder("HttpClients.createDefault()")
-                    .javaParser(JavaParser.fromJavaVersion().classpath(JavaParser.runtimeClasspath()))
-                    .imports("org.apache.http.impl.client.HttpClients")
-                    .build();
 
             @Override
             public J visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
@@ -65,7 +61,11 @@ public class MigrateDefaultHttpClient extends Recipe {
                             "org.apache.http.impl.client.DefaultHttpClient",
                             "org.apache.http.impl.client.CloseableHttpClient", true
                     ).getVisitor());
-                    return noArgsTemplate.apply(getCursor(), newClass.getCoordinates().replace());
+                    return JavaTemplate.builder("HttpClients.createDefault()")
+                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient-4"))
+                            .imports("org.apache.http.impl.client.HttpClients")
+                            .build()
+                            .apply(getCursor(), newClass.getCoordinates().replace());
                 }
                 return super.visitNewClass(newClass, ctx);
             }

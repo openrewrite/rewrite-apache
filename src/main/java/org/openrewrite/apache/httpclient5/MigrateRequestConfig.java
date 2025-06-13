@@ -85,7 +85,7 @@ public class MigrateRequestConfig extends Recipe {
                     method = JavaTemplate.builder(
                                     "PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = " +
                                     "new PoolingHttpClientConnectionManager();")
-                            .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
+                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports(FQN_POOL_CONN_MANAGER5)
                             .build()
                             .apply(getCursor(), method.getBody().getCoordinates().firstStatement());
@@ -96,7 +96,7 @@ public class MigrateRequestConfig extends Recipe {
                 J.Identifier connectionManagerIdentifier = connectionManagerVD.getVariables().get(0).getName();
                 maybeAddImport(FQN_TIME_VALUE);
                 method = JavaTemplate.builder("#{any(" + FQN_POOL_CONN_MANAGER5 + ")}.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);")
-                        .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
+                        .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                         .imports(FQN_TIME_VALUE)
                         .build()
                         .apply(updateCursor(method), connectionManagerVD.getCoordinates().after(), connectionManagerIdentifier);
@@ -132,7 +132,7 @@ public class MigrateRequestConfig extends Recipe {
                 J.Identifier connectionManagerIdentifier = getCursor().pollNearestMessage(KEY_POOL_CONN_MANAGER);
                 if (connectionManagerIdentifier != null) {
                     method = JavaTemplate.builder("#{any()}.setConnectionManager(#{any()});")
-                            .javaParser(JavaParser.fromJavaVersion().classpath("httpclient5", "httpcore5"))
+                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports(FQN_POOL_CONN_MANAGER5)
                             .build()
                             .apply(getCursor(), method.getCoordinates().replace(), method, connectionManagerIdentifier);

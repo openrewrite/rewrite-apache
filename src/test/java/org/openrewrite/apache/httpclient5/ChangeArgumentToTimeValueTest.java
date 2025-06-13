@@ -16,6 +16,9 @@
 package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.InMemoryExecutionContext;
+import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpecs;
 
@@ -24,6 +27,12 @@ import java.util.concurrent.TimeUnit;
 import static org.openrewrite.java.Assertions.java;
 
 class ChangeArgumentToTimeValueTest implements RewriteTest {
+
+    @Override
+    public void defaults(RecipeSpec spec) {
+        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpcore5"));
+    }
+
     //language=java
     private static final SourceSpecs stubCode = java(
       """
