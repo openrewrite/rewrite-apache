@@ -11,6 +11,12 @@ recipeDependencies {
     parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.1.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
     parserClasspath("org.apache.poi:poi:3.16")
+    parserClasspath("org.apache.httpcomponents:httpclient:4.5.14")
+    parserClasspath("org.apache.httpcomponents:httpmime:4.5.14")
+    parserClasspath("org.apache.httpcomponents:httpcore-nio:4.4.16")
+    parserClasspath("org.apache.httpcomponents:httpcore:4.4.16")
+    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.2.+")
+    parserClasspath("org.codehaus.plexus:plexus-container-default:2.+")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
@@ -40,11 +46,6 @@ dependencies {
 
     testImplementation("commons-codec:commons-codec:1.+")
 
-    testRuntimeOnly("org.apache.httpcomponents:httpclient:4.5.14")
-    testRuntimeOnly("org.apache.httpcomponents:httpmime:4.5.14")
-    testRuntimeOnly("org.apache.httpcomponents:httpcore-nio:4.4.16")
-    testRuntimeOnly("org.apache.httpcomponents.client5:httpclient5:5.2.+")
-
     testImplementation("commons-collections:commons-collections:3.2.2")
     testImplementation("org.apache.commons:commons-collections4:4.4")
 
@@ -53,8 +54,6 @@ dependencies {
 
     testImplementation("commons-lang:commons-lang:2.6")
     testImplementation("org.apache.commons:commons-lang3:3.+")
-
-    testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:latest.release")
 
