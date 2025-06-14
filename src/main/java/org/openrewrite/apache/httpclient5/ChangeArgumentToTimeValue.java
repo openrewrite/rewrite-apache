@@ -18,17 +18,12 @@ package org.openrewrite.apache.httpclient5;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.jspecify.annotations.Nullable;
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Option;
-import org.openrewrite.Preconditions;
-import org.openrewrite.Recipe;
-import org.openrewrite.TreeVisitor;
+import org.openrewrite.*;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 import java.util.concurrent.TimeUnit;
@@ -50,14 +45,14 @@ public class ChangeArgumentToTimeValue extends Recipe {
 
     @Override
     public String getDisplayName() {
-        return "Changes an argument to a TimeValue for matched method invocations";
+        return "Changes an argument to a `TimeValue` for matched method invocations";
     }
 
     @Override
     public String getDescription() {
-        return "In Apache Http Client 5.x migration, some methods that previously took a single long argument have changed to take a TimeValue. " +
+        return "In Apache Http Client 5.x migration, some methods that previously took a single long argument have changed to take a `TimeValue`. " +
                 "Previously in 4.x, all these methods were implicitly having the value expressed in milliseconds. By default this recipe uses " +
-                "`TimeUnit.MILLISECONDS` for the TimeUnit when creating a TimeValue. It is possible to specify this as a parameter. Since all " +
+                "`TimeUnit.MILLISECONDS` for the `TimeUnit` when creating a `TimeValue`. It is possible to specify this as a parameter. Since all " +
                 "affected methods of the Apache Http Client 5.x migration only have one long argument, the recipe applies with matched method " +
                 "invocations of exactly one parameter.";
     }
@@ -70,20 +65,19 @@ public class ChangeArgumentToTimeValue extends Recipe {
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
                 if (matcher.matches(m) && m.getArguments().size() == 1) {
-                    JavaTemplate template = JavaTemplate
+                    maybeAddImport("org.apache.hc.core5.util.TimeValue");
+                    maybeAddImport("java.util.concurrent.TimeUnit");
+                    return JavaTemplate
                             .builder("TimeValue.of(#{any()}, TimeUnit.#{})")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
                             .imports("org.apache.hc.core5.util.TimeValue", "java.util.concurrent.TimeUnit")
-                            .build();
-                    Expression firstArg = m.getArguments().get(0);
-                    m = template.apply(
-                            updateCursor(m),
-                            m.getCoordinates().replaceArguments(),
-                            firstArg,
-                            timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
-                    );
-                    maybeAddImport("org.apache.hc.core5.util.TimeValue");
-                    maybeAddImport("java.util.concurrent.TimeUnit");
+                            .build()
+                            .apply(
+                                    updateCursor(m),
+                                    m.getCoordinates().replaceArguments(),
+                                    m.getArguments().get(0),
+                                    timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
+                            );
                 }
                 return m;
             }

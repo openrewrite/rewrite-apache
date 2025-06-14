@@ -16,11 +16,11 @@
 package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
-import org.openrewrite.test.SourceSpecs;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,33 +30,33 @@ class ChangeArgumentToTimeValueTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpcore5"));
+        spec.parser(JavaParser.fromJavaVersion()
+          .classpathFromResources(new InMemoryExecutionContext(), "httpcore5")
+          //language=java
+          .dependsOn(
+            """
+            import org.apache.hc.core5.util.TimeValue;
+
+            class A {
+                private TimeValue storedValue;
+
+                void method(long value) {
+                    storedValue = TimeValue.ofMilliseconds(value);
+                }
+
+                void method(TimeValue value) {
+                    storedValue = value;
+                }
+            }
+            """
+          ));
     }
 
-    //language=java
-    private static final SourceSpecs stubCode = java(
-      """
-        import org.apache.hc.core5.util.TimeValue;
-
-        class A {
-            private TimeValue storedValue;
-
-            void method(long value) {
-                storedValue = TimeValue.ofMilliseconds(value);
-            }
-
-            void method(TimeValue value) {
-                storedValue = value;
-            }
-        }
-        """
-    );
-
+    @DocumentExample
     @Test
     void changeArgumentToTimeValueDefaultMilliseconds() {
         rewriteRun(
           spec -> spec.recipe(new ChangeArgumentToTimeValue("A method(long)", null)),
-          stubCode,
           //language=java
           java(
             """
@@ -87,7 +87,6 @@ class ChangeArgumentToTimeValueTest implements RewriteTest {
     void changeArgumentToTimeValueWithTimeUnitProvided() {
         rewriteRun(
           spec -> spec.recipe(new ChangeArgumentToTimeValue("A method(long)", TimeUnit.SECONDS)),
-          stubCode,
           //language=java
           java(
             """

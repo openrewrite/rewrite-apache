@@ -698,6 +698,34 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient5.ChangeArgumentToTimeValue
+examples:
+- description: ''
+  parameters:
+  - A method(long)
+  - 'null'
+  sources:
+  - before: |
+      class B {
+          void test() {
+              A a = new A();
+              a.method(100);
+          }
+      }
+    after: |
+      import org.apache.hc.core5.util.TimeValue;
+
+      import java.util.concurrent.TimeUnit;
+
+      class B {
+          void test() {
+              A a = new A();
+              a.method(TimeValue.of(100, TimeUnit.MILLISECONDS));
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.MigrateStringEntityStringCharsetConstructor
 examples:
 - description: ''
@@ -729,66 +757,6 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5
 examples:
-- description: ''
-  sources:
-  - before: |
-      import org.apache.http.HttpEntity;
-      import org.apache.http.client.methods.HttpGet;
-      import org.apache.http.client.methods.HttpUriRequest;
-      import org.apache.http.entity.ContentType;
-      import org.apache.http.entity.mime.MinimalField;
-      import org.apache.http.entity.mime.MultipartEntityBuilder;
-      import org.apache.http.entity.mime.content.StringBody;
-      import org.apache.http.util.EntityUtils;
-
-      class A {
-          void method(HttpEntity entity, String urlStr) throws Exception {
-              HttpUriRequest getRequest = new HttpGet(urlStr);
-              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
-              MinimalField field = new MinimalField("A", "B");
-              EntityUtils.consume(entity);
-          }
-      }
-    after: |
-      import org.apache.hc.core5.http.ContentType;
-      import org.apache.hc.core5.http.io.entity.EntityUtils;
-      import org.apache.hc.core5.http.HttpEntity;
-      import org.apache.hc.client5.http.classic.methods.HttpGet;
-      import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
-      import org.apache.hc.client5.http.entity.mime.MimeField;
-      import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-      import org.apache.hc.client5.http.entity.mime.StringBody;
-
-      class A {
-          void method(HttpEntity entity, String urlStr) throws Exception {
-              HttpUriRequest getRequest = new HttpGet(urlStr);
-              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
-              MimeField field = new MimeField("A", "B");
-              EntityUtils.consume(entity);
-          }
-      }
-    language: java
-- description: ''
-  sources:
-  - before: |
-      import org.apache.http.auth.AuthScope;
-
-      class A {
-          void method() {
-              AuthScope any = AuthScope.ANY;
-          }
-      }
-    after: |
-      import org.apache.hc.client5.http.auth.AuthScope;
-
-      class A {
-          void method() {
-              AuthScope any = new AuthScope(null, -1);
-          }
-      }
-    language: java
 - description: ''
   sources:
   - before: |
@@ -887,6 +855,115 @@ examples:
               String c1 = StandardCookieSpec.IGNORE;
               String c2 = StandardCookieSpec.RELAXED;
               String c3 = StandardCookieSpec.STRICT;
+          }
+      }
+    language: java
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.HttpEntity;
+      import org.apache.http.client.methods.HttpGet;
+      import org.apache.http.client.methods.HttpUriRequest;
+      import org.apache.http.entity.ContentType;
+      import org.apache.http.entity.mime.MinimalField;
+      import org.apache.http.entity.mime.MultipartEntityBuilder;
+      import org.apache.http.entity.mime.content.StringBody;
+      import org.apache.http.util.EntityUtils;
+
+      class A {
+          void method(HttpEntity entity, String urlStr) throws Exception {
+              HttpUriRequest getRequest = new HttpGet(urlStr);
+              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+              MinimalField field = new MinimalField("A", "B");
+              EntityUtils.consume(entity);
+          }
+      }
+    after: |
+      import org.apache.hc.core5.http.ContentType;
+      import org.apache.hc.core5.http.io.entity.EntityUtils;
+      import org.apache.hc.core5.http.HttpEntity;
+      import org.apache.hc.client5.http.classic.methods.HttpGet;
+      import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+      import org.apache.hc.client5.http.entity.mime.MimeField;
+      import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+      import org.apache.hc.client5.http.entity.mime.StringBody;
+
+      class A {
+          void method(HttpEntity entity, String urlStr) throws Exception {
+              HttpUriRequest getRequest = new HttpGet(urlStr);
+              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+              MimeField field = new MimeField("A", "B");
+              EntityUtils.consume(entity);
+          }
+      }
+    language: java
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.auth.AuthScope;
+
+      class A {
+          void method() {
+              AuthScope any = AuthScope.ANY;
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.auth.AuthScope;
+
+      class A {
+          void method() {
+              AuthScope any = new AuthScope(null, -1);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
+examples:
+- description: ''
+  sources:
+  - before: |
+      import org.apache.http.impl.nio.reactor.IOReactorConfig;
+      import org.apache.http.impl.nio.reactor.IOReactorConfig.Builder;
+
+      class A {
+          void method() {
+              IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+              builder.setSelectInterval(500);
+              builder.setShutdownGracePeriod(400);
+              builder.setInterestOpQueued(true);
+              builder.setSoTimeout(300);
+              builder.setSoLinger(200);
+              builder.setConnectTimeout(100);
+              IOReactorConfig ioReactorConfig = builder.build();
+              long selectInterval = ioReactorConfig.getSelectInterval();
+              ioReactorConfig.getShutdownGracePeriod();
+              ioReactorConfig.isInterestOpQueued();
+              int soTimeout = ioReactorConfig.getSoTimeout();
+              int soLinger = ioReactorConfig.getSoLinger();
+              ioReactorConfig.getConnectTimeout();
+          }
+      }
+    after: |
+      import org.apache.hc.core5.reactor.IOReactorConfig;
+      import org.apache.hc.core5.reactor.IOReactorConfig.Builder;
+      import org.apache.hc.core5.util.TimeValue;
+      import org.apache.hc.core5.util.Timeout;
+
+      import java.util.concurrent.TimeUnit;
+
+      class A {
+          void method() {
+              IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+              builder.setSelectInterval(TimeValue.of(500, TimeUnit.MILLISECONDS));
+              builder.setSoTimeout(300, TimeUnit.MILLISECONDS);
+              builder.setSoLinger(200, TimeUnit.MILLISECONDS);
+              IOReactorConfig ioReactorConfig = builder.build();
+              TimeValue selectInterval = ioReactorConfig.getSelectInterval();
+              Timeout soTimeout = ioReactorConfig.getSoTimeout();
+              TimeValue soLinger = ioReactorConfig.getSoLinger();
           }
       }
     language: java
