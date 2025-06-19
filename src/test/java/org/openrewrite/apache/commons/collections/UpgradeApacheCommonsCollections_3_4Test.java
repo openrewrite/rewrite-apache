@@ -22,7 +22,12 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.maven.Assertions.pomXml;
 
 class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Override
@@ -97,6 +102,56 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
               import org.apache.commons.collections4.map.HashedMap;
               class Test {}
               """
+          )
+        );
+    }
+
+    @Test
+    void migrateDependencies() {
+        rewriteRun(
+          //language=xml
+          pomXml(
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <properties>
+                      <commons-collections.version>3.2.2</commons-collections.version>
+                  </properties>
+                  <dependencies>
+                      <dependency>
+                          <groupId>commons-collections</groupId>
+                          <artifactId>commons-collections</artifactId>
+                          <version>${commons-collections.version}</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
+            spec -> spec.after(pom -> {
+                Matcher version = Pattern.compile("4\\.5\\.\\d+").matcher(pom);
+                assertThat(version.find()).describedAs("Expected 4.5.x in %s", pom).isTrue();
+                //language=xml
+                return """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                      <properties>
+                          <commons-collections.version>%s</commons-collections.version>
+                      </properties>
+                      <dependencies>
+                          <dependency>
+                              <groupId>org.apache.commons</groupId>
+                              <artifactId>commons-collections4</artifactId>
+                              <version>${commons-collections.version}</version>
+                          </dependency>
+                      </dependencies>
+                  </project>
+                  """.formatted(version.group(0));
+            })
           )
         );
     }
