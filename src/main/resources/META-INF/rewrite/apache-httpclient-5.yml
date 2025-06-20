@@ -109,7 +109,14 @@ recipeList:
       methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer shutdown()
       newMethodName: abort
   # TODO: remove flush() calls
-
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.ContentInputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.ContentInputBuffer
+  - org.openrewrite.java.ChangeTyp:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.ContentOutputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.ContentOutputBuffer
+  # TODO: remove references to org.apache.http.nio.util.SimpleInputBuffer
+  # TODO: remove references to org.apache.http.nio.util.SimpleOutputBuffer
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
