@@ -34,6 +34,7 @@ dependencies {
 
     implementation("commons-io:commons-io:2.+")
     implementation("org.apache.commons:commons-lang3:3.+")
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.5+")
     implementation("org.apache.maven.shared:maven-shared-utils:3.+")
     implementation("org.codehaus.plexus:plexus-utils:3.+")
 
