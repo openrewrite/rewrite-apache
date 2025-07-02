@@ -61,18 +61,8 @@ recipeList:
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
   - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
-  - org.openrewrite.apache.httpclient5.MigrateSchemeFactoriesRecipesWrapper
----
-type: specs.openrewrite.org/v1beta/recipe
-name: org.openrewrite.apache.httpclient5.MigrateSchemeFactoriesRecipesWrapper
-displayName: Removes the charset argument from `BasicSchemeFactory()` and `DigestSchemeFactory()` constructor calls
-description: RFC 7616 and 7617 mandates the use of UTF-8. Those constructors are now deprecated and httpclient v5 ignores any provided charset, ensuring that only UTF-8 is used.
-preconditions:
-  - org.openrewrite.apache.httpclient5.MigrateSchemeFactoriesRecipes
-
-recipeList:
-  - org.openrewrite.apache.httpclient5.MigrateSchemeFactoriesRecipes
-  - org.openrewrite.java.RemoveUnusedImports
+  - org.openrewrite.apache.httpclient5.MigrateBasicSchemeFactory
+  - org.openrewrite.apache.httpclient5.MigrateDigestSchemeFactory
 
 ---
 type: specs.openrewrite.org/v1beta/recipe
@@ -649,3 +639,31 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.client.CredentialsProvider
       newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.CredentialsStore
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.MigrateBasicSchemeFactory
+displayName: Removes the charset argument from `BasicSchemeFactory()` constructor calls
+description: RFC 7617 mandates the use of UTF-8. This constructor is now deprecated and httpclient v5 ignores any provided charset, ensuring that only UTF-8 is used.
+preconditions:
+  - org.openrewrite.java.search.FindMethods:
+      methodPattern: org.apache.hc.client5.http.impl.auth.BasicSchemeFactory <constructor>(java.nio.charset.Charset)
+
+recipeList:
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.client5.http.impl.auth.BasicSchemeFactory <constructor>(java.nio.charset.Charset)
+      argumentIndex: 0
+  - org.openrewrite.java.RemoveUnusedImports
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.MigrateDigestSchemeFactory
+displayName: Removes the charset argument from `DigestSchemeFactory()` constructor calls
+description: RFC 7616 mandates the use of UTF-8. This constructor is now deprecated and httpclient v5 ignores any provided charset, ensuring that only UTF-8 is used.
+preconditions:
+  - org.openrewrite.java.search.FindMethods:
+      methodPattern: org.apache.hc.client5.http.impl.auth.DigestSchemeFactory <constructor>(java.nio.charset.Charset)
+
+recipeList:
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.client5.http.impl.auth.DigestSchemeFactory <constructor>(java.nio.charset.Charset)
+      argumentIndex: 0
+  - org.openrewrite.java.RemoveUnusedImports
