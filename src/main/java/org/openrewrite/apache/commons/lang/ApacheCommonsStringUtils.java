@@ -335,7 +335,9 @@ public class ApacheCommonsStringUtils {
     //}
 
     // NOTE: not sure if accurate replacement
-    @SuppressWarnings("ConstantValue")
+    @RecipeDescriptor(
+            name = "Replace `StringUtils.lowerCase(String)` with JDK provided API",
+            description = "Replace Apache Commons `StringUtils.lowerCase(String str)` with JDK provided API.")
     //public static class Left {
     //    @BeforeTemplate
     //    String before(String s, int l) {
@@ -348,9 +350,7 @@ public class ApacheCommonsStringUtils {
     //    }
     //}
 
-    @RecipeDescriptor(
-            name = "Replace `StringUtils.lowerCase(String)` with JDK provided API",
-            description = "Replace Apache Commons `StringUtils.lowerCase(String str)` with JDK provided API.")
+    @SuppressWarnings("ConstantValue")
     public static class Lowercase {
         @BeforeTemplate
         String before(@Matches(RepeatableArgumentMatcher.class) String s) {

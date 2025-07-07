@@ -37,8 +37,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping");
     }
 
-    @Test
     @DocumentExample
+    @Test
     void migratesIOReactorConfig() {
         rewriteRun(
           //language=java

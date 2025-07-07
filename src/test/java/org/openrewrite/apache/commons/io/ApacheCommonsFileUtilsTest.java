@@ -30,8 +30,8 @@ class ApacheCommonsFileUtilsTest implements RewriteTest {
           .recipe(new ApacheCommonsFileUtilsRecipes());
     }
 
-    @Test
     @DocumentExample
+    @Test
     void ubertest() {
         rewriteRun(
           //language=java

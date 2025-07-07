@@ -32,8 +32,8 @@ class AbstractLogEnabledToSlf4jTest implements RewriteTest {
           .parser(JavaParser.fromJavaVersion().classpath( "plexus-container-default"));
     }
 
-    @Test
     @DocumentExample
+    @Test
     void addAndUseLoggerField() {
         rewriteRun(
           //language=java

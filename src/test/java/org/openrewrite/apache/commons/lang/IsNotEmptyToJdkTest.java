@@ -34,8 +34,8 @@ class IsNotEmptyToJdkTest implements RewriteTest {
           .recipe(new IsNotEmptyToJdk());
     }
 
-    @Test
     @DocumentExample
+    @Test
     void exampleUse() {
         rewriteRun(
           // language=java
@@ -105,7 +105,6 @@ class IsNotEmptyToJdkTest implements RewriteTest {
         );
     }
 
-    @ParameterizedTest
     @CsvSource(delimiter = '#', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(first) # first == null || first.isEmpty()
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(field) # field == null || field.isEmpty()
@@ -116,6 +115,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
       org.codehaus.plexus.util.StringUtils # StringUtils.isEmpty(first) # first == null || first.isEmpty()
       org.codehaus.plexus.util.StringUtils # StringUtils.isNotEmpty(first) # first != null && !first.isEmpty()
       """)
+    @ParameterizedTest
     void replaceDirectUse(String classname, String beforeLine, String afterLine) {
         // language=java
         rewriteRun(
@@ -140,7 +140,6 @@ class IsNotEmptyToJdkTest implements RewriteTest {
               """.formatted(afterLine)));
     }
 
-    @ParameterizedTest
     @CsvSource(delimiter = '#', textBlock = """
       org.apache.commons.lang3.StringUtils # !StringUtils.isEmpty(first) # !(first == null || first.isEmpty())
       org.apache.commons.lang3.StringUtils # !StringUtils.isNotEmpty(first) # !(first != null && !first.isEmpty())
@@ -151,6 +150,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
       org.codehaus.plexus.util.StringUtils # !StringUtils.isEmpty(first) # !(first == null || first.isEmpty())
       org.codehaus.plexus.util.StringUtils # !StringUtils.isNotEmpty(first) # !(first != null && !first.isEmpty())
       """)
+    @ParameterizedTest
     void replaceNegated(String classname, String beforeLine, String afterLine) {
         // language=java
         rewriteRun(
@@ -208,7 +208,6 @@ class IsNotEmptyToJdkTest implements RewriteTest {
         );
     }
 
-    @ParameterizedTest
     @CsvSource(delimiter = '#', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(foo())
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(first + second)
@@ -217,6 +216,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
       org.apache.maven.shared.utils.StringUtils # StringUtils.isEmpty(foo())
       org.codehaus.plexus.util.StringUtils # StringUtils.isEmpty(foo())
       """)
+    @ParameterizedTest
     void retainComplexUse(String classname, String beforeLine) {
         // language=java
         rewriteRun(

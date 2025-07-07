@@ -88,8 +88,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
         );
     }
 
-    @Test
     @Issue("https://github.com/openrewrite/rewrite-apache/issues/55")
+    @Test
     void hashedMap() {
         rewriteRun(
           //language=java

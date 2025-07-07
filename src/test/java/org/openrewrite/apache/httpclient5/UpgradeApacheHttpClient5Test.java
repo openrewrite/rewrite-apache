@@ -510,8 +510,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         );
     }
 
-    @Test
     @Issue("https://github.com/openrewrite/rewrite-apache/issues/58")
+    @Test
     void setRetryHandlerToSetRetryStrategy() {
         rewriteRun(
           //language=java

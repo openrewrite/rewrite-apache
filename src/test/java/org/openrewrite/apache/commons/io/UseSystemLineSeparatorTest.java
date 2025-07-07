@@ -89,8 +89,8 @@ class UseSystemLineSeparatorTest implements RewriteTest {
         );
     }
 
-    @Test
     @Issue("https://github.com/openrewrite/rewrite-migrate-java/issues/54")
+    @Test
     void migratesFieldInitializer() {
         //language=java
         rewriteRun(

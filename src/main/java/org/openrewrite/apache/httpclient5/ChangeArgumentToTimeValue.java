@@ -28,8 +28,8 @@ import org.openrewrite.java.tree.J;
 
 import java.util.concurrent.TimeUnit;
 
-@Value
 @EqualsAndHashCode(callSuper = false)
+@Value
 public class ChangeArgumentToTimeValue extends Recipe {
     @Option(displayName = "Method pattern",
             description = "A method pattern that is used to find matching method invocations.",

@@ -28,8 +28,8 @@ import org.openrewrite.java.tree.J;
 
 import java.util.*;
 
-@Value
 @EqualsAndHashCode(callSuper = false)
+@Value
 public class ApacheIOUtilsUseExplicitCharset extends Recipe {
 
     private static final Map<MethodMatcher, String> MATCHER_TEMPLATES = new HashMap<>();

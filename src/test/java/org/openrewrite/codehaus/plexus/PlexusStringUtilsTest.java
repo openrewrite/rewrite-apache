@@ -32,8 +32,8 @@ class PlexusStringUtilsTest implements RewriteTest {
           .recipe(new PlexusStringUtilsRecipes());
     }
 
-    @Test
     @DocumentExample
+    @Test
     void ubertest() {
         rewriteRun(
           //language=java

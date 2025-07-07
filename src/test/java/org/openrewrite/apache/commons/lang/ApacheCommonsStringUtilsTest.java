@@ -33,8 +33,8 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
           .recipe(new ApacheCommonsStringUtilsRecipes());
     }
 
-    @Test
     @DocumentExample
+    @Test
     void ubertest() {
         rewriteRun(
           //language=java
@@ -273,8 +273,8 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
         );
     }
 
-    @Test
     @Issue("https://github.com/openrewrite/rewrite-templating/issues/27")
+    @Test
     void inputMethodsNotCalledTwice() {
         rewriteRun(
           //language=java
@@ -302,8 +302,8 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
         );
     }
 
-    @Test
     @Issue("https://github.com/openrewrite/rewrite-templating/issues/27")
+    @Test
     void getterIsCalledTwice() {
         rewriteRun(
           //language=java

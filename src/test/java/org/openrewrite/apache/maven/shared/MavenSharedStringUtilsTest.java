@@ -32,8 +32,8 @@ class MavenSharedStringUtilsTest implements RewriteTest {
           .recipe(new MavenSharedStringUtilsRecipes());
     }
 
-    @Test
     @DocumentExample
+    @Test
     void ubertest() {
         rewriteRun(
           //language=java

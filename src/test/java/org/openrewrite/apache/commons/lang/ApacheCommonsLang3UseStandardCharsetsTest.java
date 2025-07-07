@@ -31,9 +31,9 @@ class ApacheCommonsLang3UseStandardCharsetsTest implements RewriteTest {
           .recipeFromResource("/META-INF/rewrite/apache-commons-lang-3.yml","org.openrewrite.apache.commons.lang3.UseStandardCharsets");
     }
 
+    @DocumentExample
     @SuppressWarnings({"UnusedAssignment", "deprecation"})
     @Test
-    @DocumentExample
     void convertCharEncodingFieldsToJdk() {
         // language=java
         rewriteRun(

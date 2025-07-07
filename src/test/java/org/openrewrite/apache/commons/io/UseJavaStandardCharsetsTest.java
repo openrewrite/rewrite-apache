@@ -32,8 +32,8 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
     }
 
     @DocumentExample
-    @Test
     @SuppressWarnings("deprecation")
+    @Test
     void toStandardCharsets() {
         //language=java
         rewriteRun(
