@@ -29,29 +29,25 @@ tags:
   - httpclient
 recipeList:
   - org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
-  - org.openrewrite.java.dependencies.ChangeDependency:
-      oldGroupId: org.apache.httpcomponents
-      oldArtifactId: httpmime
-      newGroupId: org.apache.httpcomponents.client5
-      newArtifactId: httpclient5
-      newVersion: 5.4.x
-  - org.openrewrite.java.dependencies.ChangeDependency:
-      oldGroupId: org.apache.httpcomponents
-      oldArtifactId: httpclient
-      newGroupId: org.apache.httpcomponents.client5
-      newArtifactId: httpclient5
-      newVersion: 5.4.x
-  - org.openrewrite.java.dependencies.ChangeDependency:
-      oldGroupId: org.apache.httpcomponents
-      oldArtifactId: httpcore
-      newGroupId: org.apache.httpcomponents.core5
-      newArtifactId: httpcore5
-      newVersion: 5.3.x
   - org.openrewrite.java.dependencies.AddDependency:
       groupId: org.apache.httpcomponents.client5
       artifactId: httpclient5
       version: 5.4.x
-      onlyIfUsing: org.apache.http.impl.client.*
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.httpcomponents.core5
+      artifactId: httpcore5
+      version: 5.3.x
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.httpcomponents
+      artifactId: httpclient
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.httpcomponents
+      artifactId: httpmime
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.httpcomponents
+      artifactId: httpcore
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
   - org.openrewrite.maven.RemoveDuplicateDependencies
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
