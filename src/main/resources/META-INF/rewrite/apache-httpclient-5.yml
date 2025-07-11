@@ -70,12 +70,13 @@ name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
 displayName: Migrate to Apache HttpCore Nio Classes to Apache HttpCore 5.x
 description: Mapping of all the compatible classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
 recipeList:
-  - org.openrewrite.java.dependencies.ChangeDependency:
-      oldGroupId: org.apache.httpcomponents
-      oldArtifactId: httpcore-nio
-      newGroupId: org.apache.httpcomponents.core5
-      newArtifactId: httpcore5
-      newVersion: 5.3.x
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.httpcomponents.core5
+      artifactId: httpcore5
+      version: 5.3.x
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.httpcomponents
+      artifactId: httpcore-nio
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.IOReactorConfig
       newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactorConfig
