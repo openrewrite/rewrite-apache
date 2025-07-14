@@ -148,61 +148,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
-    void migrateDependenciesWhenTwoBecomeOne() {
-        rewriteRun(
-          pomXml(
-            //language=xml
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-                  <dependencies>
-                      <dependency>
-                          <groupId>org.apache.httpcomponents</groupId>
-                          <artifactId>httpmime</artifactId>
-                          <version>4.5.14</version>
-                      </dependency>
-                      <dependency>
-                          <groupId>org.apache.httpcomponents</groupId>
-                          <artifactId>httpclient</artifactId>
-                          <version>4.5.14</version>
-                      </dependency>
-                  </dependencies>
-              </project>
-              """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
-                String httpClientVersion = version.group();
-                assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
-                String httpCoreVersion = version.group();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.client5</groupId>
-                              <artifactId>httpclient5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.core5</groupId>
-                              <artifactId>httpcore5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(httpClientVersion, httpCoreVersion);
-            })));
-    }
-
-    @Test
     void migrateDependencies() {
         rewriteRun(
           pomXml(
@@ -219,17 +164,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           <artifactId>httpmime</artifactId>
                           <version>4.5.14</version>
                       </dependency>
-                  </dependencies>
-              </project>
-              """,
-            //language=xml
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-                  <dependencies>
                       <dependency>
                           <groupId>org.apache.httpcomponents</groupId>
                           <artifactId>httpclient</artifactId>
