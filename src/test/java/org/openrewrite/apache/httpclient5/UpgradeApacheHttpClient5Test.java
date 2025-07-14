@@ -173,8 +173,11 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               </project>
               """,
             spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
                 assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                String httpClientVersion = version.group();
+                assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
+                String httpCoreVersion = version.group();
                 //language=xml
                 return """
                   <project>
@@ -188,9 +191,14 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                               <artifactId>httpclient5</artifactId>
                               <version>%s</version>
                           </dependency>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents.core5</groupId>
+                              <artifactId>httpcore5</artifactId>
+                              <version>%s</version>
+                          </dependency>
                       </dependencies>
                   </project>
-                  """.formatted(version.group(0));
+                  """.formatted(httpClientVersion, httpCoreVersion);
             })));
     }
 
@@ -231,8 +239,11 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               </project>
               """,
             spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
                 assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                String httpClientVersion = version.group();
+                assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
+                String httpCoreVersion = version.group();
                 //language=xml
                 return """
                   <project>
@@ -246,9 +257,14 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                               <artifactId>httpclient5</artifactId>
                               <version>%s</version>
                           </dependency>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents.core5</groupId>
+                              <artifactId>httpcore5</artifactId>
+                              <version>%s</version>
+                          </dependency>
                       </dependencies>
                   </project>
-                  """.formatted(version.group(0));
+                  """.formatted(httpClientVersion, httpCoreVersion);
             })));
     }
 
@@ -756,8 +772,11 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                 </project>
                 """,
               spec -> spec.after(pom -> {
-                  Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                  Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
                   assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                  String httpClientVersion = version.group();
+                  assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
+                  String httpCoreVersion = version.group();
                   return """
                     <project>
                         <modelVersion>4.0.0</modelVersion>
@@ -771,13 +790,18 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                                 <version>%s</version>
                             </dependency>
                             <dependency>
+                                <groupId>org.apache.httpcomponents.core5</groupId>
+                                <artifactId>httpcore5</artifactId>
+                                <version>%s</version>
+                            </dependency>
+                            <dependency>
                                 <groupId>org.apache.solr</groupId>
                                 <artifactId>solr-solrj</artifactId>
                                 <version>8.11.3</version>
                             </dependency>
                         </dependencies>
                     </project>
-                    """.formatted(version.group(0));
+                    """.formatted(httpClientVersion, httpCoreVersion);
               }))));
     }
 
@@ -796,6 +820,11 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       <dependency>
                           <groupId>org.apache.httpcomponents.client5</groupId>
                           <artifactId>httpclient5</artifactId>
+                          <version>5.1</version>
+                      </dependency>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents.core5</groupId>
+                          <artifactId>httpcore5</artifactId>
                           <version>5.1</version>
                       </dependency>
                   </dependencies>
@@ -858,30 +887,30 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             pomXml(
               //language=xml
               """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <groupId>org.example</groupId>
-                    <artifactId>parent</artifactId>
-                    <version>1.0.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.httpcomponents</groupId>
-                            <artifactId>httpmime</artifactId>
-                            <version>4.5.14</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.httpcomponents</groupId>
-                            <artifactId>httpclient</artifactId>
-                            <version>4.5.14</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.httpcomponents</groupId>
-                            <artifactId>httpcore</artifactId>
-                            <version>4.4.16</version>
-                        </dependency>
-                    </dependencies>
-                </project>
-                """,
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>parent</artifactId>
+                  <version>1.0.0</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpmime</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpclient</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpcore</artifactId>
+                          <version>4.4.16</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
               SourceSpec::skip
             )
           ),
@@ -889,19 +918,19 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             pomXml(
               //language=xml
               """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <groupId>org.example</groupId>
-                    <artifactId>example</artifactId>
-                    <version>1.0.0</version>
-                    <parent>
-                        <groupId>org.example</groupId>
-                        <artifactId>parent</artifactId>
-                        <version>1.0.0</version>
-                        <relativePath>../pom.xml</relativePath>
-                    </parent>
-                </project>
-                """,
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+                  <parent>
+                      <groupId>org.example</groupId>
+                      <artifactId>parent</artifactId>
+                      <version>1.0.0</version>
+                      <relativePath>../pom.xml</relativePath>
+                  </parent>
+              </project>
+              """,
               spec -> spec.after(pom -> {
                   Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
                   assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
@@ -910,31 +939,31 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   String httpCoreVersion = version.group();
                   //language=xml
                   return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <parent>
-                          <groupId>org.example</groupId>
-                          <artifactId>parent</artifactId>
-                          <version>1.0.0</version>
-                          <relativePath>../pom.xml</relativePath>
-                      </parent>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.client5</groupId>
-                              <artifactId>httpclient5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.core5</groupId>
-                              <artifactId>httpcore5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(httpClientVersion, httpCoreVersion);
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <parent>
+                            <groupId>org.example</groupId>
+                            <artifactId>parent</artifactId>
+                            <version>1.0.0</version>
+                            <relativePath>../pom.xml</relativePath>
+                        </parent>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents.client5</groupId>
+                                <artifactId>httpclient5</artifactId>
+                                <version>%s</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents.core5</groupId>
+                                <artifactId>httpcore5</artifactId>
+                                <version>%s</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """.formatted(httpClientVersion, httpCoreVersion);
               })
             )
           )
@@ -944,61 +973,82 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void migrateTransitiveDep() {
         rewriteRun(
-          mavenProject("parent",
+          mavenProject("aggregate",
             pomXml(
               //language=xml
               """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <groupId>org.example</groupId>
-                    <artifactId>parent</artifactId>
-                    <version>1.0.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.httpcomponents</groupId>
-                            <artifactId>httpmime</artifactId>
-                            <version>4.5.14</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.httpcomponents</groupId>
-                            <artifactId>httpclient</artifactId>
-                            <version>4.5.14</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.httpcomponents</groupId>
-                            <artifactId>httpcore</artifactId>
-                            <version>4.4.16</version>
-                        </dependency>
-                    </dependencies>
-                </project>
-                """,
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+
+                  <groupId>org.example</groupId>
+                  <artifactId>aggregate</artifactId>
+                  <version>1.0.0</version>
+                  <packaging>pom</packaging>
+
+                  <modules>
+                      <module>dependencies</module>
+                      <module>dependant</module>
+                  </modules>
+              </project>
+              """,
               SourceSpec::skip
             )
           ),
-          mavenProject("child",
+          mavenProject("dependencies",
             pomXml(
               //language=xml
               """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <groupId>org.example</groupId>
-                    <artifactId>example</artifactId>
-                    <version>1.0.0</version>
-                    <parent>
-                        <groupId>org.example</groupId>
-                        <artifactId>parent</artifactId>
-                        <version>1.0.0</version>
-                        <relativePath>../pom.xml</relativePath>
-                    </parent>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.example</groupId>
-                            <artifactId>parent</artifactId>
-                            <version>1.0.0</version>
-                        </dependency>
-                    </dependencies>
-                </project>
-                """,
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <artifactId>dependencies</artifactId>
+                  <parent>
+                      <groupId>org.example</groupId>
+                      <artifactId>aggregate</artifactId>
+                      <version>1.0.0</version>
+                  </parent>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpmime</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpclient</artifactId>
+                          <version>4.5.14</version>
+                      </dependency>
+                      <dependency>
+                          <groupId>org.apache.httpcomponents</groupId>
+                          <artifactId>httpcore</artifactId>
+                          <version>4.4.16</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
+              SourceSpec::skip
+            )
+          ),
+          mavenProject("dependant",
+            pomXml(
+              //language=xml
+              """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <artifactId>dependant</artifactId>
+                  <parent>
+                      <groupId>org.example</groupId>
+                      <artifactId>aggregate</artifactId>
+                      <version>1.0.0</version>
+                  </parent>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.example</groupId>
+                          <artifactId>dependencies</artifactId>
+                          <version>1.0.0</version>
+                      </dependency>
+                  </dependencies>
+              </project>
+              """,
               spec -> spec.after(pom -> {
                   Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
                   assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
@@ -1007,36 +1057,33 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   String httpCoreVersion = version.group();
                   //language=xml
                   return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <parent>
-                          <groupId>org.example</groupId>
-                          <artifactId>parent</artifactId>
-                          <version>1.0.0</version>
-                          <relativePath>../pom.xml</relativePath>
-                      </parent>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.client5</groupId>
-                              <artifactId>httpclient5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.core5</groupId>
-                              <artifactId>httpcore5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.example</groupId>
-                              <artifactId>parent</artifactId>
-                              <version>1.0.0</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(httpClientVersion, httpCoreVersion);
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <artifactId>dependant</artifactId>
+                        <parent>
+                            <groupId>org.example</groupId>
+                            <artifactId>aggregate</artifactId>
+                            <version>1.0.0</version>
+                        </parent>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents.client5</groupId>
+                                <artifactId>httpclient5</artifactId>
+                                <version>%s</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents.core5</groupId>
+                                <artifactId>httpcore5</artifactId>
+                                <version>%s</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.example</groupId>
+                                <artifactId>dependencies</artifactId>
+                                <version>1.0.0</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """.formatted(httpClientVersion, httpCoreVersion);
               })
             )
           )
