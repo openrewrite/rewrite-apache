@@ -908,4 +908,21 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
             );
         }
     }
+
+    @Test
+    void onlyAddDependencyWhenApplicable() {
+        rewriteRun(
+          pomXml(
+            //language=xml
+            """
+              <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>org.example</groupId>
+                  <artifactId>example</artifactId>
+                  <version>1.0.0</version>
+              </project>
+              """
+          )
+        );
+    }
 }
