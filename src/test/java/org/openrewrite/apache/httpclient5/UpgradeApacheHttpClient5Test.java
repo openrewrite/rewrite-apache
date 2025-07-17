@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.httpclient5;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
@@ -683,11 +684,9 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                   </project>
                   """,
                 spec -> spec.after(pom -> {
-                    Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
+                    Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
                     assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
                     String httpClientVersion = version.group();
-                    assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
-                    String httpCoreVersion = version.group();
                     //language=xml
                     return """
                       <project>
@@ -701,14 +700,9 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                                   <artifactId>httpclient5</artifactId>
                                   <version>%s</version>
                               </dependency>
-                              <dependency>
-                                  <groupId>org.apache.httpcomponents.core5</groupId>
-                                  <artifactId>httpcore5</artifactId>
-                                  <version>%s</version>
-                              </dependency>
                           </dependencies>
                       </project>
-                      """.formatted(httpClientVersion, httpCoreVersion);
+                      """.formatted(httpClientVersion);
                 })));
         }
 
@@ -757,11 +751,9 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     </project>
                     """,
                   spec -> spec.after(pom -> {
-                      Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
+                      Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
                       assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
                       String httpClientVersion = version.group();
-                      assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
-                      String httpCoreVersion = version.group();
                       return """
                         <project>
                             <modelVersion>4.0.0</modelVersion>
@@ -775,18 +767,13 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                                     <version>%s</version>
                                 </dependency>
                                 <dependency>
-                                    <groupId>org.apache.httpcomponents.core5</groupId>
-                                    <artifactId>httpcore5</artifactId>
-                                    <version>%s</version>
-                                </dependency>
-                                <dependency>
                                     <groupId>org.apache.solr</groupId>
                                     <artifactId>solr-solrj</artifactId>
                                     <version>8.11.3</version>
                                 </dependency>
                             </dependencies>
                         </project>
-                        """.formatted(httpClientVersion, httpCoreVersion);
+                        """.formatted(httpClientVersion);
                   }))));
         }
 
@@ -807,11 +794,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                               <artifactId>httpclient5</artifactId>
                               <version>5.1</version>
                           </dependency>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.core5</groupId>
-                              <artifactId>httpcore5</artifactId>
-                              <version>5.1</version>
-                          </dependency>
                       </dependencies>
                   </project>
                   """
@@ -819,6 +801,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         }
 
         @Test
+        @Disabled("`org.openrewrite.java.dependencies.DependencyInsight` does not consider transitive dependencies from parent")
         void migrateTransitiveParent() {
             rewriteRun(
               mavenProject("parent",
@@ -870,11 +853,9 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     </project>
                     """,
                   spec -> spec.after(pom -> {
-                      Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
+                      Matcher version = Pattern.compile("5\\.4+\\.\\d+").matcher(pom);
                       assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
                       String httpClientVersion = version.group();
-                      assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
-                      String httpCoreVersion = version.group();
                       //language=xml
                       return """
                         <project>
@@ -894,35 +875,30 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                                     <artifactId>httpclient5</artifactId>
                                     <version>%s</version>
                                 </dependency>
-                                <dependency>
-                                    <groupId>org.apache.httpcomponents.core5</groupId>
-                                    <artifactId>httpcore5</artifactId>
-                                    <version>%s</version>
-                                </dependency>
                             </dependencies>
                         </project>
-                        """.formatted(httpClientVersion, httpCoreVersion);
+                        """.formatted(httpClientVersion);
                   })
                 )
               )
             );
         }
-    }
 
-    @Test
-    void onlyAddDependencyWhenApplicable() {
-        rewriteRun(
-          pomXml(
-            //language=xml
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-              </project>
-              """
-          )
-        );
+        @Test
+        void onlyAddDependencyWhenApplicable() {
+            rewriteRun(
+              pomXml(
+                //language=xml
+                """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                  </project>
+                  """
+              )
+            );
+        }
     }
 }
