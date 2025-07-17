@@ -800,8 +800,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               ));
         }
 
-        @Test
         @Disabled("`org.openrewrite.java.dependencies.DependencyInsight` does not consider transitive dependencies from parent")
+        @Test
         void migrateTransitiveParent() {
             rewriteRun(
               mavenProject("parent",
