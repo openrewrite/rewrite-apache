@@ -15,6 +15,8 @@
  */
 package org.openrewrite.apache.httpclient5;
 
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
@@ -22,6 +24,7 @@ import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
+import org.openrewrite.test.SourceSpec;
 import org.openrewrite.test.TypeValidation;
 
 import java.util.regex.Matcher;
@@ -144,111 +147,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               """
           )
         );
-    }
-
-    @Test
-    void migrateDependenciesWhenTwoBecomeOne() {
-        rewriteRun(
-          pomXml(
-            //language=xml
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-                  <dependencies>
-                      <dependency>
-                          <groupId>org.apache.httpcomponents</groupId>
-                          <artifactId>httpmime</artifactId>
-                          <version>4.5.14</version>
-                      </dependency>
-                      <dependency>
-                          <groupId>org.apache.httpcomponents</groupId>
-                          <artifactId>httpclient</artifactId>
-                          <version>4.5.14</version>
-                      </dependency>
-                  </dependencies>
-              </project>
-              """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.client5</groupId>
-                              <artifactId>httpclient5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(version.group(0));
-            })));
-    }
-
-    @Test
-    void migrateDependencies() {
-        rewriteRun(
-          pomXml(
-            //language=xml
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-                  <dependencies>
-                      <dependency>
-                          <groupId>org.apache.httpcomponents</groupId>
-                          <artifactId>httpmime</artifactId>
-                          <version>4.5.14</version>
-                      </dependency>
-                  </dependencies>
-              </project>
-              """,
-            //language=xml
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-                  <dependencies>
-                      <dependency>
-                          <groupId>org.apache.httpcomponents</groupId>
-                          <artifactId>httpclient</artifactId>
-                          <version>4.5.14</version>
-                      </dependency>
-                  </dependencies>
-              </project>
-              """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.client5</groupId>
-                              <artifactId>httpclient5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(version.group(0));
-            })));
     }
 
     @Test
@@ -711,99 +609,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
-    void migrateDependenciesForTransitive() {
-        rewriteRun(
-          mavenProject("project",
-            srcMainJava(
-              //language=java
-              java(
-                """
-                  import org.apache.http.impl.client.CloseableHttpClient;
-                  import org.apache.http.impl.client.HttpClients;
-                  public class A {
-                      CloseableHttpClient getClient() {
-                          return HttpClients.createDefault();
-                      }
-                  }
-                  """,
-                """
-                  import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-                  import org.apache.hc.client5.http.impl.classic.HttpClients;
-                  public class A {
-                      CloseableHttpClient getClient() {
-                          return HttpClients.createDefault();
-                      }
-                  }
-                  """
-              )
-            ),
-            //language=xml
-            pomXml(
-              """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <groupId>org.example</groupId>
-                    <artifactId>example</artifactId>
-                    <version>1.0.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.solr</groupId>
-                            <artifactId>solr-solrj</artifactId>
-                            <version>8.11.3</version>
-                        </dependency>
-                    </dependencies>
-                </project>
-                """,
-              spec -> spec.after(pom -> {
-                  Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                  assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
-                  return """
-                    <project>
-                        <modelVersion>4.0.0</modelVersion>
-                        <groupId>org.example</groupId>
-                        <artifactId>example</artifactId>
-                        <version>1.0.0</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.apache.httpcomponents.client5</groupId>
-                                <artifactId>httpclient5</artifactId>
-                                <version>%s</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.apache.solr</groupId>
-                                <artifactId>solr-solrj</artifactId>
-                                <version>8.11.3</version>
-                            </dependency>
-                        </dependencies>
-                    </project>
-                    """.formatted(version.group(0));
-              }))));
-    }
-
-    @Test
-    void ignoresExistingDependency() {
-        rewriteRun(
-          //language=xml
-          pomXml(
-            """
-              <project>
-                  <modelVersion>4.0.0</modelVersion>
-                  <groupId>org.example</groupId>
-                  <artifactId>example</artifactId>
-                  <version>1.0.0</version>
-                  <dependencies>
-                      <dependency>
-                          <groupId>org.apache.httpcomponents.client5</groupId>
-                          <artifactId>httpclient5</artifactId>
-                          <version>5.1</version>
-                      </dependency>
-                  </dependencies>
-              </project>
-              """
-          ));
-    }
-
-    @Test
     void authSchemeMigrations() {
         rewriteRun(
           //language=java
@@ -848,5 +653,252 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               """
           )
         );
+    }
+
+    @Nested
+    class Dependencies {
+
+        @Test
+        void migrateDependencies() {
+            rewriteRun(
+              pomXml(
+                //language=xml
+                """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                      <dependencies>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents</groupId>
+                              <artifactId>httpmime</artifactId>
+                              <version>4.5.14</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents</groupId>
+                              <artifactId>httpclient</artifactId>
+                              <version>4.5.14</version>
+                          </dependency>
+                      </dependencies>
+                  </project>
+                  """,
+                spec -> spec.after(pom -> {
+                    Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                    assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                    String httpClientVersion = version.group();
+                    //language=xml
+                    return """
+                      <project>
+                          <modelVersion>4.0.0</modelVersion>
+                          <groupId>org.example</groupId>
+                          <artifactId>example</artifactId>
+                          <version>1.0.0</version>
+                          <dependencies>
+                              <dependency>
+                                  <groupId>org.apache.httpcomponents.client5</groupId>
+                                  <artifactId>httpclient5</artifactId>
+                                  <version>%s</version>
+                              </dependency>
+                          </dependencies>
+                      </project>
+                      """.formatted(httpClientVersion);
+                })));
+        }
+
+        @Test
+        void migrateDependenciesForTransitive() {
+            rewriteRun(
+              mavenProject("project",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.apache.http.impl.client.CloseableHttpClient;
+                      import org.apache.http.impl.client.HttpClients;
+                      public class A {
+                          CloseableHttpClient getClient() {
+                              return HttpClients.createDefault();
+                          }
+                      }
+                      """,
+                    """
+                      import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+                      import org.apache.hc.client5.http.impl.classic.HttpClients;
+                      public class A {
+                          CloseableHttpClient getClient() {
+                              return HttpClients.createDefault();
+                          }
+                      }
+                      """
+                  )
+                ),
+                //language=xml
+                pomXml(
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.solr</groupId>
+                                <artifactId>solr-solrj</artifactId>
+                                <version>8.11.3</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """,
+                  spec -> spec.after(pom -> {
+                      Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                      assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                      String httpClientVersion = version.group();
+                      return """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>org.example</groupId>
+                            <artifactId>example</artifactId>
+                            <version>1.0.0</version>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>org.apache.httpcomponents.client5</groupId>
+                                    <artifactId>httpclient5</artifactId>
+                                    <version>%s</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>org.apache.solr</groupId>
+                                    <artifactId>solr-solrj</artifactId>
+                                    <version>8.11.3</version>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """.formatted(httpClientVersion);
+                  }))));
+        }
+
+        @Test
+        void ignoresExistingDependency() {
+            rewriteRun(
+              //language=xml
+              pomXml(
+                """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                      <dependencies>
+                          <dependency>
+                              <groupId>org.apache.httpcomponents.client5</groupId>
+                              <artifactId>httpclient5</artifactId>
+                              <version>5.1</version>
+                          </dependency>
+                      </dependencies>
+                  </project>
+                  """
+              ));
+        }
+
+        @Disabled("`org.openrewrite.java.dependencies.DependencyInsight` does not consider transitive dependencies from parent")
+        @Test
+        void migrateTransitiveParent() {
+            rewriteRun(
+              mavenProject("parent",
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>parent</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents</groupId>
+                                <artifactId>httpmime</artifactId>
+                                <version>4.5.14</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents</groupId>
+                                <artifactId>httpclient</artifactId>
+                                <version>4.5.14</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents</groupId>
+                                <artifactId>httpcore</artifactId>
+                                <version>4.4.16</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """,
+                  SourceSpec::skip
+                )
+              ),
+              mavenProject("child",
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <parent>
+                            <groupId>org.example</groupId>
+                            <artifactId>parent</artifactId>
+                            <version>1.0.0</version>
+                            <relativePath>../pom.xml</relativePath>
+                        </parent>
+                    </project>
+                    """,
+                  spec -> spec.after(pom -> {
+                      Matcher version = Pattern.compile("5\\.4+\\.\\d+").matcher(pom);
+                      assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                      String httpClientVersion = version.group();
+                      //language=xml
+                      return """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>org.example</groupId>
+                            <artifactId>example</artifactId>
+                            <version>1.0.0</version>
+                            <parent>
+                                <groupId>org.example</groupId>
+                                <artifactId>parent</artifactId>
+                                <version>1.0.0</version>
+                                <relativePath>../pom.xml</relativePath>
+                            </parent>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>org.apache.httpcomponents.client5</groupId>
+                                    <artifactId>httpclient5</artifactId>
+                                    <version>%s</version>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """.formatted(httpClientVersion);
+                  })
+                )
+              )
+            );
+        }
+
+        @Test
+        void onlyAddDependencyWhenApplicable() {
+            rewriteRun(
+              pomXml(
+                //language=xml
+                """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                  </project>
+                  """
+              )
+            );
+        }
     }
 }
