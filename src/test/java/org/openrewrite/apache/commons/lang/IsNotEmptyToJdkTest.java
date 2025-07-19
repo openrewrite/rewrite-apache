@@ -71,7 +71,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
           java(
             """
               import %s;
-                            
+
               class A {
                   boolean test(String first) {
                       boolean a = StringUtils.isEmpty(first.trim());
@@ -87,7 +87,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
               """.formatted(import_),
             """
               import %s;
-                            
+
               class A {
                   boolean test(String first) {
                       boolean a = first.trim().isEmpty();
@@ -190,7 +190,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
           java(
             """
               import org.apache.commons.lang3.StringUtils;
-                            
+
               class A {
                   boolean test(B b) {
                       return StringUtils.isEmpty(b.getField());
@@ -233,5 +233,35 @@ class IsNotEmptyToJdkTest implements RewriteTest {
                   }
               }
               """.formatted(classname, beforeLine)));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '#', textBlock = """
+      s.length() == 0#s.isEmpty()
+      s.length() != 0#!s.isEmpty()
+      s.length() > 0#!s.isEmpty()
+      s.trim().length() == 0#s.trim().isEmpty()
+      s.trim().length() != 0#!s.trim().isEmpty()
+      s.trim().length() > 0#!s.trim().isEmpty()
+    """)
+    void replaceLengthComparison(String before, String after) {
+        rewriteRun(
+          java(
+            """
+            class A {
+                boolean test(String s) {
+                    return %s;
+                }
+            }
+            """.formatted(before),
+            """
+            class A {
+                boolean test(String s) {
+                    return %s;
+                }
+            }
+            """.formatted(after)
+          )
+        );
     }
 }

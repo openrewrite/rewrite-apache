@@ -64,18 +64,21 @@ public class IsNotEmptyToJdk extends Recipe {
                 new UsesMethod<>("org.apache.maven.shared.utils.StringUtils isEmpty(..)"),
                 new UsesMethod<>("org.apache.maven.shared.utils.StringUtils isNotEmpty(..)"),
                 new UsesMethod<>("org.codehaus.plexus.util.StringUtils isEmpty(..)"),
-                new UsesMethod<>("org.codehaus.plexus.util.StringUtils isNotEmpty(..)"));
+                new UsesMethod<>("org.codehaus.plexus.util.StringUtils isNotEmpty(..)"),
+                new UsesMethod<>("java.lang.String length()"));
 
         return Preconditions.check(precondition, new JavaVisitor<ExecutionContext>() {
             private final MethodMatcher isEmptyMatcher = new MethodMatcher("*..StringUtils isEmpty(..)");
             private final MethodMatcher isNotEmptyMatcher = new MethodMatcher("*..StringUtils isNotEmpty(..)");
+            private final MethodMatcher lengthMatcher     = new MethodMatcher("java.lang.String length()");
             private final MethodMatcher trimMatcher = new MethodMatcher("java.lang.String trim()");
 
             private final JavaTemplate isEmptyReplacement = Semantics.expression(this, "IsEmpty", (String s) -> (s == null || s.isEmpty())).build();
             private final JavaTemplate isNotEmptyReplacement = Semantics.expression(this, "IsNotEmpty", (String s) -> (s != null && !s.isEmpty())).build();
             private final JavaTemplate isEmptyTrimmed = Semantics.expression(this, "IsEmptyTrimmed", (String s) -> s.trim().isEmpty()).build();
             private final JavaTemplate isNotEmptyTrimmed = Semantics.expression(this, "IsNotEmptyTrimmed", (String s) -> !s.trim().isEmpty()).build();
-
+            private final JavaTemplate isEmptyLength = Semantics.expression(this, "IsEmptyLength", (String s) -> s.isEmpty()).build();
+            private final JavaTemplate isNotEmptyLength = Semantics.expression(this, "IsNotEmptyLength", (String s) -> !s.isEmpty()).build();
             @Override
             public J visitMethodInvocation(J.MethodInvocation mi, ExecutionContext ctx) {
                 boolean isEmptyCall = isEmptyMatcher.matches(mi);
@@ -109,6 +112,54 @@ public class IsNotEmptyToJdk extends Recipe {
                 }
 
                 return super.visitMethodInvocation(mi, ctx);
+            }
+
+            @Override
+            public J visitBinary(J.Binary binary, ExecutionContext ctx) {
+                // s.length() == 0  or  s.length() != 0
+                if (binary.getLeft() instanceof J.MethodInvocation) {
+                    J.MethodInvocation left = (J.MethodInvocation) binary.getLeft();
+                    if (lengthMatcher.matches(left)
+                            && binary.getRight() instanceof J.Literal) {
+
+                        J.Literal lit = (J.Literal) binary.getRight();
+                        Object value = lit.getValue();
+                        if (value instanceof Number && ((Number) value).intValue() == 0) {
+                            JavaTemplate tpl = binary.getOperator() == J.Binary.Type.Equal
+                                    ? isEmptyLength
+                                    : isNotEmptyLength;
+                            return tpl.apply(
+                                    updateCursor(binary),
+                                    binary.getCoordinates().replace(),
+                                    left.getSelect()
+                            );
+                        }
+                    }
+                }
+
+                // s.trim().length() == 0  or  s.trim().length() != 0
+                if (binary.getLeft() instanceof J.MethodInvocation) {
+                    J.MethodInvocation lengthCall = (J.MethodInvocation) binary.getLeft();
+                    if (trimMatcher.matches(lengthCall.getSelect())
+                            && lengthMatcher.matches(lengthCall)
+                            && binary.getRight() instanceof J.Literal) {
+
+                        J.Literal lit = (J.Literal) binary.getRight();
+                        Object value = lit.getValue();
+                        if (value instanceof Number && ((Number) value).intValue() == 0) {
+                            JavaTemplate tpl = binary.getOperator() == J.Binary.Type.Equal
+                                    ? isEmptyTrimmed
+                                    : isNotEmptyTrimmed;
+                            return tpl.apply(
+                                    updateCursor(binary),
+                                    binary.getCoordinates().replace(),
+                                    ((J.MethodInvocation) lengthCall.getSelect()).getSelect()
+                            );
+                        }
+                    }
+                }
+
+                return super.visitBinary(binary, ctx);
             }
         });
     }
