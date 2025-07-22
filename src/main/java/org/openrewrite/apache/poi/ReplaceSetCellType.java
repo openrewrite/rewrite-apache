@@ -73,8 +73,7 @@ public class ReplaceSetCellType extends Recipe {
                 m = blank(m, getCursor(), ctx);
                 m = formula(m, getCursor(), ctx);
                 m = bool(m, getCursor(), ctx);
-                m = error(m, getCursor(), ctx);
-                return m;
+                return error(m, getCursor(), ctx);
             }
 
             private J.MethodInvocation numeric(J.MethodInvocation m, Cursor c, ExecutionContext ctx) {
