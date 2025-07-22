@@ -68,24 +68,27 @@ public class ApacheFileUtilsToJavaFiles extends Recipe {
                 J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
                 if (readFileToByteArrayMatcher.matches(mi)) {
                     return JavaTemplate.builder("Files.readAllBytes(#{any(java.io.File)}.toPath())")
-                            .imports("java.nio.file.Files")
-                            .build()
-                            .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0));
-                } else if (readLinesToByteArrayMatcher.matches(mi)) {
+                      .imports("java.nio.file.Files")
+                      .build()
+                      .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0));
+                }
+                if (readLinesToByteArrayMatcher.matches(mi)) {
                     return JavaTemplate.builder("Files.readAllLines(#{any(java.io.File)}.toPath())")
-                            .imports("java.nio.file.Files")
-                            .build()
-                            .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0));
-                } else if (readLinesWithCharsetToByteArrayMatcher.matches(mi)) {
+                      .imports("java.nio.file.Files")
+                      .build()
+                      .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0));
+                }
+                if (readLinesWithCharsetToByteArrayMatcher.matches(mi)) {
                     return JavaTemplate.builder("Files.readAllLines(#{any(java.io.File)}.toPath(), #{any(java.nio.charset.Charset)})")
-                            .imports("java.nio.file.Files", "java.nio.charset.Charset")
-                            .build()
-                            .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0), mi.getArguments().get(1));
-                } else if (readLinesWithCharsetIdToByteArrayMatcher.matches(mi)) {
+                      .imports("java.nio.file.Files", "java.nio.charset.Charset")
+                      .build()
+                      .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0), mi.getArguments().get(1));
+                }
+                if (readLinesWithCharsetIdToByteArrayMatcher.matches(mi)) {
                     return JavaTemplate.builder("Files.readAllLines(#{any(java.io.File)}.toPath(), Charset.forName(#{any(String)}))")
-                            .imports("java.nio.file.Files", "java.nio.charset.Charset")
-                            .build()
-                            .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0), mi.getArguments().get(1));
+                      .imports("java.nio.file.Files", "java.nio.charset.Charset")
+                      .build()
+                      .apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0), mi.getArguments().get(1));
                 }
                 return mi;
             }
