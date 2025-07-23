@@ -98,10 +98,13 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
 
                 // If we found a tlsSocketStrategy declaration and need a connection manager, add it
                 if (tlsStrategyDecl != null && needsConnectionManager) {
-                    String cmDeclaration = "HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
-                            ".setTlsSocketStrategy(tlsSocketStrategy).build();";
 
-                    m = JavaTemplate.builder(cmDeclaration)
+                    maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy");
+                    maybeAddImport("org.apache.hc.client5.http.io.HttpClientConnectionManager");
+                    maybeAddImport("org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder");
+                    return JavaTemplate.builder(
+                            "HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
+                            ".setTlsSocketStrategy(tlsSocketStrategy).build();")
                             .contextSensitive()
                             .imports("org.apache.hc.client5.http.io.HttpClientConnectionManager",
                                     "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder")
@@ -109,17 +112,6 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                                     .classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .build()
                             .apply(updateCursor(m), tlsStrategyDecl.getCoordinates().after());
-
-                    // Add imports
-                    doAfterVisit(new JavaIsoVisitor<ExecutionContext>() {
-                        @Override
-                        public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
-                            maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy", false);
-                            maybeAddImport("org.apache.hc.client5.http.io.HttpClientConnectionManager", false);
-                            maybeAddImport("org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder", false);
-                            return cu;
-                        }
-                    });
                 }
             }
 
@@ -151,7 +143,11 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                         replacement = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy()";
                     }
 
-                    vd = JavaTemplate.builder(replacement)
+                    maybeRemoveImport("org.apache.http.conn.ssl.SSLConnectionSocketFactory");
+                    maybeRemoveImport("org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory");
+                    maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy");
+                    maybeAddImport("org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy");
+                    return JavaTemplate.builder(replacement)
                             .contextSensitive()
                             .imports("org.apache.hc.client5.http.ssl.TlsSocketStrategy")
                             .imports("org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy")
@@ -160,18 +156,6 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                             .build()
                             .apply(getCursor(), vd.getCoordinates().replace(),
                                     hasArgument ? new Object[]{newClass.getArguments().get(0)} : new Object[0]);
-
-                    // Add imports
-                    doAfterVisit(new JavaIsoVisitor<ExecutionContext>() {
-                        @Override
-                        public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
-                            maybeRemoveImport("org.apache.http.conn.ssl.SSLConnectionSocketFactory");
-                            maybeRemoveImport("org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory");
-                            maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy", false);
-                            maybeAddImport("org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy", false);
-                            return cu;
-                        }
-                    });
                 }
             }
             return vd;
