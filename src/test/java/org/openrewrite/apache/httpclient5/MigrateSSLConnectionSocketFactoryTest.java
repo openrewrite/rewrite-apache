@@ -48,8 +48,8 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
                 import org.apache.http.impl.client.HttpClients;
                 import org.apache.http.ssl.SSLContexts;
 
-                public class HttpClientManager {
-                    public void create() {
+                class HttpClientManager {
+                    void create() {
                         SSLContext sslContext = SSLContexts.createDefault();
                         SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
                         HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
@@ -66,8 +66,8 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
                 import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
                 import org.apache.hc.core5.ssl.SSLContexts;
 
-                public class HttpClientManager {
-                    public void create() {
+                class HttpClientManager {
+                    void create() {
                         SSLContext sslContext = SSLContexts.createDefault();
                         TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
                         HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
@@ -89,8 +89,8 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
 
                 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
-                public class HttpClientManager {
-                    public void create(SSLContext sslContext) {
+                class HttpClientManager {
+                    void create(SSLContext sslContext) {
                         SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
                     }
                 }
@@ -101,8 +101,8 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
                 import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
                 import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
 
-                public class HttpClientManager {
-                    public void create(SSLContext sslContext) {
+                class HttpClientManager {
+                    void create(SSLContext sslContext) {
                         TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
                     }
                 }
