@@ -35,38 +35,6 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
                 .afterTypeValidationOptions(TypeValidation.all().identifiers(false));
     }
 
-    @Test
-    void justVariableDeclaration() {
-        rewriteRun(
-            //language=java
-            java(
-                """
-                import javax.net.ssl.SSLContext;
-
-                import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-
-                public class HttpClientManager {
-                    public void create(SSLContext sslContext) {
-                        SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
-                    }
-                }
-                """,
-                """
-                import javax.net.ssl.SSLContext;
-
-                import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
-                import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
-
-                public class HttpClientManager {
-                    public void create(SSLContext sslContext) {
-                        TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
-                    }
-                }
-                """
-            )
-        );
-    }
-
     @DocumentExample
     @Test
     void migratesToDefaultClientTlsStrategy() {
@@ -104,6 +72,38 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
                         TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
                         HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
                         HttpClients.custom().setConnectionManager(cm).build();
+                    }
+                }
+                """
+            )
+        );
+    }
+
+    @Test
+    void justVariableDeclaration() {
+        rewriteRun(
+            //language=java
+            java(
+                """
+                import javax.net.ssl.SSLContext;
+
+                import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+
+                public class HttpClientManager {
+                    public void create(SSLContext sslContext) {
+                        SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+                    }
+                }
+                """,
+                """
+                import javax.net.ssl.SSLContext;
+
+                import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+                import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+
+                public class HttpClientManager {
+                    public void create(SSLContext sslContext) {
+                        TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
                     }
                 }
                 """

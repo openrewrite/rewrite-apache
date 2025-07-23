@@ -71,7 +71,8 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     maybeRemoveImport("org.apache.http.ssl.SSLContexts");
                     maybeAddImport("org.apache.hc.core5.ssl.SSLContexts");
                     return id.withType(JavaType.ShallowClass.build("org.apache.hc.core5.ssl.SSLContexts"));
-                } else if (TypeUtils.isOfClassType(id.getType(), "org.apache.http.impl.client.HttpClients")) {
+                }
+                if (TypeUtils.isOfClassType(id.getType(), "org.apache.http.impl.client.HttpClients")) {
                     maybeRemoveImport("org.apache.http.impl.client.HttpClients");
                     maybeAddImport("org.apache.hc.client5.http.impl.classic.HttpClients");
                     return id.withType(JavaType.ShallowClass.build("org.apache.hc.client5.http.impl.classic.HttpClients"));
@@ -131,7 +132,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     // Add imports
                     doAfterVisit(new JavaIsoVisitor<ExecutionContext>() {
                         @Override
-                        public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext executionContext) {
+                        public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
                             maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy", false);
                             maybeAddImport("org.apache.hc.client5.http.io.HttpClientConnectionManager", false);
                             maybeAddImport("org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder", false);
@@ -181,7 +182,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     // Add imports
                     doAfterVisit(new JavaIsoVisitor<ExecutionContext>() {
                         @Override
-                        public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext executionContext) {
+                        public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
                             maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy", false);
                             maybeAddImport("org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy", false);
                             maybeRemoveImport("org.apache.http.conn.ssl.SSLConnectionSocketFactory");
