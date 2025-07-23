@@ -27,7 +27,6 @@ import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
 
@@ -61,26 +60,6 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
         private static final MethodMatcher SET_SSL_SOCKET_FACTORY = new MethodMatcher(
                 "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)"
         );
-
-        @Override
-        public J.Identifier visitIdentifier(J.Identifier identifier, ExecutionContext ctx) {
-            J.Identifier id = super.visitIdentifier(identifier, ctx);
-
-            if (id.getType() != null) {
-                if (TypeUtils.isOfClassType(id.getType(), "org.apache.http.ssl.SSLContexts")) {
-                    maybeRemoveImport("org.apache.http.ssl.SSLContexts");
-                    maybeAddImport("org.apache.hc.core5.ssl.SSLContexts");
-                    return id.withType(JavaType.ShallowClass.build("org.apache.hc.core5.ssl.SSLContexts"));
-                }
-                if (TypeUtils.isOfClassType(id.getType(), "org.apache.http.impl.client.HttpClients")) {
-                    maybeRemoveImport("org.apache.http.impl.client.HttpClients");
-                    maybeAddImport("org.apache.hc.client5.http.impl.classic.HttpClients");
-                    return id.withType(JavaType.ShallowClass.build("org.apache.hc.client5.http.impl.classic.HttpClients"));
-                }
-            }
-
-            return id;
-        }
 
         @Override
         public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
@@ -151,9 +130,9 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
 
             // Check if this is a SSLConnectionSocketFactory variable declaration
             if ((TypeUtils.isOfClassType(vd.getType(), "org.apache.http.conn.ssl.SSLConnectionSocketFactory") ||
-                TypeUtils.isOfClassType(vd.getType(), "org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory")) &&
-                !vd.getVariables().isEmpty() &&
-                vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
+                    TypeUtils.isOfClassType(vd.getType(), "org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory")) &&
+                    !vd.getVariables().isEmpty() &&
+                    vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
 
                 J.NewClass newClass = (J.NewClass) vd.getVariables().get(0).getInitializer();
                 String variableName = vd.getVariables().get(0).getSimpleName();

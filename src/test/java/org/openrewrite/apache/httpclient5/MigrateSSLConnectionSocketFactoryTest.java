@@ -31,7 +31,7 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
         spec.parser(JavaParser.fromJavaVersion()
                         .classpathFromResources(new InMemoryExecutionContext(),
                                 "httpclient-4", "httpcore-4", "httpclient5", "httpcore5"))
-                .recipe(new MigrateSSLConnectionSocketFactory())
+                .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5")
                 .afterTypeValidationOptions(TypeValidation.all().identifiers(false));
     }
 
@@ -85,9 +85,9 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
             //language=java
             java(
                 """
-                import javax.net.ssl.SSLContext;
-
                 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+
+                import javax.net.ssl.SSLContext;
 
                 class HttpClientManager {
                     void create(SSLContext sslContext) {
@@ -96,10 +96,10 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
                 }
                 """,
                 """
-                import javax.net.ssl.SSLContext;
-
                 import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
                 import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+
+                import javax.net.ssl.SSLContext;
 
                 class HttpClientManager {
                     void create(SSLContext sslContext) {
