@@ -30,6 +30,8 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
 
+import static java.util.Objects.requireNonNull;
+
 @EqualsAndHashCode(callSuper = false)
 @Value
 public class MigrateSSLConnectionSocketFactory extends Recipe {
@@ -134,7 +136,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     !vd.getVariables().isEmpty() &&
                     vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
 
-                J.NewClass newClass = (J.NewClass) vd.getVariables().get(0).getInitializer();
+                J.NewClass newClass = requireNonNull((J.NewClass) vd.getVariables().get(0).getInitializer());
                 String variableName = vd.getVariables().get(0).getSimpleName();
 
                 // Only transform if this is actually SSLConnectionSocketFactory
@@ -142,7 +144,8 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
 
                     // Replace SSLConnectionSocketFactory with TlsSocketStrategy
                     String replacement;
-                    if (newClass.getArguments() != null && !newClass.getArguments().isEmpty()) {
+                    boolean hasArgument = !newClass.getArguments().isEmpty() && !(newClass.getArguments().get(0) instanceof J.Empty);
+                    if (hasArgument) {
                         replacement = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)})";
                     } else {
                         replacement = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy()";
@@ -156,16 +159,16 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                                     .classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .build()
                             .apply(getCursor(), vd.getCoordinates().replace(),
-                                    newClass.getArguments().isEmpty() ? new Object[0] : newClass.getArguments().get(0));
+                                    hasArgument ? new Object[]{newClass.getArguments().get(0)} : new Object[0]);
 
                     // Add imports
                     doAfterVisit(new JavaIsoVisitor<ExecutionContext>() {
                         @Override
                         public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
-                            maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy", false);
-                            maybeAddImport("org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy", false);
                             maybeRemoveImport("org.apache.http.conn.ssl.SSLConnectionSocketFactory");
                             maybeRemoveImport("org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory");
+                            maybeAddImport("org.apache.hc.client5.http.ssl.TlsSocketStrategy", false);
+                            maybeAddImport("org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy", false);
                             return cu;
                         }
                     });
