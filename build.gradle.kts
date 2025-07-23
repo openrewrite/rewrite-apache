@@ -7,8 +7,8 @@ group = "org.openrewrite.recipe"
 description = "Apache Migration"
 
 recipeDependencies {
-    parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.1.+")
-    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.1.+")
+    parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.+")
+    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
     parserClasspath("org.apache.poi:poi:3.16")
     parserClasspath("org.apache.httpcomponents:httpclient:4.5.14")
