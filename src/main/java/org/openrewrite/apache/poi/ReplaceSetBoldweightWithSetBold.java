@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ReplaceSetBoldweightWithSetBold extends Recipe {
     @Override
     public String getDisplayName() {
-        return "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)";
+        return "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`";
     }
 
     @Override
