@@ -96,6 +96,29 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
+    void ensureEntityMimeAloneMigrated() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.mime.MultipartEntityBuilder;
+
+              class A {
+                  MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+
+              class A {
+                  MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void doesNotMigrateAlreadyCorrectPackage() {
         rewriteRun(
           //language=java

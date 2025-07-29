@@ -278,6 +278,7 @@ recipeList:
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.entity
       newPackageName: org.apache.hc.core5.http.io.entity
+      recursive: true
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.hc.core5.http.io.entity.mime
       newPackageName: org.apache.hc.client5.http.entity.mime
