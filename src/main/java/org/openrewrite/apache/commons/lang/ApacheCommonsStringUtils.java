@@ -688,6 +688,21 @@ public class ApacheCommonsStringUtils {
         }
     }
 
+    @RecipeDescriptor(
+            name = "Remove redundant null check when using `StringUtils.isNotBlank(String)`",
+            description = "Remove redundant null check when using `StringUtils.isNotBlank(String)` as it already handles null values.")
+    public static class RemoveRedundantNullCheckWithIsNotBlank {
+        @BeforeTemplate
+        boolean before(@Matches(RepeatableArgumentMatcher.class) String s) {
+            return s != null && StringUtils.isNotBlank(s);
+        }
+
+        @AfterTemplate
+        boolean after(String s) {
+            return StringUtils.isNotBlank(s);
+        }
+    }
+
     // NOTE: breaks on empty strings
     //public static class Uncapitalize {
     //    @BeforeTemplate
