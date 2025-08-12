@@ -141,9 +141,9 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     !vd.getVariables().isEmpty() &&
                     vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
                 J.NewClass newClass = requireNonNull((J.NewClass) vd.getVariables().get(0).getInitializer());
-                boolean hasArgument = !newClass.getArguments().isEmpty()
-                        && newClass.getArguments().size() == 1
-                        && newClass.getArguments().get(0) instanceof J.Identifier;
+                boolean hasArgument = !newClass.getArguments().isEmpty() &&
+                        newClass.getArguments().size() == 1 &&
+                        newClass.getArguments().get(0) instanceof J.Identifier;
 
                 if (hasArgument) {
                     // Replace SSLConnectionSocketFactory with TlsSocketStrategy
