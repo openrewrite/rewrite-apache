@@ -96,6 +96,26 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
+    void preventsChangingOfParamsPackageAndAddsNotice() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpEntity;
+              import org.apache.http.params.HttpParams;
+              class A {}
+              """,
+            """
+              import org.apache.hc.core5.http.HttpEntity;
+              /* No generic migration for classes in the `org.apache.http.params` package exists, please migrate manually */
+              import org.apache.http.params.HttpParams;
+              class A {}
+              """
+          )
+        );
+    }
+
+    @Test
     void ensureEntityMimeAloneMigrated() {
         rewriteRun(
           //language=java
@@ -756,8 +776,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       """
                   )
                 ),
-                //language=xml
                 pomXml(
+                  //language=xml
                   """
                     <project>
                         <modelVersion>4.0.0</modelVersion>
@@ -777,6 +797,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
                       assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
                       String httpClientVersion = version.group();
+                      //language=xml
                       return """
                         <project>
                             <modelVersion>4.0.0</modelVersion>
