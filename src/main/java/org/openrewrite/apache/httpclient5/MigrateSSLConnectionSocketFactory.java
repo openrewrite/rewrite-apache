@@ -35,8 +35,16 @@ import static java.util.Objects.requireNonNull;
 @EqualsAndHashCode(callSuper = false)
 @Value
 public class MigrateSSLConnectionSocketFactory extends Recipe {
-    private static final String HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME = "org.apache.http.conn.ssl.SSLConnectionSocketFactory";
-    private static final String HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME = "org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory";
+    private static final String HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY = "org.apache.http.conn.ssl.SSLConnectionSocketFactory";
+    private static final String HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY = "org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory";
+
+    private static final String HTTP_CLIENT_CONNECTION_MANAGER = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
+    private static final String POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER = "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder";
+    private static final String DEFAULT_TLS_SOCKET_STRATEGY = "org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy";
+    private static final String TLS_SOCKET_STRATEGY = "org.apache.hc.client5.http.ssl.TlsSocketStrategy";
+
+    private static final MethodMatcher SET_SSL_SOCKET_FACTORY = new MethodMatcher(
+            "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)");
 
     @Override
     public String getDisplayName() {
@@ -51,149 +59,138 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(
-                Preconditions.or(
-                        new UsesType<>(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME, false),
-                        new UsesType<>(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME, false)
-                ),
-                new MigrateSSLConnectionSocketFactoryVisitor()
+        TreeVisitor<?, ExecutionContext> conditions = Preconditions.or(
+                new UsesType<>(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY, false),
+                new UsesType<>(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY, false)
         );
-    }
+        return Preconditions.check(conditions, new JavaIsoVisitor<ExecutionContext>() {
+                    @Override
+                    public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
+                        J.MethodDeclaration m = super.visitMethodDeclaration(method, ctx);
 
-    private static class MigrateSSLConnectionSocketFactoryVisitor extends JavaIsoVisitor<ExecutionContext> {
-        private static final MethodMatcher SET_SSL_SOCKET_FACTORY = new MethodMatcher(
-                "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)"
-        );
-
-        @Override
-        public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
-            J.MethodDeclaration m = super.visitMethodDeclaration(method, ctx);
-
-            // Check if this method contains the SSLConnectionSocketFactory pattern
-            if (m.getBody() != null) {
-                J.VariableDeclarations tlsStrategyDecl = null;
-                boolean needsConnectionManager = false;
-                int tlsStrategyIndex = -1;
-
-                // First pass: check if we have the pattern and find the transformed declaration
-                for (int i = 0; i < m.getBody().getStatements().size(); i++) {
-                    Statement stmt = m.getBody().getStatements().get(i);
-
-                    if (stmt instanceof J.VariableDeclarations) {
-                        J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
-                        if (!vd.getVariables().isEmpty() &&
-                            TypeUtils.isOfClassType(vd.getType(), "org.apache.hc.client5.http.ssl.TlsSocketStrategy")) {
-                            tlsStrategyDecl = vd;
-                            tlsStrategyIndex = i;
+                        // Check if this method contains the SSLConnectionSocketFactory pattern
+                        if (m.getBody() == null) {
+                            return m;
                         }
-                    }
 
-                    // Check in the complete statement tree for setConnectionManager calls
-                    if (stmt.toString().contains("setConnectionManager")) {
-                        needsConnectionManager = true;
-                    }
-                }
+                        J.VariableDeclarations tlsStrategyDecl = null;
+                        boolean needsConnectionManager = false;
+                        int tlsStrategyIndex = -1;
 
-                // If we found a tlsSocketStrategy declaration and need a connection manager, add it
-                if (tlsStrategyDecl != null && needsConnectionManager) {
-                    boolean connectionManagerExists = false;
-                    for (int i = tlsStrategyIndex + 1; i < m.getBody().getStatements().size(); i++) {
-                        Statement stmt = m.getBody().getStatements().get(i);
-                        if (stmt instanceof J.VariableDeclarations) {
-                            J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
-                            if (!vd.getVariables().isEmpty() &&
-                                TypeUtils.isOfClassType(vd.getVariables().get(0).getType(), "org.apache.hc.client5.http.io.HttpClientConnectionManager")) {
-                                connectionManagerExists = true;
-                                break;
+                        // First pass: check if we have the pattern and find the transformed declaration
+                        for (int i = 0; i < m.getBody().getStatements().size(); i++) {
+                            Statement stmt = m.getBody().getStatements().get(i);
+
+                            if (stmt instanceof J.VariableDeclarations) {
+                                J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
+                                if (!vd.getVariables().isEmpty() &&
+                                        TypeUtils.isOfClassType(vd.getType(), "org.apache.hc.client5.http.ssl.TlsSocketStrategy")) {
+                                    tlsStrategyDecl = vd;
+                                    tlsStrategyIndex = i;
+                                }
+                            }
+
+                            // Check in the complete statement tree for setConnectionManager calls
+                            if (stmt.toString().contains("setConnectionManager")) {
+                                needsConnectionManager = true;
                             }
                         }
+
+                        // If we found a tlsSocketStrategy declaration and need a connection manager, add it
+                        if (tlsStrategyDecl != null && needsConnectionManager) {
+                            boolean connectionManagerExists = false;
+                            for (int i = tlsStrategyIndex + 1; i < m.getBody().getStatements().size(); i++) {
+                                Statement stmt = m.getBody().getStatements().get(i);
+                                if (stmt instanceof J.VariableDeclarations) {
+                                    J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
+                                    if (!vd.getVariables().isEmpty() &&
+                                            TypeUtils.isOfClassType(vd.getVariables().get(0).getType(), "org.apache.hc.client5.http.io.HttpClientConnectionManager")) {
+                                        connectionManagerExists = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!connectionManagerExists) {
+
+                                maybeAddImport(HTTP_CLIENT_CONNECTION_MANAGER);
+                                maybeAddImport(POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER);
+                                return JavaTemplate.builder("HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
+                                                ".setTlsSocketStrategy(tlsSocketStrategy).build();")
+                                        .contextSensitive()
+                                        .javaParser(JavaParser.fromJavaVersion()
+                                                .classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                                        .imports(HTTP_CLIENT_CONNECTION_MANAGER,
+                                                POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER)
+                                        .build()
+                                        .apply(updateCursor(m), tlsStrategyDecl.getCoordinates().after());
+                            }
+                        }
+
+                        return m;
                     }
 
-                    if (!connectionManagerExists) {
-                        final String httpClientConnectionManagerFullyQualifiedClassName = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
-                        final String poolingHttpClientConnectionManagerBuilderFullyQualifiedClassName = "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder";
-                        final String httpClientConnectionManagerCode = "HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
-                                ".setTlsSocketStrategy(tlsSocketStrategy).build();";
+                    @Override
+                    public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
+                        J.VariableDeclarations vd = super.visitVariableDeclarations(multiVariable, ctx);
 
-                        maybeAddImport(httpClientConnectionManagerFullyQualifiedClassName);
-                        maybeAddImport(poolingHttpClientConnectionManagerBuilderFullyQualifiedClassName);
+                        // Check if this is a SSLConnectionSocketFactory variable declaration
+                        // The SSLConnectionSocketFactory in HttpClient 5 has been deprecated and replaced with TlsSocketStrategy
+                        if ((TypeUtils.isOfClassType(vd.getType(), HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY) ||
+                                TypeUtils.isOfClassType(vd.getType(), HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY)) &&
+                                !vd.getVariables().isEmpty() &&
+                                vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
+                            J.NewClass newClass = requireNonNull((J.NewClass) vd.getVariables().get(0).getInitializer());
+                            boolean hasArgument = !newClass.getArguments().isEmpty() &&
+                                    newClass.getArguments().size() == 1 &&
+                                    newClass.getArguments().get(0) instanceof J.Identifier;
 
-                        return createBaseTemplateBuilder(httpClientConnectionManagerCode, ctx)
-                                .imports(httpClientConnectionManagerFullyQualifiedClassName,
-                                        poolingHttpClientConnectionManagerBuilderFullyQualifiedClassName)
-                                .build()
-                                .apply(updateCursor(m), tlsStrategyDecl.getCoordinates().after());
+                            if (hasArgument) {
+                                // Replace SSLConnectionSocketFactory with TlsSocketStrategy
+                                maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY);
+                                maybeRemoveImport(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY);
+                                maybeAddImport(TLS_SOCKET_STRATEGY);
+                                maybeAddImport(DEFAULT_TLS_SOCKET_STRATEGY);
+
+                                String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)})";
+                                return JavaTemplate.builder(code)
+                                        .contextSensitive()
+                                        .javaParser(JavaParser.fromJavaVersion()
+                                                .classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                                        .imports(TLS_SOCKET_STRATEGY,
+                                                DEFAULT_TLS_SOCKET_STRATEGY)
+                                        .build()
+                                        .apply(getCursor(), vd.getCoordinates().replace(), new Object[]{newClass.getArguments().get(0)});
+                            }
+                        }
+                        return vd;
+                    }
+
+                    @Override
+                    public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                        J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
+
+                        // Check if this is a setConnectionManager call with SSLConnectionSocketFactory as argument
+                        if (SET_SSL_SOCKET_FACTORY.matches(mi)) {
+                            if (mi.getArguments().size() == 1 && mi.getArguments().get(0) instanceof J.Identifier) {
+                                J.Identifier arg = (J.Identifier) mi.getArguments().get(0);
+                                // Check if the identifier type is SSLConnectionSocketFactory
+                                if (arg.getType() != null &&
+                                        (TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY) ||
+                                                TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY))) {
+                                    // Replace the method call
+                                    return JavaTemplate.builder("#{any()}.setConnectionManager(cm)")
+                                            .contextSensitive()
+                                            .javaParser(JavaParser.fromJavaVersion()
+                                                    .classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                                            .build()
+                                            .apply(getCursor(), mi.getCoordinates().replace(), mi.getSelect());
+                                }
+                            }
+                        }
+                        return mi;
                     }
                 }
-            }
-
-            return m;
-        }
-
-        @Override
-        public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
-            J.VariableDeclarations vd = super.visitVariableDeclarations(multiVariable, ctx);
-
-            // Check if this is a SSLConnectionSocketFactory variable declaration
-            // The SSLConnectionSocketFactory in HttpClient 5 has been deprecated and replaced with TlsSocketStrategy
-            if ((TypeUtils.isOfClassType(vd.getType(), HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME) ||
-                    TypeUtils.isOfClassType(vd.getType(), HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME)) &&
-                    !vd.getVariables().isEmpty() &&
-                    vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
-                J.NewClass newClass = requireNonNull((J.NewClass) vd.getVariables().get(0).getInitializer());
-                boolean hasArgument = !newClass.getArguments().isEmpty() &&
-                        newClass.getArguments().size() == 1 &&
-                        newClass.getArguments().get(0) instanceof J.Identifier;
-
-                if (hasArgument) {
-                    // Replace SSLConnectionSocketFactory with TlsSocketStrategy
-                    final String tlsSocketStrategyFullyQualifiedClassName = "org.apache.hc.client5.http.ssl.TlsSocketStrategy";
-                    final String defaultTlsSocketStrategyFullyQualifiedClassName = "org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy";
-                    final String replacementCode = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)})";
-
-                    maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME);
-                    maybeRemoveImport(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME);
-                    maybeAddImport(tlsSocketStrategyFullyQualifiedClassName);
-                    maybeAddImport(defaultTlsSocketStrategyFullyQualifiedClassName);
-
-                    return createBaseTemplateBuilder(replacementCode, ctx)
-                            .imports(tlsSocketStrategyFullyQualifiedClassName,
-                                    defaultTlsSocketStrategyFullyQualifiedClassName)
-                            .build()
-                            .apply(getCursor(), vd.getCoordinates().replace(), new Object[]{newClass.getArguments().get(0)});
-                }
-            }
-            return vd;
-        }
-
-        @Override
-        public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-            J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
-
-            // Check if this is a setConnectionManager call with SSLConnectionSocketFactory as argument
-            if (SET_SSL_SOCKET_FACTORY.matches(mi)) {
-                if (mi.getArguments().size() == 1 && mi.getArguments().get(0) instanceof J.Identifier) {
-                    J.Identifier arg = (J.Identifier) mi.getArguments().get(0);
-                    // Check if the identifier type is SSLConnectionSocketFactory
-                    if (arg.getType() != null &&
-                        (TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME) ||
-                         TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY_FULLY_QUALIFIED_CLASS_NAME))) {
-                        // Replace the method call
-                        return createBaseTemplateBuilder("#{any()}.setConnectionManager(cm)", ctx)
-                                    .build()
-                                    .apply(getCursor(), mi.getCoordinates().replace(), mi.getSelect());
-                    }
-                }
-            }
-
-            return mi;
-        }
-
-        private JavaTemplate.Builder createBaseTemplateBuilder(String code, ExecutionContext ctx) {
-            return JavaTemplate.builder(code)
-                    .contextSensitive()
-                    .javaParser(JavaParser.fromJavaVersion()
-                            .classpathFromResources(ctx, "httpclient5", "httpcore5"));
-        }
+        );
     }
 }
