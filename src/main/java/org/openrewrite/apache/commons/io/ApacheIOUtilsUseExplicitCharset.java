@@ -95,7 +95,7 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
                     mi = mi.withMethodType(mi.getMethodType().withName("getBytes"));
                     maybeAddImport("java.nio.charset.StandardCharsets");
                     return JavaTemplate.builder("#{any(String)}.getBytes(StandardCharsets.#{})")
-                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-io"))
+                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-io"))
                             .imports("java.nio.charset.StandardCharsets")
                             .build()
                             .apply(updateCursor(mi),
@@ -109,7 +109,7 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
                         args.add(encoding == null ? "UTF_8" : encoding);
                         mi = JavaTemplate.builder(entry.getValue())
                                 .contextSensitive()
-                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-io"))
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-io"))
                                 .imports("java.nio.charset.StandardCharsets")
                                 .build()
                                 .apply(updateCursor(mi), mi.getCoordinates().replaceMethod(), args.toArray());
