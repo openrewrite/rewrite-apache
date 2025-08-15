@@ -86,8 +86,6 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(new UsesType<>("org.apache.commons.io.IOUtils", false), new JavaIsoVisitor<ExecutionContext>() {
-            private final JavaParser.Builder<?, ?> javaParser = JavaParser.fromJavaVersion().classpath("commons-io");
-
             @Override
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
@@ -95,26 +93,26 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
                     mi = mi.withSelect(method.getArguments().get(0));
                     //noinspection ConstantConditions
                     mi = mi.withMethodType(mi.getMethodType().withName("getBytes"));
-                    mi = JavaTemplate.builder("#{any(String)}.getBytes(StandardCharsets.#{})")
-                            .javaParser(javaParser)
+                    maybeAddImport("java.nio.charset.StandardCharsets");
+                    return JavaTemplate.builder("#{any(String)}.getBytes(StandardCharsets.#{})")
+                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-io"))
                             .imports("java.nio.charset.StandardCharsets")
                             .build()
                             .apply(updateCursor(mi),
                                     mi.getCoordinates().replaceMethod(),
                                     mi.getArguments().get(0), encoding == null ? "UTF_8" : encoding);
-                } else {
-                    for (Map.Entry<MethodMatcher, String> entry : MATCHER_TEMPLATES.entrySet()) {
-                        if (entry.getKey().matches(mi)) {
-                            List<Object> args = new ArrayList<>(mi.getArguments());
-                            args.add(encoding == null ? "UTF_8" : encoding);
-                            mi = JavaTemplate.builder(entry.getValue())
-                                    .contextSensitive()
-                                    .javaParser(javaParser)
-                                    .imports("java.nio.charset.StandardCharsets")
-                                    .build()
-                                    .apply(updateCursor(mi),
-                                            mi.getCoordinates().replaceMethod(), args.toArray());
-                        }
+                }
+
+                for (Map.Entry<MethodMatcher, String> entry : MATCHER_TEMPLATES.entrySet()) {
+                    if (entry.getKey().matches(mi)) {
+                        List<Object> args = new ArrayList<>(mi.getArguments());
+                        args.add(encoding == null ? "UTF_8" : encoding);
+                        mi = JavaTemplate.builder(entry.getValue())
+                                .contextSensitive()
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-io"))
+                                .imports("java.nio.charset.StandardCharsets")
+                                .build()
+                                .apply(updateCursor(mi), mi.getCoordinates().replaceMethod(), args.toArray());
                     }
                 }
                 if (method != mi) {

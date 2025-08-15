@@ -17,6 +17,7 @@ package org.openrewrite.apache.commons.io;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -26,7 +27,7 @@ import static org.openrewrite.java.Assertions.java;
 class ApacheCommonsFileUtilsTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpath("commons-io"))
+        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),"commons-io"))
           .recipe(new ApacheCommonsFileUtilsRecipes());
     }
 

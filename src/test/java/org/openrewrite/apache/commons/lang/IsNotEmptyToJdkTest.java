@@ -20,6 +20,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -30,7 +31,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang3", "plexus-utils", "maven-shared-utils"))
+        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang3", "plexus-utils", "maven-shared-utils"))
           .recipe(new IsNotEmptyToJdk());
     }
 
@@ -71,7 +72,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
           java(
             """
               import %s;
-                            
+
               class A {
                   boolean test(String first) {
                       boolean a = StringUtils.isEmpty(first.trim());
@@ -87,7 +88,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
               """.formatted(import_),
             """
               import %s;
-                            
+
               class A {
                   boolean test(String first) {
                       boolean a = first.trim().isEmpty();
@@ -190,7 +191,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
           java(
             """
               import org.apache.commons.lang3.StringUtils;
-                            
+
               class A {
                   boolean test(B b) {
                       return StringUtils.isEmpty(b.getField());

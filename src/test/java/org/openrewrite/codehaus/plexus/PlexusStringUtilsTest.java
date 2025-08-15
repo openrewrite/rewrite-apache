@@ -17,6 +17,7 @@ package org.openrewrite.codehaus.plexus;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -28,7 +29,8 @@ class PlexusStringUtilsTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpath("plexus-utils"))
+        spec
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "plexus-utils"))
           .recipe(new PlexusStringUtilsRecipes());
     }
 
@@ -84,22 +86,22 @@ class PlexusStringUtilsTest implements RewriteTest {
                       String[] array;
                       boolean bool;
                       String string;
-                            
+
                       // Test all methods in alphabetical order to only execute the slow recipes once
                       string = in.length() <= 10 ? in : in.substring(0, 10 - 3) + "...";
                       string = in == null || in.isEmpty() ? in : Character.toTitleCase(in.charAt(0)) + in.substring(1);
                       string = Objects.toString(in, "");
                       string = Objects.toString(in, "nil");
                       string = in.replaceAll("\\\\s+", "");
-                            
+
                       bool = in == null ? false : in.equalsIgnoreCase("other");
                       bool = Objects.equals(in, "other");
                       //bool = StringUtils.equals(cs, "other");
-                            
+
                       bool = StringUtils.isAlphanumeric(in);
                       bool = StringUtils.isAlpha(in);
                       bool = StringUtils.isEmpty(in);
-                            
+
                       string = in == null ? null : in.toLowerCase();
                       string = in == null || in.isEmpty() ? in : in.replace("search", "replacement");
                       string = in == null ? null : new StringBuilder(in).reverse().toString();
