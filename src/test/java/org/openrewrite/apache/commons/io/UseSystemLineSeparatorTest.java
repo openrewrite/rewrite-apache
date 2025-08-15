@@ -17,6 +17,7 @@ package org.openrewrite.apache.commons.io;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
@@ -34,7 +35,7 @@ class UseSystemLineSeparatorTest implements RewriteTest {
             .scanRuntimeClasspath("org.openrewrite.apache.commons.io")
             .build()
             .activateRecipes("org.openrewrite.apache.commons.io.UseSystemLineSeparator"))
-          .parser(JavaParser.fromJavaVersion().classpath("commons-io"));
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-io"));
     }
 
 

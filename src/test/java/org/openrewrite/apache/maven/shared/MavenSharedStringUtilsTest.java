@@ -17,6 +17,7 @@ package org.openrewrite.apache.maven.shared;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -28,7 +29,7 @@ class MavenSharedStringUtilsTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpath("maven-shared-utils"))
+        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "maven-shared-utils"))
           .recipe(new MavenSharedStringUtilsRecipes());
     }
 
@@ -81,19 +82,19 @@ class MavenSharedStringUtilsTest implements RewriteTest {
                       String[] array;
                       boolean bool;
                       String string;
-                            
+
                       // Test all methods in alphabetical order to only execute the slow recipes once
                       string = in.length() <= 10 ? in : in.substring(0, 10 - 3) + "...";
                       string = in == null || in.isEmpty() ? in : Character.toTitleCase(in.charAt(0)) + in.substring(1);
                       string = Objects.toString(in, "");
                       string = Objects.toString(in, "nil");
                       string = in.replaceAll("\\\\s+", "");
-                            
+
                       bool = in == null ? false : in.equalsIgnoreCase("other");
                       bool = Objects.equals(in, "other");
                       //bool = StringUtils.equals(cs, "other");
                       bool = StringUtils.isEmpty(in);
-                            
+
                       string = in == null ? null : in.toLowerCase();
                       string = in == null || in.isEmpty() ? in : in.replace("search", "replacement");
                       string = in == null ? null : new StringBuffer(in).reverse().toString();
