@@ -66,8 +66,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                         // Second pass: add connection manager if needed
                         cu = (J.CompilationUnit) new AddConnectionManagerVisitor().visitNonNull(cu, ctx);
                         // Third pass: transform setSSLSocketFactory to setConnectionManager
-                        cu = (J.CompilationUnit) new TransformSetSSLSocketFactoryVisitor().visitNonNull(cu, ctx);
-                        return cu;
+                        return (J.CompilationUnit) new TransformSetSSLSocketFactoryVisitor().visitNonNull(cu, ctx);
                     }
                 }
         );
@@ -85,9 +84,9 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     !vd.getVariables().isEmpty() &&
                     vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
                 J.NewClass newClass = requireNonNull((J.NewClass) vd.getVariables().get(0).getInitializer());
-                boolean hasExactlyOneArgument = !newClass.getArguments().isEmpty()
-                        && newClass.getArguments().size() == 1
-                        && newClass.getArguments().get(0) instanceof J.Identifier;
+                boolean hasExactlyOneArgument = !newClass.getArguments().isEmpty() &&
+                        newClass.getArguments().size() == 1 &&
+                        newClass.getArguments().get(0) instanceof J.Identifier;
 
                 if (hasExactlyOneArgument) {
                     String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)})";
