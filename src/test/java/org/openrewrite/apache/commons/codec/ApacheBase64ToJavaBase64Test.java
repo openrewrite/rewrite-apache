@@ -40,7 +40,7 @@ class ApacheBase64ToJavaBase64Test implements RewriteTest {
           java(
             """
               import org.apache.commons.codec.binary.Base64;
-                            
+
               class Test {
                   static byte[] decodeBytes(byte[] encodedBytes) {
                       return Base64.decodeBase64(encodedBytes);

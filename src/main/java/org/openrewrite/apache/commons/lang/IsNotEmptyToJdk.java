@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.commons.lang;
 
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -71,8 +72,9 @@ public class IsNotEmptyToJdk extends Recipe {
             private final MethodMatcher isNotEmptyMatcher = new MethodMatcher("*..StringUtils isNotEmpty(..)");
             private final MethodMatcher trimMatcher = new MethodMatcher("java.lang.String trim()");
 
-            private final JavaTemplate isEmptyReplacement = Semantics.expression(this, "IsEmpty", (String s) -> (s == null || s.isEmpty())).build();
-            private final JavaTemplate isNotEmptyReplacement = Semantics.expression(this, "IsNotEmpty", (String s) -> (s != null && !s.isEmpty())).build();
+            // No need to use context here, as there are no classpath dependencies needed for these replacements
+            private final JavaTemplate isEmptyReplacement = Semantics.expression(this, "IsEmpty", (@Nullable String s) -> (s == null || s.isEmpty())).build();
+            private final JavaTemplate isNotEmptyReplacement = Semantics.expression(this, "IsNotEmpty", (@Nullable String s) -> (s != null && !s.isEmpty())).build();
             private final JavaTemplate isEmptyTrimmed = Semantics.expression(this, "IsEmptyTrimmed", (String s) -> s.trim().isEmpty()).build();
             private final JavaTemplate isNotEmptyTrimmed = Semantics.expression(this, "IsNotEmptyTrimmed", (String s) -> !s.trim().isEmpty()).build();
 

@@ -17,6 +17,7 @@ package org.openrewrite.codehaus.plexus;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -28,7 +29,7 @@ class PlexusFileUtilsTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpath("commons-io", "plexus-utils"))
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),"commons-io", "plexus-utils"))
           .recipe(new PlexusFileUtilsRecipes());
     }
 
@@ -42,7 +43,7 @@ class PlexusFileUtilsTest implements RewriteTest {
               java(
                 """
                   import java.io.File;
-                                
+
                   class Test {
                       void test() throws Exception {
                           org.codehaus.plexus.util.FileUtils.deleteDirectory("test");
@@ -53,9 +54,9 @@ class PlexusFileUtilsTest implements RewriteTest {
                   """,
                 """
                   import org.apache.commons.io.FileUtils;
-                                
+
                   import java.io.File;
-                                
+
                   class Test {
                       void test() throws Exception {
                           FileUtils.deleteDirectory(new File("test"));
@@ -75,9 +76,9 @@ class PlexusFileUtilsTest implements RewriteTest {
               java(
                 """
                   import org.codehaus.plexus.util.FileUtils;
-                                
+
                   import java.io.File;
-                                
+
                   class Test {
                       void test() throws Exception {
                           FileUtils.deleteDirectory("test");
@@ -86,9 +87,9 @@ class PlexusFileUtilsTest implements RewriteTest {
                   """,
                 """
                   import org.apache.commons.io.FileUtils;
-                                
+
                   import java.io.File;
-                                
+
                   class Test {
                       void test() throws Exception {
                           FileUtils.deleteDirectory(new File("test"));
@@ -106,9 +107,9 @@ class PlexusFileUtilsTest implements RewriteTest {
               java(
                 """
                   import org.codehaus.plexus.util.FileUtils;
-                                
+
                   import java.io.File;
-                                
+
                   class Test {
                       void test() throws Exception {
                           FileUtils.deleteDirectory("test");
@@ -118,9 +119,9 @@ class PlexusFileUtilsTest implements RewriteTest {
                   """,
                 """
                   import org.codehaus.plexus.util.FileUtils;
-                                
+
                   import java.io.File;
-                                
+
                   class Test {
                       void test() throws Exception {
                           org.apache.commons.io.FileUtils.deleteDirectory(new File("test"));
@@ -142,7 +143,7 @@ class PlexusFileUtilsTest implements RewriteTest {
               java(
                 """
                   import org.codehaus.plexus.util.FileUtils;
-                      
+
                   class Test {
                       boolean test(String fileName) throws Exception {
                           return FileUtils.fileExists(fileName);
@@ -151,7 +152,7 @@ class PlexusFileUtilsTest implements RewriteTest {
                   """,
                 """
                   import java.io.File;
-                      
+
                   class Test {
                       boolean test(String fileName) throws Exception {
                           return new File(fileName).exists();
@@ -172,9 +173,9 @@ class PlexusFileUtilsTest implements RewriteTest {
               java(
                 """
                   import org.codehaus.plexus.util.FileUtils;
-                                    
+
                   import java.io.File;
-                      
+
                   class Test {
                       File test(String fileName) throws Exception {
                           return FileUtils.getFile(fileName);
@@ -183,7 +184,7 @@ class PlexusFileUtilsTest implements RewriteTest {
                   """,
                 """
                   import java.io.File;
-                      
+
                   class Test {
                       File test(String fileName) throws Exception {
                           return new File(fileName);
