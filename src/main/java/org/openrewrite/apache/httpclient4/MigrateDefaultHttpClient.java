@@ -23,8 +23,9 @@ import org.openrewrite.java.*;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
 
-import java.util.Collections;
 import java.util.Set;
+
+import static java.util.Collections.singleton;
 
 public class MigrateDefaultHttpClient extends Recipe {
     @Override
@@ -45,7 +46,7 @@ public class MigrateDefaultHttpClient extends Recipe {
 
     @Override
     public Set<String> getTags() {
-        return Collections.singleton("CWE-326");
+        return singleton("CWE-326");
     }
 
     @Override

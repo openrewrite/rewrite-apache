@@ -24,8 +24,9 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
 import org.openrewrite.marker.SearchResult;
 
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.Collections.singletonList;
 
 public class MigrateRequestConfig extends Recipe {
 
@@ -127,7 +128,7 @@ public class MigrateRequestConfig extends Recipe {
         @Override
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
             if (MATCHER_STALE_CHECK_ENABLED.matches(method)) {
-                doAfterVisit(new RemoveMethodInvocationsVisitor(Collections.singletonList(PATTERN_STALE_CHECK_ENABLED)));
+                doAfterVisit(new RemoveMethodInvocationsVisitor(singletonList(PATTERN_STALE_CHECK_ENABLED)));
             } else if (MATCHER_REQUEST_CONFIG.matches(method)) {
                 J.Identifier connectionManagerIdentifier = getCursor().pollNearestMessage(KEY_POOL_CONN_MANAGER);
                 if (connectionManagerIdentifier != null) {

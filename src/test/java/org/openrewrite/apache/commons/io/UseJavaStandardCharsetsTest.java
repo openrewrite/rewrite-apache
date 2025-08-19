@@ -17,6 +17,7 @@ package org.openrewrite.apache.commons.io;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -28,7 +29,7 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .recipeFromResources("org.openrewrite.apache.commons.io.UseStandardCharsets")
-          .parser(JavaParser.fromJavaVersion().classpath("commons-io"));
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-io"));
     }
 
     @DocumentExample
@@ -41,7 +42,7 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
             """
               import java.nio.charset.Charset;
               import org.apache.commons.io.Charsets;
-              
+
               class A {
                    Charset iso88591 = Charsets.ISO_8859_1;
                    Charset usAscii = Charsets.US_ASCII;
@@ -54,7 +55,7 @@ class UseJavaStandardCharsetsTest implements RewriteTest {
             """
               import java.nio.charset.Charset;
               import java.nio.charset.StandardCharsets;
-              
+
               class A {
                    Charset iso88591 = StandardCharsets.ISO_8859_1;
                    Charset usAscii = StandardCharsets.US_ASCII;

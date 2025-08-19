@@ -7,14 +7,22 @@ group = "org.openrewrite.recipe"
 description = "Apache Migration"
 
 recipeDependencies {
-    parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.+")
-    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.+")
+    parserClasspath("commons-io:commons-io:2.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
-    parserClasspath("org.apache.poi:poi:3.16")
+    parserClasspath("org.apache.commons:commons-lang3:3.+")
+
+    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.+")
+    parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.+")
     parserClasspath("org.apache.httpcomponents:httpclient:4.5.14")
-    parserClasspath("org.apache.httpcomponents:httpmime:4.5.14")
     parserClasspath("org.apache.httpcomponents:httpcore-nio:4.4.16")
     parserClasspath("org.apache.httpcomponents:httpcore:4.4.16")
+    parserClasspath("org.apache.httpcomponents:httpmime:4.5.14")
+
+    parserClasspath("org.apache.maven.shared:maven-shared-utils:3.+")
+
+    parserClasspath("org.apache.poi:poi:3.16")
+
+    parserClasspath("org.codehaus.plexus:plexus-utils:3.+")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
@@ -32,12 +40,13 @@ dependencies {
         exclude("io.github.eisop","dataflow-errorprone")
     }
 
-    implementation("commons-io:commons-io:2.+")
-    implementation("org.apache.commons:commons-lang3:3.+")
-    implementation("org.apache.maven.shared:maven-shared-utils:3.+")
-    implementation("org.codehaus.plexus:plexus-utils:3.+")
+    compileOnly("commons-io:commons-io:2.+")
+    compileOnly("org.apache.commons:commons-lang3:3.+")
+    compileOnly("org.apache.maven.shared:maven-shared-utils:3.+")
+    compileOnly("org.codehaus.plexus:plexus-utils:3.+")
 
     implementation("org.jspecify:jspecify:1.0.0")
+
     testImplementation("org.openrewrite:rewrite-java-17")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
@@ -57,4 +66,8 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.13.3")
 
+}
+
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-Arewrite.javaParserClasspathFrom=resources")
 }

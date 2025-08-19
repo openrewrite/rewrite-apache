@@ -15,8 +15,10 @@
  */
 package org.openrewrite.apache.commons.lang;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -29,7 +31,7 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang3"))
+        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang3"))
           .recipe(new ApacheCommonsStringUtilsRecipes());
     }
 
@@ -336,5 +338,120 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
               """
           )
         );
+    }
+
+    @Nested
+    class RemoveRedundantNullCheckWithIsNotBlankTests {
+        @Test
+        void removeRedundantNullCheckWithIsNotBlank() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class Foo {
+                      boolean test(String str) {
+                          return str != null && StringUtils.isNotBlank(str);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class Foo {
+                      boolean test(String str) {
+                          return StringUtils.isNotBlank(str);
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void removeRedundantNullCheckWithIsNotBlankInIfStatement() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class Foo {
+                      void test(String str) {
+                          if (str != null && StringUtils.isNotBlank(str)) {
+                              System.out.println(str);
+                          }
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class Foo {
+                      void test(String str) {
+                          if (StringUtils.isNotBlank(str)) {
+                              System.out.println(str);
+                          }
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void shouldNotChangeWhenOnlyNullCheck() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class Foo {
+                      boolean test(String str) {
+                          return str != null;
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void shouldNotChangeWhenOnlyIsNotBlank() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class Foo {
+                      boolean test(String str) {
+                          return StringUtils.isNotBlank(str);
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void shouldNotChangeWhenNullCheckAgainstDifferentVariable() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class Foo {
+                      boolean test(String str1, String str2) {
+                          return str1 != null && StringUtils.isNotBlank(str2);
+                      }
+                  }
+                  """
+              )
+            );
+        }
     }
 }
