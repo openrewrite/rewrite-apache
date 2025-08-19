@@ -21,7 +21,6 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
-import org.openrewrite.test.TypeValidation;
 
 import static org.openrewrite.java.Assertions.java;
 
@@ -39,7 +38,6 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
     @Test
     void migratesToDefaultClientTlsStrategy() {
         rewriteRun(
-          spec -> spec.afterTypeValidationOptions(TypeValidation.all().identifiers(false)),
           //language=java
           java(
             """
@@ -176,7 +174,7 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
      * TODO: The handling of other constructor arguments should be improved later.
      */
     @Test
-    void constructorArgumentsThanSSLContextOnlyChangeImports() {
+    void moreConstructorArgumentsThanSSLContextOnlyChangeImports() {
         rewriteRun(
           //language=java
           java(
