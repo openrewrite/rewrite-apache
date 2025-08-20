@@ -39,6 +39,8 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     private static final String HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY = "org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory";
     private static final String DEFAULT_TLS_SOCKET_STRATEGY = "org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy";
     private static final String TLS_SOCKET_STRATEGY = "org.apache.hc.client5.http.ssl.TlsSocketStrategy";
+    private static final MethodMatcher SET_SSL_SOCKET_FACTORY = new MethodMatcher(
+            "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)");
 
     @Override
     public String getDisplayName() {
@@ -112,6 +114,8 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
         private static final String HTTP_CLIENT_CONNECTION_MANAGER = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
         private static final String POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER = "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder";
 
+        private boolean hasSetSSLSocketFactory = false;
+
         @Override
         public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
             J.MethodDeclaration m = super.visitMethodDeclaration(method, ctx);
@@ -120,7 +124,8 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                 return m;
             }
 
-            boolean hasSetSSLSocketFactory = false;
+            // Needs to reset for each method
+            hasSetSSLSocketFactory = false;
             J.VariableDeclarations tlsStrategyDecl = null;
             int tlsStrategyIndex = -1;
 
@@ -137,9 +142,15 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     }
                 }
 
-                if (stmt.toString().contains("setSSLSocketFactory")) {
-                    hasSetSSLSocketFactory = true;
-                }
+                new JavaIsoVisitor<ExecutionContext>() {
+                    @Override
+                    public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                        if (SET_SSL_SOCKET_FACTORY.matches(method)) {
+                            hasSetSSLSocketFactory = true;
+                        }
+                        return super.visitMethodInvocation(method, ctx);
+                    }
+                }.visitNonNull(stmt, ctx);
             }
 
             if (tlsStrategyDecl != null && hasSetSSLSocketFactory) {
@@ -180,8 +191,6 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     }
 
     private static class TransformSetSSLSocketFactoryVisitor extends JavaIsoVisitor<ExecutionContext> {
-        private static final MethodMatcher SET_SSL_SOCKET_FACTORY = new MethodMatcher(
-                "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)");
 
         @Override
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
