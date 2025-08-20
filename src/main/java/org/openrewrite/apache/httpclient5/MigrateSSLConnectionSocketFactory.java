@@ -95,13 +95,12 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     maybeAddImport(TLS_SOCKET_STRATEGY);
                     maybeAddImport(DEFAULT_TLS_SOCKET_STRATEGY);
                     return JavaTemplate.builder(code)
-                            .contextSensitive()
                             .javaParser(JavaParser.fromJavaVersion()
                                     .classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports(TLS_SOCKET_STRATEGY,
                                     DEFAULT_TLS_SOCKET_STRATEGY)
                             .build()
-                            .apply(getCursor(), vd.getCoordinates().replace(), new Object[]{newClass.getArguments().get(0)});
+                            .apply(getCursor(), vd.getCoordinates().replace(), newClass.getArguments().get(0));
                 }
             }
 
@@ -160,14 +159,13 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
 
                 if (!connectionManagerExists) {
                     J.Identifier tlsStrategyIdentifier = tlsStrategyDecl.getVariables().get(0).getName();
-                    final String httpClientConnectionManagerCode = "HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
+                    String httpClientConnectionManagerCode = "HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
                             ".setTlsSocketStrategy(#{any(org.apache.hc.client5.http.ssl.TlsSocketStrategy)}).build();";
 
                     maybeAddImport(HTTP_CLIENT_CONNECTION_MANAGER);
                     maybeAddImport(POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER);
 
                     return JavaTemplate.builder(httpClientConnectionManagerCode)
-                            .contextSensitive()
                             .javaParser(JavaParser.fromJavaVersion()
                                     .classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports(HTTP_CLIENT_CONNECTION_MANAGER,
