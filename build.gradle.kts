@@ -11,8 +11,8 @@ recipeDependencies {
     parserClasspath("org.apache.commons:commons-collections4:4.4")
     parserClasspath("org.apache.commons:commons-lang3:3.+")
 
-    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.1.+")
-    parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.1.+")
+    parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.+")
+    parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.+")
     parserClasspath("org.apache.httpcomponents:httpclient:4.5.14")
     parserClasspath("org.apache.httpcomponents:httpcore-nio:4.4.16")
     parserClasspath("org.apache.httpcomponents:httpcore:4.4.16")
