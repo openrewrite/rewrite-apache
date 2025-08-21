@@ -17,6 +17,7 @@ package org.openrewrite.apache.httpclient5;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -122,9 +123,9 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             }
 
             class MethodAnalyzer extends JavaIsoVisitor<ExecutionContext> {
-                boolean hasSetSSLSocketFactory = false;
-                J.VariableDeclarations tlsStrategyDecl = null;
                 boolean connectionManagerExists = false;
+                boolean hasSetSSLSocketFactory = false;
+                J.@Nullable VariableDeclarations tlsStrategyDecl = null;
 
                 @Override
                 public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations vd, ExecutionContext ctx) {
