@@ -65,7 +65,8 @@ public class RemoveByteBufferAllocators extends Recipe {
                             maybeAddImport("java.nio.ByteBuffer");
                             maybeRemoveImport(dbbaClassName);
                             return newM;
-                        } else if (hbbaAllocateMatcher.matches(m)) {
+                        }
+                        if (hbbaAllocateMatcher.matches(m)) {
                             J.MethodInvocation newM = JavaTemplate
                                     .builder("ByteBuffer.allocate(#{any(int)})")
                                     .imports("java.nio.ByteBuffer")

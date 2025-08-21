@@ -67,7 +67,8 @@ public class InputBufferReadAddOffsetAndLengthArguments extends Recipe {
                             .build();
                     if (simpleCaseMatcher.matches(firstArg)) {
                         return after.apply(getCursor(), m.getCoordinates().replace(), requireNonNull(m.getSelect()), firstArg, firstArg);
-                    } else if (messyCaseMatcher.matches(firstArg)) {
+                    }
+                    if (messyCaseMatcher.matches(firstArg)) {
                         return after.apply(getCursor(), m.getCoordinates().replace(), requireNonNull(m.getSelect()), firstArg, firstArg)
                                 .withComments(ListUtils.concat(m.getComments(),
                                         new TextComment(true, " TODO: Please check that repeated obtaining of byte[] is safe here ", m.getPrefix().getWhitespace(), Markers.EMPTY)));
