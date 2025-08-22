@@ -27,7 +27,6 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
-import org.openrewrite.java.template.Matcher;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TextComment;
@@ -38,8 +37,8 @@ import static java.util.Objects.requireNonNull;
 @EqualsAndHashCode(callSuper = false)
 @Value
 public class OutputBufferWriteAddOffsetAndLengthArguments extends Recipe {
-    private static final String writePattern = "org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer write(byte[])";
-    private static final MethodMatcher writeMatcher = new MethodMatcher(writePattern);
+    private static final String WRITE_PATTERN = "org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer write(byte[])";
+    private static final MethodMatcher WRITE_MATCHER = new MethodMatcher(WRITE_PATTERN);
 
     @Override
     public String getDisplayName() {
@@ -53,27 +52,24 @@ public class OutputBufferWriteAddOffsetAndLengthArguments extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new UsesMethod<>(writePattern), new JavaIsoVisitor<ExecutionContext>() {
+        return Preconditions.check(new UsesMethod<>(WRITE_PATTERN), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m =  super.visitMethodInvocation(method, ctx);
-                if (writeMatcher.matches(m)) {
+                if (WRITE_MATCHER.matches(m)) {
                     Expression firstArg = m.getArguments().get(0);
-                    Matcher<Expression> simpleCaseMatcher = new RepeatableByteArrayArgumentMatcher();
-                    Matcher<Expression> messyCaseMatcher = new NonRepeatableByteArrayArgumentMatcher();
                     JavaTemplate after = JavaTemplate
                             .builder("#{any(org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer)}.write(#{any(byte[])}, 0, #{any(byte[])}.length)")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
                             .build();
-                    if (simpleCaseMatcher.matches(firstArg)) {
+                    if (new RepeatableByteArrayArgumentMatcher().matches(firstArg)) {
                         return after.apply(getCursor(), m.getCoordinates().replace(), requireNonNull(m.getSelect()), firstArg, firstArg);
                     }
-                    if (messyCaseMatcher.matches(firstArg)) {
+                    if (new NonRepeatableByteArrayArgumentMatcher().matches(firstArg)) {
                         return after.apply(getCursor(), m.getCoordinates().replace(), requireNonNull(m.getSelect()), firstArg, firstArg)
                                 .withComments(ListUtils.concat(m.getComments(),
                                         new TextComment(true, " TODO: Please check that repeated obtaining of byte[] is safe here ", m.getPrefix().getWhitespace(), Markers.EMPTY)));
                     }
-                    return m;
                 }
                 return m;
             }

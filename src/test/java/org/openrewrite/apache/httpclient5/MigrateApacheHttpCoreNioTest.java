@@ -286,8 +286,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
                       BufferWrapper bb2 = (BufferWrapper) ByteBuffer.allocateDirect(4);
                       BufferWrapper bb3 = (BufferWrapper) ByteBuffer.allocate(5);
                       BufferWrapper bb4 = (BufferWrapper) ByteBuffer.allocate(6);
-                      SimpleInputBuffer sib = /* TODO: Please remove usages of this class, as no direct migration exists */ new SimpleInputBuffer(7);
-                      SimpleOutputBuffer sob = /* TODO: Please remove usages of this class, as no direct migration exists */ new SimpleOutputBuffer(7);
+                      SimpleInputBuffer sib = /* TODO: Please remove usages of `SimpleInputBuffer`, as no direct migration exists */ new SimpleInputBuffer(7);
+                      SimpleOutputBuffer sob = /* TODO: Please remove usages of `SimpleOutputBuffer`, as no direct migration exists */ new SimpleOutputBuffer(8);
                   }
               }
               """

@@ -22,26 +22,19 @@ import org.openrewrite.java.tree.TypeUtils;
 
 public class NonRepeatableByteArrayArgumentMatcher implements Matcher<Expression> {
     /**
-     * @param arg an argument to a method invocation
+     * @param expr an argument to a method invocation
      * @return true if the argument is a more complicated method that returns a byte[]
      */
-    static boolean isNonRepeatableArgument(Expression arg) {
-        if (arg instanceof J.Identifier || arg instanceof J.FieldAccess) {
+    @Override
+    public boolean matches(Expression expr) {
+        if (!(expr instanceof J.MethodInvocation)) {
             return false;
         }
-        if (!(arg instanceof J.MethodInvocation)) {
-            return false;
-        }
-        J.MethodInvocation castArg = (J.MethodInvocation) arg;
+        J.MethodInvocation castArg = (J.MethodInvocation) expr;
         // Allow simple getters that return a byte[]
         return !(castArg.getSelect() instanceof J.Identifier) ||
                 !castArg.getSimpleName().startsWith("get") ||
                 (!castArg.getArguments().isEmpty() && !(castArg.getArguments().get(0) instanceof J.Empty)) ||
                 !TypeUtils.isAssignableTo("byte[]", castArg.getMethodType());
-    }
-
-    @Override
-    public boolean matches(Expression expr) {
-        return isNonRepeatableArgument(expr);
     }
 }

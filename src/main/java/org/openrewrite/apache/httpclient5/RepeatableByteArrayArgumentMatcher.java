@@ -22,26 +22,22 @@ import org.openrewrite.java.tree.TypeUtils;
 
 public class RepeatableByteArrayArgumentMatcher implements Matcher<Expression> {
     /**
-     * @param arg an argument to a method invocation
+     * @param expr an argument to a method invocation
      * @return true if the argument is a simple getter that returns a byte[], or an identifier or field access
      */
-    static boolean isRepeatableArgument(Expression arg) {
-        if (arg instanceof J.Identifier || arg instanceof J.FieldAccess) {
+    @Override
+    public boolean matches(Expression expr) {
+        if (expr instanceof J.Identifier || expr instanceof J.FieldAccess) {
             return true;
         }
-        if (!(arg instanceof J.MethodInvocation)) {
+        if (!(expr instanceof J.MethodInvocation)) {
             return false;
         }
-        J.MethodInvocation castArg = (J.MethodInvocation) arg;
+        J.MethodInvocation castArg = (J.MethodInvocation) expr;
         // Allow simple getters that return a byte[]
         return castArg.getSelect() instanceof J.Identifier &&
                 castArg.getSimpleName().startsWith("get") &&
                 (castArg.getArguments().isEmpty() || castArg.getArguments().get(0) instanceof J.Empty) &&
                 TypeUtils.isAssignableTo("byte[]", castArg.getMethodType());
-    }
-
-    @Override
-    public boolean matches(Expression expr) {
-        return isRepeatableArgument(expr);
     }
 }
