@@ -101,11 +101,104 @@ recipeList:
 
 ---
 type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioInputBuffers
+displayName: Migrate Apache HttpCore Nio Input Buffer classes to Apache HttpCore 5.x
+description: Mapping of specifically `*InputBuffer` classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x
+recipeList:
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Check this usage, as implementation has changed to match that of old `.available()` method."
+      methodPattern: org.apache.http.nio.util.SharedInputBuffer capacity()
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.SharedInputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer
+  - org.openrewrite.apache.httpclient5.InputBufferReadAddOffsetAndLengthArguments
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer <constructor>(int, org.apache.http.nio.IOControl, org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer <constructor>(int, org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Remove calls to `consumeContent(..)` as the method has been removed"
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer consumeContent(..)
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer available()
+      newMethodName: capacity
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer close()
+      newMethodName: markEndStream
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer shutdown()
+      newMethodName: abort
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Remove calls to `waitForData()` as the method has been removed"
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer waitForData()
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.ContentInputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.ContentInputBuffer
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Please remove usages of `SimpleInputBuffer`, as no direct migration exists"
+      methodPattern: "org.apache.http.nio.util.SimpleInputBuffer *(..)"
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioOutputBuffers
+displayName: Migrate Apache HttpCore Nio Output Buffer classes to Apache HttpCore 5.x
+description: Mapping of specifically `*OutputBuffer` classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x
+recipeList:
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Check this usage, as implementation has changed to match that of old `.available()` method."
+      methodPattern: org.apache.http.nio.util.SharedOutputBuffer capacity()
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.SharedOutputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer
+  - org.openrewrite.apache.httpclient5.OutputBufferWriteAddOffsetAndLengthArguments
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer <constructor>(int, org.apache.http.nio.IOControl, org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer <constructor>(int, org.apache.http.nio.util.ByteBufferAllocator)
+      argumentIndex: 1
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Remove calls to `produceContent(..)` as the method has been removed"
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer produceContent(..)
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer available()
+      newMethodName: capacity
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer close()
+      newMethodName: abort
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer shutdown()
+      newMethodName: abort
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Remove calls to `flush(..)` as the method has been removed"
+      methodPattern: org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer flush()
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.util.ContentOutputBuffer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.support.classic.ContentOutputBuffer
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: Please remove usages of `SimpleOutputBuffer`, as no direct migration exists"
+      methodPattern: "org.apache.http.nio.util.SimpleOutputBuffer *(..)"
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioUtilMapping
+displayName: Migrate to Apache HttpCore Nio Util Classes to Apache HttpCore 5.x
+description: Mapping of all the compatible utility classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x
+recipeList:
+  - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioInputBuffers
+  - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioOutputBuffers
+  - org.openrewrite.apache.httpclient5.RemoveByteBufferAllocators
+
+---
+type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
 displayName: Migrate to Apache HttpCore Nio Classes to Apache HttpCore 5.x
 description: Mapping of all the compatible classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
 recipeList:
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCoreNioDependencies
+  - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioUtilMapping
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.IOReactorConfig
       newFullyQualifiedTypeName: org.apache.hc.core5.reactor.IOReactorConfig

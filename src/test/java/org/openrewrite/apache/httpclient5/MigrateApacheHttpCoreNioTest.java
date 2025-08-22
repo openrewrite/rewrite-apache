@@ -21,6 +21,7 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
+import org.openrewrite.test.SourceSpec;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -131,6 +132,165 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
                   </project>
                   """.formatted(version.group(0));
             })
+          )
+        );
+    }
+
+    @Test
+    void migratesSharedInputBuffer() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.nio.util.DirectByteBufferAllocator;
+              import org.apache.http.nio.util.SharedInputBuffer;
+
+              class A {
+                  void method() {
+                      SharedInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                      SharedInputBuffer inBuffer2 = new SharedInputBuffer(2, DirectByteBufferAllocator.INSTANCE);
+                      inBuffer1.capacity();
+                      int available1 = inBuffer1.available();
+                      byte[] bArr = "testing".getBytes();
+                      int readCount = inBuffer2.read(bArr);
+                      int readCount2 = inBuffer2.read("testing2".getBytes());
+                      inBuffer2.close();
+                      inBuffer2.shutdown();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer;
+
+              class A {
+                  void method() {
+                      SharedInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                      SharedInputBuffer inBuffer2 = new SharedInputBuffer(2);
+                      /* TODO: Check this usage, as implementation has changed to match that of old `.available()` method. */
+                      inBuffer1.capacity();
+                      int available1 = inBuffer1.capacity();
+                      byte[] bArr = "testing".getBytes();
+                      int readCount = inBuffer2.read(bArr, 0, bArr.length);
+                      int readCount2 = /* TODO: Please check that repeated obtaining of byte[] is safe here */ inBuffer2.read("testing2".getBytes(), 0, "testing2".getBytes().length);
+                      inBuffer2.markEndStream();
+                      inBuffer2.abort();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesSharedOutputBuffer() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.nio.util.HeapByteBufferAllocator;
+              import org.apache.http.nio.util.SharedOutputBuffer;
+
+              class A {
+                  void method() {
+                      SharedOutputBuffer outBuffer1 = new SharedOutputBuffer(3);
+                      SharedOutputBuffer outBuffer2 = new SharedOutputBuffer(4, HeapByteBufferAllocator.INSTANCE);
+                      outBuffer1.capacity();
+                      int available1 = outBuffer1.available();
+                      byte[] bArr = "testing".getBytes();
+                      outBuffer1.write(bArr);
+                      outBuffer2.write("testing2".getBytes());
+                      outBuffer2.close();
+                      outBuffer2.shutdown();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer;
+
+              class A {
+                  void method() {
+                      SharedOutputBuffer outBuffer1 = new SharedOutputBuffer(3);
+                      SharedOutputBuffer outBuffer2 = new SharedOutputBuffer(4);
+                      /* TODO: Check this usage, as implementation has changed to match that of old `.available()` method. */
+                      outBuffer1.capacity();
+                      int available1 = outBuffer1.capacity();
+                      byte[] bArr = "testing".getBytes();
+                      outBuffer1.write(bArr, 0, bArr.length);
+                      /* TODO: Please check that repeated obtaining of byte[] is safe here */
+                      outBuffer2.write("testing2".getBytes(), 0, "testing2".getBytes().length);
+                      outBuffer2.abort();
+                      outBuffer2.abort();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesUtilClasses() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              package com.example;
+
+              import java.nio.ByteBuffer;
+
+              public class BufferWrapper extends ByteBuffer {}
+              """,
+            SourceSpec::skip
+          ),
+          //language=java
+          java(
+            """
+              import com.example.BufferWrapper;
+              import org.apache.http.nio.util.ContentInputBuffer;
+              import org.apache.http.nio.util.ContentOutputBuffer;
+              import org.apache.http.nio.util.DirectByteBufferAllocator;
+              import org.apache.http.nio.util.HeapByteBufferAllocator;
+              import org.apache.http.nio.util.SharedInputBuffer;
+              import org.apache.http.nio.util.SharedOutputBuffer;
+              import org.apache.http.nio.util.SimpleInputBuffer;
+              import org.apache.http.nio.util.SimpleOutputBuffer;
+
+              class A {
+                  void method() {
+                      ContentInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                      ContentOutputBuffer outBuffer1 = new SharedOutputBuffer(2);
+                      BufferWrapper bb1 = (BufferWrapper) new DirectByteBufferAllocator().allocate(3);
+                      BufferWrapper bb2 = (BufferWrapper) DirectByteBufferAllocator.INSTANCE.allocate(4);
+                      BufferWrapper bb3 = (BufferWrapper) new HeapByteBufferAllocator().allocate(5);
+                      BufferWrapper bb4 = (BufferWrapper) HeapByteBufferAllocator.INSTANCE.allocate(6);
+                      SimpleInputBuffer sib = new SimpleInputBuffer(7);
+                      SimpleOutputBuffer sob = new SimpleOutputBuffer(8);
+                  }
+              }
+              """,
+            """
+              import com.example.BufferWrapper;
+              import org.apache.hc.core5.http.nio.support.classic.ContentInputBuffer;
+              import org.apache.hc.core5.http.nio.support.classic.ContentOutputBuffer;
+              import org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer;
+              import org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer;
+              import org.apache.http.nio.util.SimpleInputBuffer;
+              import org.apache.http.nio.util.SimpleOutputBuffer;
+
+              import java.nio.ByteBuffer;
+
+              class A {
+                  void method() {
+                      ContentInputBuffer inBuffer1 = new SharedInputBuffer(1);
+                      ContentOutputBuffer outBuffer1 = new SharedOutputBuffer(2);
+                      BufferWrapper bb1 = (BufferWrapper) ByteBuffer.allocateDirect(3);
+                      BufferWrapper bb2 = (BufferWrapper) ByteBuffer.allocateDirect(4);
+                      BufferWrapper bb3 = (BufferWrapper) ByteBuffer.allocate(5);
+                      BufferWrapper bb4 = (BufferWrapper) ByteBuffer.allocate(6);
+                      SimpleInputBuffer sib = /* TODO: Please remove usages of `SimpleInputBuffer`, as no direct migration exists */ new SimpleInputBuffer(7);
+                      SimpleOutputBuffer sob = /* TODO: Please remove usages of `SimpleOutputBuffer`, as no direct migration exists */ new SimpleOutputBuffer(8);
+                  }
+              }
+              """
           )
         );
     }
