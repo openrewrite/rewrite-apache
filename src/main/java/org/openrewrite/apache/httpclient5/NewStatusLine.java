@@ -45,7 +45,7 @@ public class NewStatusLine extends Recipe {
                 "instantiate the object.";
     }
 
-    private static final MethodMatcher MATCHER = new MethodMatcher("org.apache.hc.core5.http.HttpResponse getStatusLine()");
+    private static final MethodMatcher MATCHER = new MethodMatcher("org.apache.http.HttpResponse getStatusLine()");
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
