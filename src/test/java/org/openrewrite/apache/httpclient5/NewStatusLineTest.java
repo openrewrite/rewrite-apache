@@ -41,11 +41,11 @@ class NewStatusLineTest implements RewriteTest {
           java(
             """
               import org.apache.http.HttpStatus;
+              import org.apache.http.ProtocolVersion;
               import org.apache.http.client.methods.CloseableHttpResponse;
               import org.apache.http.client.methods.HttpGet;
               import org.apache.http.impl.client.CloseableHttpClient;
               import org.apache.http.impl.client.HttpClientBuilder;
-              import org.apache.http.ProtocolVersion;
 
               import java.io.IOException;
 
@@ -66,10 +66,10 @@ class NewStatusLineTest implements RewriteTest {
               import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
               import org.apache.hc.core5.http.message.StatusLine;
               import org.apache.hc.core5.http.HttpStatus;
+              import org.apache.hc.core5.http.ProtocolVersion;
               import org.apache.hc.client5.http.classic.methods.HttpGet;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-              import org.apache.hc.core5.http.ProtocolVersion;
 
               import java.io.IOException;
 
