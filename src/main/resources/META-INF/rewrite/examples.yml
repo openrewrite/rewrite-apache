@@ -726,45 +726,6 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
-recipeName: org.openrewrite.apache.httpclient5.MigrateSSLConnectionSocketFactory
-examples:
-- description: ''
-  sources:
-  - before: |
-      import javax.net.ssl.SSLContext;
-
-      import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-      import org.apache.http.impl.client.HttpClients;
-      import org.apache.http.ssl.SSLContexts;
-
-      public class HttpClientManager {
-          public void create() {
-              SSLContext sslContext = SSLContexts.createDefault();
-              SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
-              HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
-          }
-      }
-    after: |
-      import javax.net.ssl.SSLContext;
-
-      import org.apache.hc.client5.http.impl.classic.HttpClients;
-      import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-      import org.apache.hc.client5.http.io.HttpClientConnectionManager;
-      import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
-      import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
-      import org.apache.hc.core5.ssl.SSLContexts;
-
-      public class HttpClientManager {
-          public void create() {
-              SSLContext sslContext = SSLContexts.createDefault();
-              TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
-              HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
-              HttpClients.custom().setConnectionManager(cm).build();
-          }
-      }
-    language: java
----
-type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.MigrateStringEntityStringCharsetConstructor
 examples:
 - description: ''
@@ -834,6 +795,41 @@ examples:
               StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
               MimeField field = new MimeField("A", "B");
               EntityUtils.consume(entity);
+          }
+      }
+    language: java
+- description: ''
+  sources:
+  - before: |
+      import javax.net.ssl.SSLContext;
+
+      import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+      import org.apache.http.impl.client.HttpClients;
+      import org.apache.http.ssl.SSLContexts;
+
+      class HttpClientManager {
+          void create() {
+              SSLContext sslContext = SSLContexts.createDefault();
+              SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+              HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+          }
+      }
+    after: |
+      import javax.net.ssl.SSLContext;
+
+      import org.apache.hc.client5.http.impl.classic.HttpClients;
+      import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+      import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+      import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+      import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+      import org.apache.hc.core5.ssl.SSLContexts;
+
+      class HttpClientManager {
+          void create() {
+              SSLContext sslContext = SSLContexts.createDefault();
+              TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
+              HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
+              HttpClients.custom().setConnectionManager(cm).build();
           }
       }
     language: java
