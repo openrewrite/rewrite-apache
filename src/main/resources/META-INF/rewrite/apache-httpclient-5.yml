@@ -38,7 +38,6 @@ recipeList:
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
-  - org.openrewrite.apache.httpclient5.NewRequestLine
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
   - org.openrewrite.apache.httpclient5.MigrateSSLConnectionSocketFactory
   - org.openrewrite.java.DeleteMethodArgument:
@@ -636,6 +635,8 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.HttpConnectionFactory
       newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpConnectionFactory
+
+  # Fixing specific mappings for core Http interfaces
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.HttpRequest
       newFullyQualifiedTypeName: org.apache.hc.core5.http.ClassicHttpRequest
@@ -746,6 +747,7 @@ recipeList:
       methodPatternChain: [ 'org.apache.http.HttpResponse getStatusLine()', 'org.apache.http.StatusLine getProtocolVersion()' ]
       newMethodName: getVersion
   - org.openrewrite.apache.httpclient5.NewStatusLine
+  - org.openrewrite.apache.httpclient5.NewRequestLine
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.CredentialsStoreSetCredentials
