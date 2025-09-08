@@ -55,8 +55,8 @@ class NewRequestLineTest implements RewriteTest {
               """,
             """
               import org.apache.hc.client5.http.classic.methods.HttpGet;
-              import org.apache.hc.core5.http.ProtocolVersion;
               import org.apache.hc.core5.http.message.RequestLine;
+              import org.apache.hc.core5.http.ProtocolVersion;
 
               class A {
                   void method() {

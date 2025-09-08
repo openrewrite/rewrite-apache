@@ -34,10 +34,10 @@ recipeList:
   - org.openrewrite.maven.RemoveDuplicateDependencies
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
+  - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
-  - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
   - org.openrewrite.apache.httpclient5.MigrateSSLConnectionSocketFactory
   - org.openrewrite.java.DeleteMethodArgument:
@@ -636,6 +636,17 @@ recipeList:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.HttpConnectionFactory
       newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpConnectionFactory
 
+  # Fixing specific mappings for core Http interfaces
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.HttpRequest
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.ClassicHttpRequest
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.HttpResponse
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.ClassicHttpResponse
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.client.ResponseHandler
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpClientResponseHandler
+
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http
       newPackageName: org.apache.hc.core5.http
@@ -665,15 +676,6 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.HttpConnectionFactory
       newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpConnectionFactory
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.HttpRequest
-      newFullyQualifiedTypeName: org.apache.hc.core5.http.ClassicHttpRequest
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.HttpResponse
-      newFullyQualifiedTypeName: org.apache.hc.core5.http.ClassicHttpResponse
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.client.ResponseHandler
-      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpClientResponseHandler
 
   # Fixing argument order change
   - org.openrewrite.java.ReorderMethodArguments:
@@ -736,13 +738,13 @@ displayName: Migrate to ApacheHttpClient 5.x deprecated methods from 4.x
 description: Migrates deprecated methods to their equivalent ones in 5.x
 recipeList:
   - org.openrewrite.java.SimplifyMethodChain:
-      methodPatternChain: ['org.apache.hc.core5.http.HttpResponse getStatusLine()', 'org.apache.hc.core5.http.message.StatusLine getStatusCode()']
+      methodPatternChain: ['org.apache.http.HttpResponse getStatusLine()', 'org.apache.http.StatusLine getStatusCode()']
       newMethodName: getCode
   - org.openrewrite.java.SimplifyMethodChain:
-      methodPatternChain: ['org.apache.hc.core5.http.HttpResponse getStatusLine()', 'org.apache.hc.core5.http.message.StatusLine getReasonPhrase()']
+      methodPatternChain: ['org.apache.http.HttpResponse getStatusLine()', 'org.apache.http.StatusLine getReasonPhrase()']
       newMethodName: getReasonPhrase
   - org.openrewrite.java.SimplifyMethodChain:
-      methodPatternChain: [ 'org.apache.hc.core5.http.HttpResponse getStatusLine()', 'org.apache.hc.core5.http.message.StatusLine getProtocolVersion()' ]
+      methodPatternChain: [ 'org.apache.http.HttpResponse getStatusLine()', 'org.apache.http.StatusLine getProtocolVersion()' ]
       newMethodName: getVersion
   - org.openrewrite.apache.httpclient5.NewStatusLine
   - org.openrewrite.apache.httpclient5.NewRequestLine
