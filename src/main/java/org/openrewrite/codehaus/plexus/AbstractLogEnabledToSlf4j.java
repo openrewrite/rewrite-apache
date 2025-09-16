@@ -16,13 +16,10 @@
 package org.openrewrite.codehaus.plexus;
 
 import org.jspecify.annotations.Nullable;
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Preconditions;
-import org.openrewrite.Recipe;
-import org.openrewrite.TreeVisitor;
+import org.openrewrite.*;
 import org.openrewrite.java.*;
 import org.openrewrite.java.logging.AddLogger;
-import org.openrewrite.java.search.UsesMethod;
+import org.openrewrite.java.search.FindMethods;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JRightPadded;
@@ -36,7 +33,8 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
     private static final String ABSTRACT_LOG_ENABLED = "org.codehaus.plexus.logging.AbstractLogEnabled";
     private static final MethodMatcher GET_LOGGER_MATCHER = new MethodMatcher(ABSTRACT_LOG_ENABLED + " getLogger()", true);
     private static final String PLEXUS_LOGGER = "org.codehaus.plexus.logging.Logger";
-    private static final MethodMatcher PLEXUS_LOGGER_MATCHER = new MethodMatcher("org.codehaus.plexus.logging.Logger *(..)");
+    private static final String PLEXUS_LOGGER_PATTERN = "org.codehaus.plexus.logging.Logger *(..)";
+    private static final MethodMatcher PLEXUS_LOGGER_MATCHER = new MethodMatcher(PLEXUS_LOGGER_PATTERN);
     private static final String LOGGER_VARIABLE_NAME = "LOGGER"; // Checkstyle requires constants to be uppercase
 
     @Override
@@ -68,7 +66,7 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                             }
 
                             // Return early if not using the logger
-                            if (new UsesMethod<ExecutionContext>(PLEXUS_LOGGER_MATCHER)
+                            if (new FindMethods(PLEXUS_LOGGER_PATTERN, true).getVisitor()
                                         .visitNonNull(cd, ctx, getCursor().getParentTreeCursor()) == cd) {
                                 return cd;
                             }
