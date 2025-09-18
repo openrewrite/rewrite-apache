@@ -66,6 +66,7 @@ recipeList:
       artifactId: httpclient5
       version: 5.4.x
       acceptTransitive: true
+      onlyIfUsing: org.apache.http..*
   - org.openrewrite.java.dependencies.RemoveDependency:
       groupId: org.apache.httpcomponents
       artifactId: httpclient
