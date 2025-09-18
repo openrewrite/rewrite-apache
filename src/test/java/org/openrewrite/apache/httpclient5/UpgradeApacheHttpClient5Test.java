@@ -704,34 +704,35 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         @Test
         void migrateDependencies() {
             rewriteRun(
-              pomXml(
-                //language=xml
-                """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents</groupId>
-                              <artifactId>httpmime</artifactId>
-                              <version>4.5.14</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents</groupId>
-                              <artifactId>httpclient</artifactId>
-                              <version>4.5.14</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """,
-                spec -> spec.after(pom -> {
-                    Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                    assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
-                    String httpClientVersion = version.group();
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                    import org.apache.http.impl.client.CloseableHttpClient;
+                    import org.apache.http.impl.client.HttpClients;
+
+                    public class A {
+                        CloseableHttpClient getClient() {
+                            return HttpClients.createDefault();
+                        }
+                    }
+                    """,
+                    """
+                    import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+                    import org.apache.hc.client5.http.impl.classic.HttpClients;
+
+                    public class A {
+                        CloseableHttpClient getClient() {
+                            return HttpClients.createDefault();
+                        }
+                    }
+                    """
+                    )
+                  ),
+                  pomXml(
                     //language=xml
-                    return """
+                    """
                       <project>
                           <modelVersion>4.0.0</modelVersion>
                           <groupId>org.example</groupId>
@@ -739,14 +740,41 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           <version>1.0.0</version>
                           <dependencies>
                               <dependency>
-                                  <groupId>org.apache.httpcomponents.client5</groupId>
-                                  <artifactId>httpclient5</artifactId>
-                                  <version>%s</version>
+                                  <groupId>org.apache.httpcomponents</groupId>
+                                  <artifactId>httpmime</artifactId>
+                                  <version>4.5.14</version>
+                              </dependency>
+                              <dependency>
+                                  <groupId>org.apache.httpcomponents</groupId>
+                                  <artifactId>httpclient</artifactId>
+                                  <version>4.5.14</version>
                               </dependency>
                           </dependencies>
                       </project>
-                      """.formatted(httpClientVersion);
-                })));
+                      """,
+                    spec -> spec.after(pom -> {
+                        Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                        assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                        String httpClientVersion = version.group();
+                        //language=xml
+                        return """
+                          <project>
+                              <modelVersion>4.0.0</modelVersion>
+                              <groupId>org.example</groupId>
+                              <artifactId>example</artifactId>
+                              <version>1.0.0</version>
+                              <dependencies>
+                                  <dependency>
+                                      <groupId>org.apache.httpcomponents.client5</groupId>
+                                      <artifactId>httpclient5</artifactId>
+                                      <version>%s</version>
+                                  </dependency>
+                              </dependencies>
+                          </project>
+                          """.formatted(httpClientVersion);
+                    }))
+              )
+            );
         }
 
         @Test
@@ -939,6 +967,31 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       <groupId>org.example</groupId>
                       <artifactId>example</artifactId>
                       <version>1.0.0</version>
+                  </project>
+                  """
+              )
+            );
+        }
+
+        @Issue("https://github.com/openrewrite/rewrite-apache/issues/89")
+        @Test
+        void shouldNotAddDependencyWhenOnlyAwsSdkIsUsed() {
+            rewriteRun(
+              pomXml(
+                //language=xml
+                """
+                  <project>
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>org.example</groupId>
+                      <artifactId>example</artifactId>
+                      <version>1.0.0</version>
+                      <dependencies>
+                          <dependency>
+                              <groupId>com.amazonaws</groupId>
+                              <artifactId>aws-java-sdk-s3</artifactId>
+                              <version>1.12.565</version>
+                          </dependency>
+                      </dependencies>
                   </project>
                   """
               )
