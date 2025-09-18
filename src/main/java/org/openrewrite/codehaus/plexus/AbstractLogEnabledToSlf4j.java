@@ -16,7 +16,10 @@
 package org.openrewrite.codehaus.plexus;
 
 import org.jspecify.annotations.Nullable;
-import org.openrewrite.*;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Preconditions;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.*;
 import org.openrewrite.java.logging.AddLogger;
 import org.openrewrite.java.search.FindMethods;
@@ -67,7 +70,7 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
 
                             // Return early if not using the logger
                             if (new FindMethods(PLEXUS_LOGGER_PATTERN, true).getVisitor()
-                                        .visitNonNull(cd, ctx, getCursor().getParentTreeCursor()) == cd) {
+                                    .visitNonNull(cd, ctx, getCursor().getParentTreeCursor()) == cd) {
                                 return cd;
                             }
 
