@@ -16,6 +16,7 @@
 package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpecs;
 
@@ -62,6 +63,7 @@ class AddTimeUnitArgumentTest implements RewriteTest {
       }
       """ );
 
+    @DocumentExample
     @Test
     void addTimeUnitDefaultMilliseconds() {
         rewriteRun(

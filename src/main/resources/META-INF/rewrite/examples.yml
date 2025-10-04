@@ -15,7 +15,7 @@
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.codec.ApacheBase64ToJavaBase64
 examples:
-- description: ''
+- description: '`ApacheBase64ToJavaBase64Test#toJavaBase64`'
   sources:
   - before: |
       import org.apache.commons.codec.binary.Base64;
@@ -68,7 +68,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4
 examples:
-- description: ''
+- description: '`UpgradeApacheCommonsCollections_3_4Test#apacheCommonsCollections`'
   sources:
   - before: |
       import org.apache.commons.collections.CollectionUtils;
@@ -114,7 +114,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.io.ApacheCommonsFileUtilsRecipes
 examples:
-- description: ''
+- description: '`ApacheCommonsFileUtilsTest#ubertest`'
   sources:
   - before: |
       import org.apache.commons.io.FileUtils;
@@ -230,7 +230,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.io.ApacheFileUtilsToJavaFiles
 examples:
-- description: ''
+- description: '`ApacheFileUtilsToJavaFilesTest#convertTest`'
   sources:
   - before: |
       import java.io.File;
@@ -278,7 +278,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.io.UseStandardCharsets
 examples:
-- description: ''
+- description: '`UseJavaStandardCharsetsTest#toStandardCharsets`'
   sources:
   - before: |
       import java.nio.charset.Charset;
@@ -309,7 +309,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.io.UseSystemLineSeparator
 examples:
-- description: ''
+- description: '`UseSystemLineSeparatorTest#migratesQualifiedField`'
   sources:
   - before: |
       import org.apache.commons.io.IOUtils;
@@ -330,7 +330,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang.ApacheCommonsStringUtilsRecipes
 examples:
-- description: ''
+- description: '`ApacheCommonsStringUtilsTest#ubertest`'
   sources:
   - before: |
       import org.apache.commons.lang3.StringUtils;
@@ -515,7 +515,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang.IsNotEmptyToJdk
 examples:
-- description: ''
+- description: '`IsNotEmptyToJdkTest#exampleUse`'
   sources:
   - before: |
       import org.apache.commons.lang3.StringUtils;
@@ -536,7 +536,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang.UpgradeApacheCommonsLang_2_3
 examples:
-- description: ''
+- description: '`UpgradeApacheCommonsLang_2_3Test#apacheCommonsLang`'
   sources:
   - before: |
       import org.apache.commons.lang.RandomStringUtils;
@@ -567,7 +567,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang3.UseStandardCharsets
 examples:
-- description: ''
+- description: '`ApacheCommonsLang3UseStandardCharsetsTest#convertCharEncodingFieldsToJdk`'
   sources:
   - before: |
       import org.apache.commons.lang3.CharEncoding;
@@ -602,7 +602,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.math.UpgradeApacheCommonsMath_2_3
 examples:
-- description: ''
+- description: '`UpgradeApacheCommonsMath_2_3Test#apacheCommonsMath`'
   sources:
   - before: |
       import org.apache.commons.math.Field;
@@ -631,7 +631,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient4.MigrateDefaultHttpClient
 examples:
-- description: ''
+- description: '`MigrateDefaultHttpClientTest#noArgsDefaultHttpClient`'
   sources:
   - before: |
       import org.apache.http.HttpResponse;
@@ -667,7 +667,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
 examples:
-- description: ''
+- description: '`CookieConstantsTest#cookieConstantsMapping`'
   sources:
   - before: |
       import org.apache.http.client.params.CookiePolicy;
@@ -700,7 +700,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.ChangeArgumentToTimeValue
 examples:
-- description: ''
+- description: '`ChangeArgumentToTimeValueTest#changeArgumentToTimeValueDefaultMilliseconds`'
   parameters:
   - A method(long)
   - 'null'
@@ -728,7 +728,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.MigrateStringEntityStringCharsetConstructor
 examples:
-- description: ''
+- description: '`MigrateStringEntityStringCharsetConstructorTest#migratesWithin4xIfNotAlreadyMigratedTo5x`'
   sources:
   - before: |
       import org.apache.http.entity.StringEntity;
@@ -757,48 +757,86 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5
 examples:
-- description: ''
+- description: '`CookieConstantsTest#cookieConstantsMapping`'
   sources:
   - before: |
-      import org.apache.http.HttpEntity;
-      import org.apache.http.client.methods.HttpGet;
-      import org.apache.http.client.methods.HttpUriRequest;
-      import org.apache.http.entity.ContentType;
-      import org.apache.http.entity.mime.MinimalField;
-      import org.apache.http.entity.mime.MultipartEntityBuilder;
-      import org.apache.http.entity.mime.content.StringBody;
-      import org.apache.http.util.EntityUtils;
+      import org.apache.http.client.config.CookieSpecs;
 
       class A {
-          void method(HttpEntity entity, String urlStr) throws Exception {
-              HttpUriRequest getRequest = new HttpGet(urlStr);
-              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
-              MinimalField field = new MinimalField("A", "B");
-              EntityUtils.consume(entity);
+          void method() {
+              String c1 = CookieSpecs.IGNORE_COOKIES;
+              String c2 = CookieSpecs.STANDARD;
+              String c3 = CookieSpecs.STANDARD_STRICT;
           }
       }
     after: |
-      import org.apache.hc.core5.http.ContentType;
-      import org.apache.hc.core5.http.io.entity.EntityUtils;
-      import org.apache.hc.core5.http.HttpEntity;
-      import org.apache.hc.client5.http.classic.methods.HttpGet;
-      import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
-      import org.apache.hc.client5.http.entity.mime.MimeField;
-      import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-      import org.apache.hc.client5.http.entity.mime.StringBody;
+      import org.apache.hc.client5.http.cookie.StandardCookieSpec;
 
       class A {
-          void method(HttpEntity entity, String urlStr) throws Exception {
-              HttpUriRequest getRequest = new HttpGet(urlStr);
-              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
-              MimeField field = new MimeField("A", "B");
-              EntityUtils.consume(entity);
+          void method() {
+              String c1 = StandardCookieSpec.IGNORE;
+              String c2 = StandardCookieSpec.RELAXED;
+              String c3 = StandardCookieSpec.STRICT;
           }
       }
     language: java
-- description: ''
+- description: '`MigrateAuthScopeTest#authScopeAnyTest`'
+  sources:
+  - before: |
+      import org.apache.http.auth.AuthScope;
+
+      class A {
+          void method() {
+              AuthScope any = AuthScope.ANY;
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.auth.AuthScope;
+
+      class A {
+          void method() {
+              AuthScope any = new AuthScope(null, -1);
+          }
+      }
+    language: java
+- description: '`MigrateHttpResponseTest#migratesHttpResponseToClassicHttpResponse`'
+  sources:
+  - before: |
+      import org.apache.http.HttpEntity;
+      import org.apache.http.HttpResponse;
+      import org.apache.http.client.methods.HttpGet;
+      import org.apache.http.impl.client.CloseableHttpClient;
+      import org.apache.http.impl.client.HttpClients;
+
+      import java.io.IOException;
+
+      class HttpClientManager {
+          void getEntity() throws IOException {
+              CloseableHttpClient httpClient = HttpClients.createDefault();
+              HttpGet httpGet = new HttpGet("https://example.com");
+              HttpResponse response = httpClient.execute(httpGet);
+              HttpEntity entity = response.getEntity();
+          }
+      }
+    after: |
+      import org.apache.hc.core5.http.ClassicHttpResponse;
+      import org.apache.hc.core5.http.HttpEntity;
+      import org.apache.hc.client5.http.classic.methods.HttpGet;
+      import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+      import org.apache.hc.client5.http.impl.classic.HttpClients;
+
+      import java.io.IOException;
+
+      class HttpClientManager {
+          void getEntity() throws IOException {
+              CloseableHttpClient httpClient = HttpClients.createDefault();
+              HttpGet httpGet = new HttpGet("https://example.com");
+              ClassicHttpResponse response = httpClient.execute(httpGet);
+              HttpEntity entity = response.getEntity();
+          }
+      }
+    language: java
+- description: '`MigrateSSLConnectionSocketFactoryTest#migratesToDefaultClientTlsStrategy`'
   sources:
   - before: |
       import javax.net.ssl.SSLContext;
@@ -833,26 +871,7 @@ examples:
           }
       }
     language: java
-- description: ''
-  sources:
-  - before: |
-      import org.apache.http.auth.AuthScope;
-
-      class A {
-          void method() {
-              AuthScope any = AuthScope.ANY;
-          }
-      }
-    after: |
-      import org.apache.hc.client5.http.auth.AuthScope;
-
-      class A {
-          void method() {
-              AuthScope any = new AuthScope(null, -1);
-          }
-      }
-    language: java
-- description: ''
+- description: '`NewRequestLineTest#removeRequestLineHttpResponse`'
   sources:
   - before: |
       import org.apache.http.client.methods.HttpGet;
@@ -882,7 +901,7 @@ examples:
           }
       }
     language: java
-- description: ''
+- description: '`NewStatusLineTest#removeStatusLineHttpResponse`'
   sources:
   - before: |
       import org.apache.http.HttpStatus;
@@ -930,63 +949,44 @@ examples:
           }
       }
     language: java
-- description: ''
-  sources:
-  - before: |
-      import org.apache.http.client.config.CookieSpecs;
-
-      class A {
-          void method() {
-              String c1 = CookieSpecs.IGNORE_COOKIES;
-              String c2 = CookieSpecs.STANDARD;
-              String c3 = CookieSpecs.STANDARD_STRICT;
-          }
-      }
-    after: |
-      import org.apache.hc.client5.http.cookie.StandardCookieSpec;
-
-      class A {
-          void method() {
-              String c1 = StandardCookieSpec.IGNORE;
-              String c2 = StandardCookieSpec.RELAXED;
-              String c3 = StandardCookieSpec.STRICT;
-          }
-      }
-    language: java
-- description: ''
+- description: '`UpgradeApacheHttpClient5Test#importReplacementsInGroupsWithSomeSpecificMappings`'
   sources:
   - before: |
       import org.apache.http.HttpEntity;
-      import org.apache.http.HttpResponse;
       import org.apache.http.client.methods.HttpGet;
-      import org.apache.http.impl.client.CloseableHttpClient;
-      import org.apache.http.impl.client.HttpClients;
+      import org.apache.http.client.methods.HttpUriRequest;
+      import org.apache.http.entity.ContentType;
+      import org.apache.http.entity.mime.MinimalField;
+      import org.apache.http.entity.mime.MultipartEntityBuilder;
+      import org.apache.http.entity.mime.content.StringBody;
+      import org.apache.http.util.EntityUtils;
 
-      import java.io.IOException;
-
-      class HttpClientManager {
-          void getEntity() throws IOException {
-              CloseableHttpClient httpClient = HttpClients.createDefault();
-              HttpGet httpGet = new HttpGet("https://example.com");
-              HttpResponse response = httpClient.execute(httpGet);
-              HttpEntity entity = response.getEntity();
+      class A {
+          void method(HttpEntity entity, String urlStr) throws Exception {
+              HttpUriRequest getRequest = new HttpGet(urlStr);
+              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+              MinimalField field = new MinimalField("A", "B");
+              EntityUtils.consume(entity);
           }
       }
     after: |
-      import org.apache.hc.core5.http.ClassicHttpResponse;
+      import org.apache.hc.core5.http.ContentType;
+      import org.apache.hc.core5.http.io.entity.EntityUtils;
       import org.apache.hc.core5.http.HttpEntity;
       import org.apache.hc.client5.http.classic.methods.HttpGet;
-      import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-      import org.apache.hc.client5.http.impl.classic.HttpClients;
+      import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+      import org.apache.hc.client5.http.entity.mime.MimeField;
+      import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+      import org.apache.hc.client5.http.entity.mime.StringBody;
 
-      import java.io.IOException;
-
-      class HttpClientManager {
-          void getEntity() throws IOException {
-              CloseableHttpClient httpClient = HttpClients.createDefault();
-              HttpGet httpGet = new HttpGet("https://example.com");
-              ClassicHttpResponse response = httpClient.execute(httpGet);
-              HttpEntity entity = response.getEntity();
+      class A {
+          void method(HttpEntity entity, String urlStr) throws Exception {
+              HttpUriRequest getRequest = new HttpGet(urlStr);
+              MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+              StringBody body = new StringBody("stringbody", ContentType.TEXT_PLAIN);
+              MimeField field = new MimeField("A", "B");
+              EntityUtils.consume(entity);
           }
       }
     language: java
@@ -994,7 +994,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
 examples:
-- description: ''
+- description: '`MigrateApacheHttpCoreNioTest#migratesIOReactorConfig`'
   sources:
   - before: |
       import org.apache.http.impl.nio.reactor.IOReactorConfig;
@@ -1043,7 +1043,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.maven.shared.MavenSharedStringUtilsRecipes
 examples:
-- description: ''
+- description: '`MavenSharedStringUtilsTest#ubertest`'
   sources:
   - before: |
       import org.apache.maven.shared.utils.StringUtils;
@@ -1114,7 +1114,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBold
 examples:
-- description: ''
+- description: '`ReplaceSetBoldweightWithSetBoldTest#replaceSetBoldweightWithSetBoldShort`'
   sources:
   - before: |
       import org.apache.poi.ss.usermodel.Font;
@@ -1149,7 +1149,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.poi.ReplaceSetCellType
 examples:
-- description: ''
+- description: '`ReplaceSetCellTypeTest#numeric`'
   sources:
   - before: |
       import org.apache.poi.ss.usermodel.Cell;
@@ -1177,7 +1177,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.codehaus.plexus.AbstractLogEnabledToSlf4j
 examples:
-- description: ''
+- description: '`AbstractLogEnabledToSlf4jTest#addAndUseLoggerField`'
   sources:
   - before: |
       import org.codehaus.plexus.logging.AbstractLogEnabled;
@@ -1212,7 +1212,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.codehaus.plexus.PlexusStringUtilsRecipes
 examples:
-- description: ''
+- description: '`PlexusStringUtilsTest#ubertest`'
   sources:
   - before: |
       import org.codehaus.plexus.util.StringUtils;
