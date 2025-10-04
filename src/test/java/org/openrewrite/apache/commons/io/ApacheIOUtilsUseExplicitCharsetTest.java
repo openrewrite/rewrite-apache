@@ -16,6 +16,7 @@
 package org.openrewrite.apache.commons.io;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -33,6 +34,7 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-io"));
     }
 
+    @DocumentExample
     @Test
     void useCharset() {
         //language=java
