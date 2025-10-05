@@ -334,6 +334,22 @@ public class ApacheCommonsStringUtils {
     //    }
     //}
 
+    @RecipeDescriptor(
+        name = "Replace `StringUtils.join(Iterable<? extends CharSequence>, String)` with JDK provided API",
+        description = "Replace Apache Commons `StringUtils.join(Iterable<? extends CharSequence> iterable, String separator)` with JDK provided API."
+    )
+    public static class StringJoinSeparatorIterableCharSequence {
+        @BeforeTemplate
+        String before(Iterable<? extends CharSequence> iterable, String separator) {
+            return StringUtils.join(iterable, separator);
+        }
+
+        @AfterTemplate
+        String after(Iterable<? extends CharSequence> iterable, String separator) {
+            return String.join(separator, iterable);
+        }
+    }
+
     // NOTE: not sure if accurate replacement
     @RecipeDescriptor(
             name = "Replace `StringUtils.lowerCase(String)` with JDK provided API",

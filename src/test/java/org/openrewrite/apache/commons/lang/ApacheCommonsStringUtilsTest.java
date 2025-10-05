@@ -341,6 +341,93 @@ class ApacheCommonsStringUtilsTest implements RewriteTest {
     }
 
     @Nested
+    class StringJoinSeparatorIterableCharSequenceTests {
+        @Test
+        void stringJoinWithIterable() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+                  import java.util.List;
+
+                  class Foo {
+                      String test(List<String> items) {
+                          return StringUtils.join(items, ", ");
+                      }
+                  }
+                  """,
+                """
+                  import java.util.List;
+
+                  class Foo {
+                      String test(List<String> items) {
+                          return String.join(", ", items);
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void stringJoinWithIterableAndNullSeparator() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+                  import java.util.List;
+
+                  class Foo {
+                      String test(List<String> items) {
+                          return StringUtils.join(items, null);
+                      }
+                  }
+                  """,
+                """
+                  import java.util.List;
+
+                  class Foo {
+                      String test(List<String> items) {
+                          return String.join(null, items);
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void stringJoinWithIterableSubtype() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang3.StringUtils;
+                  import java.util.Set;
+
+                  class Foo {
+                      String test(Set<CharSequence> items) {
+                          return StringUtils.join(items, "-");
+                      }
+                  }
+                  """,
+                """
+                  import java.util.Set;
+
+                  class Foo {
+                      String test(Set<CharSequence> items) {
+                          return String.join("-", items);
+                      }
+                  }
+                  """
+              )
+            );
+        }
+    }
+
+    @Nested
     class RemoveRedundantNullCheckWithIsNotBlankTests {
         @Test
         void removeRedundantNullCheckWithIsNotBlank() {
