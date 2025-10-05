@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.openrewrite.java.template.Matches;
 import org.openrewrite.java.template.RecipeDescriptor;
 
-import java.util.Iterator;
 import java.util.Objects;
 
 @SuppressWarnings("ALL")
