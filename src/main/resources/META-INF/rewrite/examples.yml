@@ -276,6 +276,100 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.io.ApacheIOUtilsUseExplicitCharset
+examples:
+- description: '`ApacheIOUtilsUseExplicitCharsetTest#useCharset`'
+  parameters:
+  - 'null'
+  sources:
+  - before: |
+      import org.apache.commons.io.IOUtils;
+      import java.io.InputStream;
+      import java.io.OutputStream;
+      import java.io.Reader;
+      import java.io.Writer;
+      import java.net.URI;
+      import java.net.URL;
+
+      class T {
+          InputStream inputStream;
+          OutputStream outputStream;
+          Reader reader;
+          Writer writer;
+          CharSequence charSequence;
+          String someString;
+          byte[] bytes;
+          URI uri;
+          URL url;
+          char[] chars;
+          StringBuffer stringBuffer;
+
+          void flex() {
+              IOUtils.copy(inputStream, writer);
+              IOUtils.copy(reader, outputStream);
+              IOUtils.readLines(inputStream);
+              IOUtils.toByteArray(someString);
+              IOUtils.toByteArray(reader);
+              IOUtils.toCharArray(inputStream);
+              IOUtils.toInputStream(charSequence);
+              IOUtils.toInputStream("Test");
+              IOUtils.toString("Test".getBytes());
+              IOUtils.toString(inputStream);
+              IOUtils.toString(uri);
+              IOUtils.toString(url);
+              IOUtils.write(bytes, writer);
+              IOUtils.write(chars, outputStream);
+              IOUtils.write(charSequence, outputStream);
+              IOUtils.write(someString, outputStream);
+              IOUtils.write(stringBuffer, outputStream);
+          }
+      }
+    after: |
+      import org.apache.commons.io.IOUtils;
+      import java.io.InputStream;
+      import java.io.OutputStream;
+      import java.io.Reader;
+      import java.io.Writer;
+      import java.net.URI;
+      import java.net.URL;
+      import java.nio.charset.StandardCharsets;
+
+      class T {
+          InputStream inputStream;
+          OutputStream outputStream;
+          Reader reader;
+          Writer writer;
+          CharSequence charSequence;
+          String someString;
+          byte[] bytes;
+          URI uri;
+          URL url;
+          char[] chars;
+          StringBuffer stringBuffer;
+
+          void flex() {
+              IOUtils.copy(inputStream, writer, StandardCharsets.UTF_8);
+              IOUtils.copy(reader, outputStream, StandardCharsets.UTF_8);
+              IOUtils.readLines(inputStream, StandardCharsets.UTF_8);
+              someString.getBytes(StandardCharsets.UTF_8);
+              IOUtils.toByteArray(reader, StandardCharsets.UTF_8);
+              IOUtils.toCharArray(inputStream, StandardCharsets.UTF_8);
+              IOUtils.toInputStream(charSequence, StandardCharsets.UTF_8);
+              IOUtils.toInputStream("Test", StandardCharsets.UTF_8);
+              IOUtils.toString("Test".getBytes(), StandardCharsets.UTF_8);
+              IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+              IOUtils.toString(uri, StandardCharsets.UTF_8);
+              IOUtils.toString(url, StandardCharsets.UTF_8);
+              IOUtils.write(bytes, writer, StandardCharsets.UTF_8);
+              IOUtils.write(chars, outputStream, StandardCharsets.UTF_8);
+              IOUtils.write(charSequence, outputStream, StandardCharsets.UTF_8);
+              IOUtils.write(someString, outputStream, StandardCharsets.UTF_8);
+              IOUtils.write(stringBuffer, outputStream, StandardCharsets.UTF_8);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.io.UseStandardCharsets
 examples:
 - description: '`UseJavaStandardCharsetsTest#toStandardCharsets`'
@@ -693,6 +787,32 @@ examples:
               String c4 = CookieSpecs.STANDARD_STRICT;
               String c5 = CookieSpecs.BEST_MATCH;
               String c6 = CookieSpecs.IGNORE_COOKIES;
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient5.AddTimeUnitArgument
+examples:
+- description: '`AddTimeUnitArgumentTest#addTimeUnitDefaultMilliseconds`'
+  parameters:
+  - A method(int)
+  - 'null'
+  sources:
+  - before: |
+      class B {
+          void test() {
+              A a = new A();
+              a.method(100);
+          }
+      }
+    after: |
+      import java.util.concurrent.TimeUnit;
+
+      class B {
+          void test() {
+              A a = new A();
+              a.method(100, TimeUnit.MILLISECONDS);
           }
       }
     language: java
