@@ -76,6 +76,9 @@ recipeList:
   - org.openrewrite.java.dependencies.RemoveDependency:
       groupId: org.apache.httpcomponents
       artifactId: httpcore
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.httpcomponents
+      artifactId: httpasyncclient
 
 ---
 type: specs.openrewrite.org/v1beta/recipe
@@ -246,6 +249,9 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.classic.methods.CloseableHttpResponse
       newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.classic.CloseableHttpResponse
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.classic.methods.HttpEntityEnclosingRequestBase
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.classic.methods.HttpUriRequestBase
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.classic.methods.HttpRequestBase
       newFullyQualifiedTypeName: org.apache.hc.client5.http.classic.methods.HttpUriRequestBase
@@ -511,6 +517,9 @@ recipeList:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.config.SocketConfig.Builder
       newFullyQualifiedTypeName: org.apache.hc.core5.http.io.SocketConfig.Builder
 
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.http.impl.nio.client
+      newPackageName: org.apache.hc.client5.http.impl.async
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.impl
       newPackageName: org.apache.hc.core5.http.impl.io
