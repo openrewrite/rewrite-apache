@@ -65,11 +65,12 @@ recipeList:
       groupId: org.apache.commons
       artifactId: commons-text
       version: 1.x
-      onlyIfUsing: org.apache.commons.lang3.text.WordUtils
+      onlyIfUsing: org.apache.commons.lang3.text.*
       acceptTransitive: true
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.lang.WordUtils
       newFullyQualifiedTypeName: org.apache.commons.text.WordUtils
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.lang3.text.WordUtils
-      newFullyQualifiedTypeName: org.apache.commons.text.WordUtils
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang3.text
+      newPackageName: org.apache.commons.text
+      recursive: true
