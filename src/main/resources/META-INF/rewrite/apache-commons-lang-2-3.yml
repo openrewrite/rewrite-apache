@@ -61,9 +61,15 @@ recipeList:
       version: 1.x
       onlyIfUsing: org.apache.commons.lang*.WordUtils
       acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.commons
+      artifactId: commons-text
+      version: 1.x
+      onlyIfUsing: org.apache.commons.lang3.text.WordUtils
+      acceptTransitive: true
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.lang.WordUtils
       newFullyQualifiedTypeName: org.apache.commons.text.WordUtils
   - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.commons.lang3.WordUtils
+      oldFullyQualifiedTypeName: org.apache.commons.lang3.text.WordUtils
       newFullyQualifiedTypeName: org.apache.commons.text.WordUtils

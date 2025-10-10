@@ -28,7 +28,7 @@ class WordUtilsToCommonsTextTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang", "commons-text"))
+        spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang", "commons-lang3", "commons-text"))
           .recipeFromResource(
             "/META-INF/rewrite/apache-commons-lang-2-3.yml",
             "org.openrewrite.apache.commons.lang.WordUtilsToCommonsText");
@@ -76,7 +76,7 @@ class WordUtilsToCommonsTextTest implements RewriteTest {
           //language=java
           java(
             """
-              import org.apache.commons.lang3.WordUtils;
+              import org.apache.commons.lang3.text.WordUtils;
 
               class Lang3 {
                   String capitalize(String str) {
