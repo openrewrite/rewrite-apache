@@ -64,3 +64,6 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.lang.WordUtils
       newFullyQualifiedTypeName: org.apache.commons.text.WordUtils
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.lang3.WordUtils
+      newFullyQualifiedTypeName: org.apache.commons.text.WordUtils
