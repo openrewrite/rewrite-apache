@@ -43,7 +43,7 @@ class WordUtilsToCommonsTextTest implements RewriteTest {
             """
               import org.apache.commons.lang.WordUtils;
 
-              class A {
+              class Lang2 {
                   String capitalize(String str) {
                       return WordUtils.capitalize(str);
                   }
@@ -56,7 +56,42 @@ class WordUtilsToCommonsTextTest implements RewriteTest {
             """
               import org.apache.commons.text.WordUtils;
 
-              class A {
+              class Lang2 {
+                  String capitalize(String str) {
+                      return WordUtils.capitalize(str);
+                  }
+
+                  String wrap(String str, int width) {
+                      return WordUtils.wrap(str, width);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migrateLang3WordUtilsToCommonsText() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang3.WordUtils;
+
+              class Lang3 {
+                  String capitalize(String str) {
+                      return WordUtils.capitalize(str);
+                  }
+
+                  String wrap(String str, int width) {
+                      return WordUtils.wrap(str, width);
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.text.WordUtils;
+
+              class Lang3 {
                   String capitalize(String str) {
                       return WordUtils.capitalize(str);
                   }

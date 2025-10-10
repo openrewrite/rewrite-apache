@@ -59,7 +59,7 @@ recipeList:
       groupId: org.apache.commons
       artifactId: commons-text
       version: 1.x
-      onlyIfUsing: org.apache.commons.lang.WordUtils
+      onlyIfUsing: org.apache.commons.lang*.WordUtils
       acceptTransitive: true
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.lang.WordUtils
