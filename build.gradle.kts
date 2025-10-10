@@ -60,7 +60,7 @@ dependencies {
     testImplementation("org.apache.commons:commons-math3:3.+")
 
     testImplementation("commons-lang:commons-lang:2.6")
-    testImplementation("org.apache.commons:commons-lang3:3.+")
+    testImplementation("org.apache.commons:commons-lang3:3.5")
 
     testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
 

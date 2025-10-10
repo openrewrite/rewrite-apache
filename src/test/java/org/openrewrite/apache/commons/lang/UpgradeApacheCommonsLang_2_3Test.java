@@ -17,7 +17,6 @@ package org.openrewrite.apache.commons.lang;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
-import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -29,13 +28,8 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpath(
-            "commons-lang", "commons-lang3"))
-          .recipe(Environment.builder()
-            .scanRuntimeClasspath("org.openrewrite")
-            .build()
-            .activateRecipes("org.openrewrite.apache.commons.lang.UpgradeApacheCommonsLang_2_3")
-          );
+          .parser(JavaParser.fromJavaVersion().classpath("commons-lang", "commons-lang3"))
+          .recipeFromResources("org.openrewrite.apache.commons.lang.UpgradeApacheCommonsLang_2_3");
     }
 
     @DocumentExample
