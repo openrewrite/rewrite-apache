@@ -659,6 +659,37 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.WordUtilsToCommonsText
+examples:
+- description: '`WordUtilsToCommonsTextTest#migrateWordUtilsToCommonsText`'
+  sources:
+  - before: |
+      import org.apache.commons.lang.WordUtils;
+
+      class Lang2 {
+          String capitalize(String str) {
+              return WordUtils.capitalize(str);
+          }
+
+          String wrap(String str, int width) {
+              return WordUtils.wrap(str, width);
+          }
+      }
+    after: |
+      import org.apache.commons.text.WordUtils;
+
+      class Lang2 {
+          String capitalize(String str) {
+              return WordUtils.capitalize(str);
+          }
+
+          String wrap(String str, int width) {
+              return WordUtils.wrap(str, width);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang3.UseStandardCharsets
 examples:
 - description: '`ApacheCommonsLang3UseStandardCharsetsTest#convertCharEncodingFieldsToJdk`'
