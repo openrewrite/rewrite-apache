@@ -33,8 +33,8 @@ recipeList:
       groupId: org.apache.poi
       artifactId: poi*
       newVersion: 3.x
-  - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBoldRecipes
-  - org.openrewrite.apache.poi.ReplaceSetCellTypeRecipes
+  - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBold
+  - org.openrewrite.apache.poi.ReplaceSetCellType
   - org.openrewrite.java.migrate.ChangeMethodInvocationReturnType:
       methodPattern: org.apache.poi.ss.usermodel.Cell getCellType()
       newReturnType: org.apache.poi.ss.usermodel.CellType
