@@ -52,7 +52,7 @@ type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClientDependencies
 displayName: Migrate from org.apache.httpcomponents to ApacheHttpClient 5.x dependencies
 description: >-
-  Adopt `org.apache.httpcomponents.client5:httpclient5` from `org.apache.httpcomponents`
+  Adopt `org.apache.httpcomponents.client5:httpclient5` from `org.apache.httpcomponents`.
 tags:
   - apache
   - httpclient
@@ -85,7 +85,7 @@ type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCoreNioDependencies
 displayName: Migrate from httpcore-nio to ApacheHttpClient 5.x core dependency
 description: >-
-  Adopt `org.apache.httpcomponents.core5:httpcore5` from `org.apache.httpcomponents:httpcore-nio`
+  Adopt `org.apache.httpcomponents.core5:httpcore5` from `org.apache.httpcomponents:httpcore-nio`.
 tags:
   - apache
   - httpclient
@@ -107,7 +107,7 @@ recipeList:
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioInputBuffers
 displayName: Migrate Apache HttpCore Nio Input Buffer classes to Apache HttpCore 5.x
-description: Mapping of specifically `*InputBuffer` classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x
+description: Mapping of specifically `*InputBuffer` classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
 recipeList:
   - org.openrewrite.java.AddCommentToMethodInvocations:
       comment: "TODO: Check this usage, as implementation has changed to match that of old `.available()` method."
@@ -148,7 +148,7 @@ recipeList:
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioOutputBuffers
 displayName: Migrate Apache HttpCore Nio Output Buffer classes to Apache HttpCore 5.x
-description: Mapping of specifically `*OutputBuffer` classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x
+description: Mapping of specifically `*OutputBuffer` classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
 recipeList:
   - org.openrewrite.java.AddCommentToMethodInvocations:
       comment: "TODO: Check this usage, as implementation has changed to match that of old `.available()` method."
@@ -189,7 +189,7 @@ recipeList:
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioUtilMapping
 displayName: Migrate to Apache HttpCore Nio Util Classes to Apache HttpCore 5.x
-description: Mapping of all the compatible utility classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x
+description: Mapping of all the compatible utility classes of Apache HttpCore 5.x from Apache HttpCore Nio 4.4.x.
 recipeList:
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioInputBuffers
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioOutputBuffers
@@ -704,7 +704,7 @@ recipeList:
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
 displayName: Migrate to ApacheHttpClient 5.x deprecated methods from 4.x
-description: Migrates deprecated methods to their equivalent ones in 5.x
+description: Migrates deprecated methods to their equivalent ones in 5.x.
 recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.hc.client5.http.config.RequestConfig.Builder setSocketTimeout(int)
@@ -745,7 +745,7 @@ recipeList:
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.StatusLine
 displayName: Migrate to ApacheHttpClient 5.x deprecated methods from 4.x
-description: Migrates deprecated methods to their equivalent ones in 5.x
+description: Migrates deprecated methods to their equivalent ones in 5.x.
 recipeList:
   - org.openrewrite.java.SimplifyMethodChain:
       methodPatternChain: ['org.apache.http.HttpResponse getStatusLine()', 'org.apache.http.StatusLine getStatusCode()']

@@ -42,7 +42,7 @@ public class AddTimeUnitArgument extends Recipe {
             example = "org.apache.http.client.config.RequestConfig.Builder setConnectionRequestTimeout(int)")
     String methodPattern;
 
-    @Option(displayName = "Time Unit",
+    @Option(displayName = "Time unit",
             description = "The TimeUnit enum value we want to add to the method invocation. Defaults to `MILLISECONDS`.",
             example = "MILLISECONDS",
             required = false)

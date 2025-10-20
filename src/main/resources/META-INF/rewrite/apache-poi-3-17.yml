@@ -35,7 +35,7 @@ recipeList:
       newVersion: 3.x
   - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBold
   - org.openrewrite.apache.poi.ReplaceSetCellType
-  - org.openrewrite.java.migrate.ChangeMethodInvocationReturnType:
+  - org.openrewrite.java.ChangeMethodInvocationReturnType:
       methodPattern: org.apache.poi.ss.usermodel.Cell getCellType()
       newReturnType: org.apache.poi.ss.usermodel.CellType
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:

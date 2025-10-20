@@ -39,7 +39,7 @@ public class MigrateAuthScope extends Recipe {
 
     @Override
     public String getDescription() {
-        return "Replace removed constant `org.apache.http.auth.AuthScope.AuthScope.ANY` with `new org.apache.hc.client5.http.auth.AuthScope(null, -1)`";
+        return "Replace removed constant `org.apache.http.auth.AuthScope.AuthScope.ANY` with `new org.apache.hc.client5.http.auth.AuthScope(null, -1)`.";
     }
 
     @Override
