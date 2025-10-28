@@ -376,6 +376,12 @@ recipeList:
       oldPackageName: org.apache.http.annotation
       newPackageName: org.apache.hc.core5.annotation
 
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
+      fullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
+      fullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.entity
       newPackageName: org.apache.hc.core5.http.io.entity
@@ -434,6 +440,12 @@ recipeList:
       oldPackageName: org.apache.http.pool
       newPackageName: org.apache.hc.core5.pool
 
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CONN_KEEP_ALIVE
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.KEEP_ALIVE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CONTENT_LEN
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.CONTENT_LENGTH
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.protocol
       newPackageName: org.apache.hc.core5.http.protocol
@@ -687,20 +699,8 @@ recipeList:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.HttpConnectionFactory
       newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpConnectionFactory
   - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.hc.core5.http.protocol.HTTP.CONN_KEEP_ALIVE
-      newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpHeaders.KEEP_ALIVE
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.hc.core5.http.protocol.HTTP.CONTENT_LEN
-      newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpHeaders.CONTENT_LENGTH
-  - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.HttpEntityEnclosingRequest
-      newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpEntityContainer   
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
-      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
-      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpEntityContainer
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.impl.nio.client.CloseableHttpAsyncClient
       newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
