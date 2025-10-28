@@ -379,9 +379,10 @@ recipeList:
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
       existingFullyQualifiedConstantName: org.apache.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
       fullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
-  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
-      existingFullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
-      fullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.entity.mime.HttpMultipartMode
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode
+
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.entity
       newPackageName: org.apache.hc.core5.http.io.entity
@@ -446,6 +447,10 @@ recipeList:
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
       existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CONTENT_LEN
       fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.CONTENT_LENGTH
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.protocol.HTTP
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpHeaders
+
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.protocol
       newPackageName: org.apache.hc.core5.http.protocol
@@ -701,9 +706,6 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.HttpEntityEnclosingRequest
       newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpEntityContainer
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.impl.nio.client.CloseableHttpAsyncClient
-      newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
 
   # Fixing argument order change
   - org.openrewrite.java.ReorderMethodArguments:
