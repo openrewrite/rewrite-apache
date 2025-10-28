@@ -698,6 +698,45 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         );
     }
 
+    @Test
+    void httpConstantsAndTypes() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.mime.HttpMultipartMode;
+              import org.apache.http.protocol.HTTP;
+
+              class A {
+                  void method() {
+                      String a = HttpMultipartMode.BROWSER_COMPATIBLE;
+                      String b = HttpMultipartMode.STRICT;
+
+                      String c = HTTP.CONN_KEEP_ALIVE;
+                      String d = HTTP.CONTENT_LEN;
+                      String e = HTTP.CONTENT_ENCODING;
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
+              import org.apache.hc.core5.http.HttpHeaders;
+
+              class A {
+                  void method() {
+                      String a = HttpMultipartMode.LEGACY;
+                      String b = HttpMultipartMode.STRICT;
+
+                      String c = HttpHeaders.KEEP_ALIVE;
+                      String d = HttpHeaders.CONTENT_LENGTH;
+                      String e = HttpHeaders.CONTENT_ENCODING;
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Nested
     class Dependencies {
 

@@ -376,6 +376,13 @@ recipeList:
       oldPackageName: org.apache.http.annotation
       newPackageName: org.apache.hc.core5.annotation
 
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
+      fullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.entity.mime.HttpMultipartMode
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode
+
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.entity
       newPackageName: org.apache.hc.core5.http.io.entity
@@ -433,6 +440,16 @@ recipeList:
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.pool
       newPackageName: org.apache.hc.core5.pool
+
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CONN_KEEP_ALIVE
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.KEEP_ALIVE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CONTENT_LEN
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.CONTENT_LENGTH
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.protocol.HTTP
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpHeaders
 
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.protocol
@@ -686,6 +703,9 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.HttpConnectionFactory
       newFullyQualifiedTypeName: org.apache.hc.core5.http.io.HttpConnectionFactory
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.core5.http.HttpEntityEnclosingRequest
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.HttpEntityContainer
 
   # Fixing argument order change
   - org.openrewrite.java.ReorderMethodArguments:
