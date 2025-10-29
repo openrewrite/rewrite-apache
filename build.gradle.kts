@@ -47,7 +47,7 @@ dependencies {
 
     implementation("org.jspecify:jspecify:1.0.0")
 
-    testImplementation("org.openrewrite:rewrite-java-17")
+    testImplementation("org.openrewrite:rewrite-java-21")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
 
