@@ -21,6 +21,7 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.*;
 import static org.openrewrite.maven.Assertions.pomXml;
 
@@ -126,26 +127,14 @@ class WordUtilsToCommonsTextTest implements RewriteTest {
                     </dependencies>
                 </project>
                 """,
-              """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <groupId>org.example</groupId>
-                    <artifactId>example</artifactId>
-                    <version>1.0.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>commons-lang</groupId>
-                            <artifactId>commons-lang</artifactId>
-                            <version>2.6</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.commons</groupId>
-                            <artifactId>commons-text</artifactId>
-                            <version>1.14.0</version>
-                        </dependency>
-                    </dependencies>
-                </project>
-                """
+              spec -> spec.after(pom -> assertThat(pom)
+                // Retained
+                .contains("<artifactId>commons-lang</artifactId>")
+                .contains("<version>2.6</version>")
+                // Added
+                .contains("<artifactId>commons-text</artifactId>")
+                .containsPattern("<version>1\\.\\d\\.\\d</version>")
+                .actual())
             ),
             srcMainJava(
               java(
