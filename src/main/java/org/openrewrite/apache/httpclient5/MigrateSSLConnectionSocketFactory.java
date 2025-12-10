@@ -123,9 +123,9 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             }
 
             class MethodAnalyzer extends JavaIsoVisitor<ExecutionContext> {
-                boolean connectionManagerExists = false;
-                boolean hasSetSSLSocketFactory = false;
-                J.@Nullable VariableDeclarations tlsStrategyDecl = null;
+                boolean connectionManagerExists;
+                boolean hasSetSSLSocketFactory;
+                J.@Nullable VariableDeclarations tlsStrategyDecl;
 
                 @Override
                 public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations vd, ExecutionContext ctx) {
