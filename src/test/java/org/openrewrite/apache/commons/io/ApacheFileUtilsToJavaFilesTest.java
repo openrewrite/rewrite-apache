@@ -39,9 +39,10 @@ class ApacheFileUtilsToJavaFilesTest implements RewriteTest {
         rewriteRun(
           java(
             """
+              import org.apache.commons.io.FileUtils;
+
               import java.io.File;
               import java.nio.charset.Charset;
-              import org.apache.commons.io.FileUtils;
               import java.util.List;
 
               class A {
@@ -63,7 +64,6 @@ class ApacheFileUtilsToJavaFilesTest implements RewriteTest {
               import java.io.File;
               import java.nio.charset.Charset;
               import java.nio.file.Files;
-
               import java.util.List;
 
               class A {
