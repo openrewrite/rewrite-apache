@@ -57,8 +57,8 @@ public class ApacheFileUtilsToJavaFiles extends Recipe {
             public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
                 J.CompilationUnit c = super.visitCompilationUnit(cu, ctx);
                 if (c != cu) {
-                    maybeAddImport("java.nio.file.Files");
                     maybeRemoveImport("org.apache.commons.io.FileUtils");
+                    maybeAddImport("java.nio.file.Files");
                 }
                 return c;
             }

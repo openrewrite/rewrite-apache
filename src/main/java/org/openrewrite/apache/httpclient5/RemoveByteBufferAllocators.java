@@ -57,8 +57,8 @@ public class RemoveByteBufferAllocators extends Recipe {
                     public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                         J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
                         if (dbbaAllocateMatcher.matches(m)) {
-                            maybeAddImport("java.nio.ByteBuffer");
                             maybeRemoveImport(dbbaClassName);
+                            maybeAddImport("java.nio.ByteBuffer");
                             return JavaTemplate
                                     .builder("ByteBuffer.allocateDirect(#{any(int)})")
                                     .imports("java.nio.ByteBuffer")
@@ -66,8 +66,8 @@ public class RemoveByteBufferAllocators extends Recipe {
                                     .apply(getCursor(), m.getCoordinates().replace(), m.getArguments().get(0));
                         }
                         if (hbbaAllocateMatcher.matches(m)) {
-                            maybeAddImport("java.nio.ByteBuffer");
                             maybeRemoveImport(hbbaClassName);
+                            maybeAddImport("java.nio.ByteBuffer");
                             return JavaTemplate
                                     .builder("ByteBuffer.allocate(#{any(int)})")
                                     .imports("java.nio.ByteBuffer")
