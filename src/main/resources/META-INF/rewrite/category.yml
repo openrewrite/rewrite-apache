@@ -20,3 +20,38 @@ name: Apache
 packageName: org.openrewrite.apache
 description: Recipes to perform [Apache](https://apache.org/) project migration tasks.
 ---
+type: specs.openrewrite.org/v1beta/category
+name: HttpClient 4
+packageName: org.openrewrite.apache.httpclient4
+description: Recipes for migrating from [Apache HttpClient 4.x](https://hc.apache.org/httpcomponents-client-4.5.x/).
+---
+type: specs.openrewrite.org/v1beta/category
+name: HttpClient 5
+packageName: org.openrewrite.apache.httpclient5
+description: Recipes for migrating to [Apache HttpClient 5.x](https://hc.apache.org/httpcomponents-client-5.4.x/).
+---
+type: specs.openrewrite.org/v1beta/category
+name: Commons Lang
+packageName: org.openrewrite.apache.commons.lang
+description: Recipes for [Apache Commons Lang](https://commons.apache.org/proper/commons-lang/) upgrades and migrations.
+---
+type: specs.openrewrite.org/v1beta/category
+name: Commons Codec
+packageName: org.openrewrite.apache.commons.codec
+description: Recipes for [Apache Commons Codec](https://commons.apache.org/proper/commons-codec/) migrations.
+---
+type: specs.openrewrite.org/v1beta/category
+name: Commons IO
+packageName: org.openrewrite.apache.commons.io
+description: Recipes for [Apache Commons IO](https://commons.apache.org/proper/commons-io/) migrations.
+---
+type: specs.openrewrite.org/v1beta/category
+name: Commons Collections
+packageName: org.openrewrite.apache.commons.collections
+description: Recipes for [Apache Commons Collections](https://commons.apache.org/proper/commons-collections/) migrations.
+---
+type: specs.openrewrite.org/v1beta/category
+name: Apache POI
+packageName: org.openrewrite.apache.poi
+description: Recipes for [Apache POI](https://poi.apache.org/) spreadsheet library.
+---
