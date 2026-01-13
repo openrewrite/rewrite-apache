@@ -32,18 +32,12 @@ import org.openrewrite.java.tree.J;
 @Value
 public class NewStatusLine extends Recipe {
 
-    @Override
-    public String getDisplayName() {
-        return "Replaces deprecated `HttpResponse::getStatusLine()`";
-    }
+    String displayName = "Replaces deprecated `HttpResponse::getStatusLine()`";
 
-    @Override
-    public String getDescription() {
-        return "`HttpResponse::getStatusLine()` was deprecated in 4.x, so we replace it for `new StatusLine(HttpResponse)`. " +
+    String description = "`HttpResponse::getStatusLine()` was deprecated in 4.x, so we replace it for `new StatusLine(HttpResponse)`. " +
                 "Ideally we will try to simplify method chains for `getStatusCode`, `getProtocolVersion` and `getReasonPhrase`, " +
                 "but there are some scenarios where the `StatusLine` object is assigned or used directly, and we need to " +
                 "instantiate the object.";
-    }
 
     private static final MethodMatcher MATCHER = new MethodMatcher("org.apache.http.HttpResponse getStatusLine()");
 

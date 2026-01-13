@@ -42,16 +42,10 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     private static final MethodMatcher SET_SSL_SOCKET_FACTORY = new MethodMatcher(
             "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)");
 
-    @Override
-    public String getDisplayName() {
-        return "Migrate deprecated `SSLConnectionSocketFactory` to `DefaultClientTlsStrategy`";
-    }
+    String displayName = "Migrate deprecated `SSLConnectionSocketFactory` to `DefaultClientTlsStrategy`";
 
-    @Override
-    public String getDescription() {
-        return "Migrates usage of the deprecated `org.apache.http.conn.ssl.SSLConnectionSocketFactory` " +
+    String description = "Migrates usage of the deprecated `org.apache.http.conn.ssl.SSLConnectionSocketFactory` " +
                 "to `org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy` with proper connection manager setup.";
-    }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

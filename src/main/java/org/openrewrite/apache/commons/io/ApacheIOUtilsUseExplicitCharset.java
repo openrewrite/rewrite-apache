@@ -62,15 +62,9 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
     @Nullable
     String encoding;
 
-    @Override
-    public String getDisplayName() {
-        return "Use IOUtils method that include  their charset encoding";
-    }
+    String displayName = "Use IOUtils method that include  their charset encoding";
 
-    @Override
-    public String getDescription() {
-        return "Use `IOUtils` method invocations that include the charset encoding instead of using the deprecated versions that do not include a charset encoding. (e.g. converts `IOUtils.readLines(inputStream)` to `IOUtils.readLines(inputStream, StandardCharsets.UTF_8)`.";
-    }
+    String description = "Use `IOUtils` method invocations that include the charset encoding instead of using the deprecated versions that do not include a charset encoding. (e.g. converts `IOUtils.readLines(inputStream)` to `IOUtils.readLines(inputStream, StandardCharsets.UTF_8)`.";
 
     @Override
     public Set<String> getTags() {

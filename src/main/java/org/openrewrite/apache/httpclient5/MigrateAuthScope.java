@@ -32,15 +32,9 @@ import org.openrewrite.java.tree.TypeUtils;
 @Value
 public class MigrateAuthScope extends Recipe {
 
-    @Override
-    public String getDisplayName() {
-        return "Replaces `AuthScope.ANY`";
-    }
+    String displayName = "Replaces `AuthScope.ANY`";
 
-    @Override
-    public String getDescription() {
-        return "Replace removed constant `org.apache.http.auth.AuthScope.AuthScope.ANY` with `new org.apache.hc.client5.http.auth.AuthScope(null, -1)`.";
-    }
+    String description = "Replace removed constant `org.apache.http.auth.AuthScope.AuthScope.ANY` with `new org.apache.hc.client5.http.auth.AuthScope(null, -1)`.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

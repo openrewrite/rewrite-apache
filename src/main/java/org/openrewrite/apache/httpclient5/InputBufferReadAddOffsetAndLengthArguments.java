@@ -40,15 +40,9 @@ public class InputBufferReadAddOffsetAndLengthArguments extends Recipe {
     private static final String READ_PATTERN = "org.apache.hc.core5.http.nio.support.classic.SharedInputBuffer read(byte[])";
     private static final MethodMatcher READ_MATCHER = new MethodMatcher(READ_PATTERN);
 
-    @Override
-    public String getDisplayName() {
-        return "Adds offset and length arguments to the read method of SharedInputBuffer";
-    }
+    String displayName = "Adds offset and length arguments to the read method of SharedInputBuffer";
 
-    @Override
-    public String getDescription() {
-        return "In Apache Http Client 5.x migration, the shortened form of the `read(byte[])` has been removed.";
-    }
+    String description = "In Apache Http Client 5.x migration, the shortened form of the `read(byte[])` has been removed.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

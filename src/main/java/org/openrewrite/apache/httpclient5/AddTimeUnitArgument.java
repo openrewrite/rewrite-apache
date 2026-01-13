@@ -49,20 +49,14 @@ public class AddTimeUnitArgument extends Recipe {
     @Nullable
     TimeUnit timeUnit;
 
-    @Override
-    public String getDisplayName() {
-        return "Adds a TimeUnit argument to the matched method invocations";
-    }
+    String displayName = "Adds a TimeUnit argument to the matched method invocations";
 
-    @Override
-    public String getDescription() {
-        return "In Apache Http Client 5.x migration, an extra TimeUnit argument is required in the timeout and duration methods. " +
+    String description = "In Apache Http Client 5.x migration, an extra TimeUnit argument is required in the timeout and duration methods. " +
                 "Previously in 4.x, all these methods were implicitly having the timeout or duration expressed in milliseconds, " +
                 "but in 5.x the unit of the timeout or duration is required. So, by default this recipe adds " +
                 "`TimeUnit.MILLISECONDS`, it is possible to specify this as a parameter. Since all affected methods of " +
                 "the Apache Http Client 5.x migration only have one integer/long argument, the recipe applies with matched method " +
                 "invocations of exactly one parameter.";
-    }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

@@ -40,15 +40,9 @@ public class OutputBufferWriteAddOffsetAndLengthArguments extends Recipe {
     private static final String WRITE_PATTERN = "org.apache.hc.core5.http.nio.support.classic.SharedOutputBuffer write(byte[])";
     private static final MethodMatcher WRITE_MATCHER = new MethodMatcher(WRITE_PATTERN);
 
-    @Override
-    public String getDisplayName() {
-        return "Adds offset and length arguments to the write method of SharedOutputBuffer";
-    }
+    String displayName = "Adds offset and length arguments to the write method of SharedOutputBuffer";
 
-    @Override
-    public String getDescription() {
-        return "In Apache Http Client 5.x migration, the shortened form of the `write(byte[])` has been removed.";
-    }
+    String description = "In Apache Http Client 5.x migration, the shortened form of the `write(byte[])` has been removed.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

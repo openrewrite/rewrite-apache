@@ -37,16 +37,10 @@ public class RemoveByteBufferAllocators extends Recipe {
     private static final String hbbaAllocatePattern = hbbaClassName + " allocate(int)";
     private static final MethodMatcher hbbaAllocateMatcher = new MethodMatcher(hbbaAllocatePattern);
 
-    @Override
-    public String getDisplayName() {
-        return "Remove ByteBufferAllocator implementations";
-    }
+    String displayName = "Remove ByteBufferAllocator implementations";
 
-    @Override
-    public String getDescription() {
-        return "In Apache Http Client 5.x migration, both implementations of `ByteBufferAllocator` have been removed. " +
+    String description = "In Apache Http Client 5.x migration, both implementations of `ByteBufferAllocator` have been removed. " +
                 "This recipe will remove usage of said classes in favour of direct static calls to `ByteBuffer`.";
-    }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

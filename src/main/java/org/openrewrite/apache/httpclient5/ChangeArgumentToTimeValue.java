@@ -43,19 +43,13 @@ public class ChangeArgumentToTimeValue extends Recipe {
     @Nullable
     TimeUnit timeUnit;
 
-    @Override
-    public String getDisplayName() {
-        return "Changes an argument to a `TimeValue` for matched method invocations";
-    }
+    String displayName = "Changes an argument to a `TimeValue` for matched method invocations";
 
-    @Override
-    public String getDescription() {
-        return "In Apache Http Client 5.x migration, some methods that previously took a single long argument have changed to take a `TimeValue`. " +
+    String description = "In Apache Http Client 5.x migration, some methods that previously took a single long argument have changed to take a `TimeValue`. " +
                 "Previously in 4.x, all these methods were implicitly having the value expressed in milliseconds. By default this recipe uses " +
                 "`TimeUnit.MILLISECONDS` for the `TimeUnit` when creating a `TimeValue`. It is possible to specify this as a parameter. Since all " +
                 "affected methods of the Apache Http Client 5.x migration only have one long argument, the recipe applies with matched method " +
                 "invocations of exactly one parameter.";
-    }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

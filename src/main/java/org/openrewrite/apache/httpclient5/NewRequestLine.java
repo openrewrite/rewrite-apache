@@ -32,19 +32,13 @@ import org.openrewrite.java.tree.J;
 @Value
 public class NewRequestLine extends Recipe {
 
-    @Override
-    public String getDisplayName() {
-        return "Replaces deprecated `HttpRequestBase::getRequestLine()`";
-    }
+    String displayName = "Replaces deprecated `HttpRequestBase::getRequestLine()`";
 
-    @Override
-    public String getDescription() {
-        return "`HttpRequestBase::getStatusLine()` was deprecated in 4.x, " +
+    String description = "`HttpRequestBase::getStatusLine()` was deprecated in 4.x, " +
                 "so we replace it with `new RequestLine(HttpRequest)`. " +
                 "Ideally we will try to simply method chains for `getMethod`, `getUri` and `getProtocolVersion`, " +
                 "but there are some scenarios where `RequestLine` object is assigned or used directly, and we need to " +
                 "instantiate the object.";
-    }
 
     private static final MethodMatcher MATCHER = new MethodMatcher("org.apache.http.client.methods.HttpRequestBase getRequestLine()");
 
