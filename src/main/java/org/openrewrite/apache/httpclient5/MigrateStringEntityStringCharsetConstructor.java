@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.httpclient5;
 
+import lombok.Getter;
 import org.openrewrite.*;
 import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -26,15 +27,11 @@ import org.openrewrite.java.tree.J;
 import java.nio.charset.Charset;
 
 public class MigrateStringEntityStringCharsetConstructor extends Recipe {
-    @Override
-    public String getDisplayName() {
-        return "Replace `new StringEntity(String, String)` with `new StringEntity(String, Charset)`";
-    }
+    @Getter
+    final String displayName = "Replace `new StringEntity(String, String)` with `new StringEntity(String, Charset)`";
 
-    @Override
-    public String getDescription() {
-        return "Replace `new StringEntity(String, String)` with `new StringEntity(String, Charset)` to eliminate literal usage for charset parameters.";
-    }
+    @Getter
+    final String description = "Replace `new StringEntity(String, String)` with `new StringEntity(String, Charset)` to eliminate literal usage for charset parameters.";
 
     private static final MethodMatcher MATCHER_FOR_4x = new MethodMatcher("org.apache.http.entity.StringEntity <constructor>(String, String)");
     private static final MethodMatcher MATCHER_FOR_5x = new MethodMatcher("org.apache.hc.core5.http.io.entity.StringEntity <constructor>(String, String)");

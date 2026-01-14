@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.httpclient5;
 
+import lombok.Getter;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -30,15 +31,11 @@ public class UsernamePasswordCredentials extends Recipe {
     private static final String FQN = "org.apache.http.auth.UsernamePasswordCredentials";
     private static final String METHOD_PATTERN = FQN + " <constructor>(String, String)";
 
-    @Override
-    public String getDisplayName() {
-        return "Migrate `UsernamePasswordCredentials` to httpclient5";
-    }
+    @Getter
+    final String displayName = "Migrate `UsernamePasswordCredentials` to httpclient5";
 
-    @Override
-    public String getDescription() {
-        return "Change the password argument going into `UsernamePasswordCredentials` to be a `char[]`.";
-    }
+    @Getter
+    final String description = "Change the password argument going into `UsernamePasswordCredentials` to be a `char[]`.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

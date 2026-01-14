@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.commons.io;
 
+import lombok.Getter;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -30,15 +31,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ApacheFileUtilsToJavaFiles extends Recipe {
-    @Override
-    public String getDisplayName() {
-        return "Prefer `java.nio.file.Files`";
-    }
+    @Getter
+    final String displayName = "Prefer `java.nio.file.Files`";
 
-    @Override
-    public String getDescription() {
-        return "Prefer the Java standard library's `java.nio.file.Files` over third-party usage of apache's `apache.commons.io.FileUtils`.";
-    }
+    @Getter
+    final String description = "Prefer the Java standard library's `java.nio.file.Files` over third-party usage of apache's `apache.commons.io.FileUtils`.";
 
     @Override
     public Set<String> getTags() {

@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.commons.lang;
 
+import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
@@ -37,15 +38,11 @@ import static org.openrewrite.apache.commons.lang.RepeatableArgumentMatcher.isRe
 
 public class IsNotEmptyToJdk extends Recipe {
 
-    @Override
-    public String getDisplayName() {
-        return "Replace any StringUtils#isEmpty(String) and #isNotEmpty(String)";
-    }
+    @Getter
+    final String displayName = "Replace any StringUtils#isEmpty(String) and #isNotEmpty(String)";
 
-    @Override
-    public String getDescription() {
-        return "Replace any `StringUtils#isEmpty(String)` and `#isNotEmpty(String)` with `s == null || s.isEmpty()` and `s != null && !s.isEmpty()`.";
-    }
+    @Getter
+    final String description = "Replace any `StringUtils#isEmpty(String)` and `#isNotEmpty(String)` with `s == null || s.isEmpty()` and `s != null && !s.isEmpty()`.";
 
     @Override
     public Duration getEstimatedEffortPerOccurrence() {

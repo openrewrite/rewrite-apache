@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.httpclient5;
 
+import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
 import org.openrewrite.java.*;
@@ -44,15 +45,11 @@ public class MigrateRequestConfig extends Recipe {
 
     private static final String KEY_POOL_CONN_MANAGER = "poolConnManager";
 
-    @Override
-    public String getDisplayName() {
-        return "Migrate `RequestConfig` to httpclient5";
-    }
+    @Getter
+    final String displayName = "Migrate `RequestConfig` to httpclient5";
 
-    @Override
-    public String getDescription() {
-        return "Migrate `RequestConfig` to httpclient5.";
-    }
+    @Getter
+    final String description = "Migrate `RequestConfig` to httpclient5.";
 
     private static TreeVisitor<? extends Tree, ExecutionContext> callsSetStaleCheckEnabledFalse() {
         return new MethodAccess.Matcher(MATCHER_STALE_CHECK_ENABLED)

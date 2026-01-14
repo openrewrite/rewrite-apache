@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.commons.codec;
 
+import lombok.Getter;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -31,15 +32,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ApacheBase64ToJavaBase64 extends Recipe {
-    @Override
-    public String getDisplayName() {
-        return "Prefer `java.util.Base64`";
-    }
+    @Getter
+    final String displayName = "Prefer `java.util.Base64`";
 
-    @Override
-    public String getDescription() {
-        return "Prefer the Java standard library's `java.util.Base64` over third-party usage of apache's `apache.commons.codec.binary.Base64`.";
-    }
+    @Getter
+    final String description = "Prefer the Java standard library's `java.util.Base64` over third-party usage of apache's `apache.commons.codec.binary.Base64`.";
 
     @Override
     public Set<String> getTags() {

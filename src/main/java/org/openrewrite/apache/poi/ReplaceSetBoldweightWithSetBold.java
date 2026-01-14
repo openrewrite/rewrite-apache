@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.poi;
 
+import lombok.Getter;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -30,15 +31,11 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReplaceSetBoldweightWithSetBold extends Recipe {
-    @Override
-    public String getDisplayName() {
-        return "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`";
-    }
+    @Getter
+    final String displayName = "Replace `Font.setBoldweight(short)` with `Font.setBold(boolean)`";
 
-    @Override
-    public String getDescription() {
-        return "Replace `Font.setBoldweight(short)` or equivalent with `Font.setBold(boolean)`.";
-    }
+    @Getter
+    final String description = "Replace `Font.setBoldweight(short)` or equivalent with `Font.setBold(boolean)`.";
 
     private static final MethodMatcher SET_BOLDWEIGHT = new MethodMatcher("org.apache.poi.ss.usermodel.Font setBoldweight(short)");
 

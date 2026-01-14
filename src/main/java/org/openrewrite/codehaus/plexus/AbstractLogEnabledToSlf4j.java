@@ -15,6 +15,7 @@
  */
 package org.openrewrite.codehaus.plexus;
 
+import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
@@ -40,15 +41,11 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
     private static final MethodMatcher PLEXUS_LOGGER_MATCHER = new MethodMatcher(PLEXUS_LOGGER_PATTERN);
     private static final String LOGGER_VARIABLE_NAME = "LOGGER"; // Checkstyle requires constants to be uppercase
 
-    @Override
-    public String getDisplayName() {
-        return "Migrate from Plexus `AbstractLogEnabled` to SLF4J";
-    }
+    @Getter
+    final String displayName = "Migrate from Plexus `AbstractLogEnabled` to SLF4J";
 
-    @Override
-    public String getDescription() {
-        return "Introduce a SLF4J `Logger` field and replace calls to `getLogger()` with calls to the field.";
-    }
+    @Getter
+    final String description = "Introduce a SLF4J `Logger` field and replace calls to `getLogger()` with calls to the field.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
