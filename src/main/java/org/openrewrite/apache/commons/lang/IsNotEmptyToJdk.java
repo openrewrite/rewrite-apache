@@ -49,10 +49,8 @@ public class IsNotEmptyToJdk extends Recipe {
         return Duration.ofMinutes(1);
     }
 
-    @Override
-    public Set<String> getTags() {
-        return new HashSet<>(Arrays.asList("apache", "commons"));
-    }
+    @Getter
+    final Set<String> tags = new HashSet<>(Arrays.asList("apache", "commons"));
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

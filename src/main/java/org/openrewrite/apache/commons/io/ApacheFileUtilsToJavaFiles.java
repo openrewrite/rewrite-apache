@@ -37,10 +37,8 @@ public class ApacheFileUtilsToJavaFiles extends Recipe {
     @Getter
     final String description = "Prefer the Java standard library's `java.nio.file.Files` over third-party usage of apache's `apache.commons.io.FileUtils`.";
 
-    @Override
-    public Set<String> getTags() {
-        return new HashSet<>(Arrays.asList("apache", "commons"));
-    }
+    @Getter
+    final Set<String> tags = new HashSet<>(Arrays.asList("apache", "commons"));
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

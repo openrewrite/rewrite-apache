@@ -66,10 +66,7 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
 
     String description = "Use `IOUtils` method invocations that include the charset encoding instead of using the deprecated versions that do not include a charset encoding. (e.g. converts `IOUtils.readLines(inputStream)` to `IOUtils.readLines(inputStream, StandardCharsets.UTF_8)`.";
 
-    @Override
-    public Set<String> getTags() {
-        return new HashSet<>(Arrays.asList("apache", "commons"));
-    }
+    Set<String> tags = new HashSet<>(Arrays.asList("apache", "commons"));
 
     @Override
     public Validated validate() {

@@ -41,10 +41,8 @@ public class MigrateDefaultHttpClient extends Recipe {
       " - [Find Sec Bugs](https://find-sec-bugs.github.io/bugs.htm#DEFAULT_HTTP_CLIENT).\n" +
       " - [IBM Support Pages](https://www.ibm.com/support/pages/im-using-apache-httpclient-make-outbound-call-my-web-application-running-websphere-application-server-traditional-and-im-getting-ssl-handshake-error-how-can-i-debug).";
 
-    @Override
-    public Set<String> getTags() {
-        return singleton("CWE-326");
-    }
+    @Getter
+    final Set<String> tags = singleton("CWE-326");
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
