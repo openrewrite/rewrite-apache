@@ -44,10 +44,8 @@ public class IsNotEmptyToJdk extends Recipe {
     @Getter
     final String description = "Replace any `StringUtils#isEmpty(String)` and `#isNotEmpty(String)` with `s == null || s.isEmpty()` and `s != null && !s.isEmpty()`.";
 
-    @Override
-    public Duration getEstimatedEffortPerOccurrence() {
-        return Duration.ofMinutes(1);
-    }
+    @Getter
+    final Duration estimatedEffortPerOccurrence = Duration.ofMinutes(1);
 
     @Getter
     final Set<String> tags = new HashSet<>(Arrays.asList("apache", "commons"));
