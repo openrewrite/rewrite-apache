@@ -101,7 +101,7 @@ class MigrateSystemUtilsDeprecationsTest implements RewriteTest {
 
               class Test {
                   String k1 = SystemProperties.USER_HOME;
-                  //String k2 = SystemProperties.USER_NAME;
+                  //String k2 = SystemUtils.USER_NAME_KEY;
                   String k3 = SystemProperties.USER_DIR;
                   String k4 = SystemProperties.JAVA_IO_TMPDIR;
                   String k5 = SystemProperties.JAVA_HOME;
