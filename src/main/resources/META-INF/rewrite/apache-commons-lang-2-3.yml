@@ -45,6 +45,7 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.lang3.NullArgumentException
       newFullyQualifiedTypeName: java.lang.NullPointerException
+  - org.openrewrite.apache.commons.lang3.MigrateSystemUtilsDeprecations
 
 ---
 type: specs.openrewrite.org/v1beta/recipe
