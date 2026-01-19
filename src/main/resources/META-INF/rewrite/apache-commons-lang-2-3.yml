@@ -46,7 +46,7 @@ recipeList:
       oldFullyQualifiedTypeName: org.apache.commons.lang3.NullArgumentException
       newFullyQualifiedTypeName: java.lang.NullPointerException
   - org.openrewrite.apache.commons.lang3.MigrateSystemUtilsDeprecations
-
+  - org.openrewrite.apache.commons.lang3.UseStandardCharsets
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.commons.lang.WordUtilsToCommonsText
