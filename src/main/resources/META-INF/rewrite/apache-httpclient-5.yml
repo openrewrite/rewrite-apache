@@ -56,10 +56,6 @@ description: >-
 tags:
   - apache
   - httpclient
-preconditions:
-  - org.openrewrite.java.dependencies.DependencyInsight:
-      groupIdPattern: org.apache.httpcomponents
-      artifactIdPattern: "*"
 recipeList:
   - org.openrewrite.java.dependencies.AddDependency:
       groupId: org.apache.httpcomponents.client5
