@@ -690,6 +690,29 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang3.MigrateSystemUtilsDeprecations
+examples:
+- description: '`MigrateSystemUtilsDeprecationsTest#fileSeparator`'
+  sources:
+  - before: |
+      import org.apache.commons.lang3.SystemUtils;
+
+      class Test {
+          String f = SystemUtils.FILE_SEPARATOR;
+          String p = SystemUtils.PATH_SEPARATOR;
+          String l = SystemUtils.LINE_SEPARATOR;
+      }
+    after: |
+      import java.io.File;
+
+      class Test {
+          String f = File.separator;
+          String p = File.pathSeparator;
+          String l = System.lineSeparator();
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang3.UseStandardCharsets
 examples:
 - description: '`ApacheCommonsLang3UseStandardCharsetsTest#convertCharEncodingFieldsToJdk`'
