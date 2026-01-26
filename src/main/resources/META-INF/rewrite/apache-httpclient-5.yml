@@ -40,6 +40,13 @@ recipeList:
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
   - org.openrewrite.apache.httpclient5.MigrateSSLConnectionSocketFactory
+  # Migrate SSLConnectionSocketFactory.getDefaultHostnameVerifier() to HttpsSupport.getDefaultHostnameVerifier()
+  - org.openrewrite.java.ChangeMethodTargetToStatic:
+      methodPattern: org.apache.http.conn.ssl.SSLConnectionSocketFactory getDefaultHostnameVerifier()
+      fullyQualifiedTargetTypeName: org.apache.hc.client5.http.ssl.HttpsSupport
+  - org.openrewrite.java.ChangeMethodTargetToStatic:
+      methodPattern: org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory getDefaultHostnameVerifier()
+      fullyQualifiedTargetTypeName: org.apache.hc.client5.http.ssl.HttpsSupport
   - org.openrewrite.java.DeleteMethodArgument:
       methodPattern: org.apache.hc.client5.http.impl.auth.BasicSchemeFactory <constructor>(java.nio.charset.Charset)
       argumentIndex: 0
