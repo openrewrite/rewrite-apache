@@ -29,6 +29,7 @@ import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
 
 import static java.util.Objects.requireNonNull;
@@ -81,11 +82,14 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     !vd.getVariables().isEmpty() &&
                     vd.getVariables().get(0).getInitializer() instanceof J.NewClass) {
                 J.NewClass newClass = requireNonNull((J.NewClass) vd.getVariables().get(0).getInitializer());
-                boolean hasExactlyOneArgument = !newClass.getArguments().isEmpty() &&
-                        newClass.getArguments().size() == 1 &&
-                        newClass.getArguments().get(0) instanceof J.Identifier;
+                boolean hasOneArgSSLContext = newClass.getArguments().size() == 1 &&
+                        TypeUtils.isAssignableTo("javax.net.ssl.SSLContext", newClass.getArguments().get(0).getType());
 
-                if (hasExactlyOneArgument) {
+                boolean hasTwoArgsWithHostnameVerifier = newClass.getArguments().size() == 2 &&
+                        TypeUtils.isAssignableTo("javax.net.ssl.SSLContext", newClass.getArguments().get(0).getType()) &&
+                        TypeUtils.isAssignableTo("javax.net.ssl.HostnameVerifier", newClass.getArguments().get(1).getType());
+
+                if (hasOneArgSSLContext) {
                     String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)})";
                     maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY);
                     maybeRemoveImport(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY);
@@ -98,6 +102,20 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                                     DEFAULT_TLS_SOCKET_STRATEGY)
                             .build()
                             .apply(getCursor(), vd.getCoordinates().replace(), newClass.getArguments().get(0));
+                } else if (hasTwoArgsWithHostnameVerifier) {
+                    String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)}, #{any(javax.net.ssl.HostnameVerifier)})";
+                    maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY);
+                    maybeRemoveImport(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY);
+                    maybeAddImport(TLS_SOCKET_STRATEGY);
+                    maybeAddImport(DEFAULT_TLS_SOCKET_STRATEGY);
+                    return JavaTemplate.builder(code)
+                            .javaParser(JavaParser.fromJavaVersion()
+                                    .classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                            .imports(TLS_SOCKET_STRATEGY,
+                                    DEFAULT_TLS_SOCKET_STRATEGY)
+                            .build()
+                            .apply(getCursor(), vd.getCoordinates().replace(),
+                                    newClass.getArguments().get(0), newClass.getArguments().get(1));
                 }
             }
 
@@ -182,7 +200,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             }
 
             // Check if a ConnectionManager variable exists in this method
-            for (org.openrewrite.java.tree.Statement stmt : enclosingMethod.getBody().getStatements()) {
+            for (Statement stmt : enclosingMethod.getBody().getStatements()) {
                 if (stmt instanceof J.VariableDeclarations) {
                     J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
                     if (!vd.getVariables().isEmpty() &&
