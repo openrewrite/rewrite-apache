@@ -170,6 +170,52 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
         );
     }
 
+    @Test
+    void multipleConstructorArgsWithSetSSLSocketFactory() {
+        // This test verifies that when SSLConnectionSocketFactory is created with multiple arguments,
+        // and setSSLSocketFactory is called, the recipe doesn't leave broken code by replacing
+        // setSSLSocketFactory with setConnectionManager(cm) without creating cm.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import javax.net.ssl.HostnameVerifier;
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.ssl.SSLContexts;
+
+              class HttpClientManager {
+                  void create() {
+                      SSLContext sslContext = SSLContexts.createDefault();
+                      HostnameVerifier customHostnameVerifier = (hostname, session) -> true;
+                      SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, customHostnameVerifier);
+                      HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.HostnameVerifier;
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+              import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+              import org.apache.hc.core5.ssl.SSLContexts;
+
+              class HttpClientManager {
+                  void create() {
+                      SSLContext sslContext = SSLContexts.createDefault();
+                      HostnameVerifier customHostnameVerifier = (hostname, session) -> true;
+                      SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, customHostnameVerifier);
+                      HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
     /**
      * TODO: The handling of other constructor arguments should be improved later.
      */

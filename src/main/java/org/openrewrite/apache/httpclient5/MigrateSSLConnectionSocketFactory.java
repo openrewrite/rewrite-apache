@@ -18,6 +18,7 @@ package org.openrewrite.apache.httpclient5;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.jspecify.annotations.Nullable;
+import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -171,12 +172,33 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     }
 
     private static class TransformSetSSLSocketFactoryVisitor extends JavaIsoVisitor<ExecutionContext> {
+        private static final String HTTP_CLIENT_CONNECTION_MANAGER = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
+
+        private boolean isInsideMethodWithConnectionManager(Cursor cursor) {
+            // Walk up the cursor to find the enclosing method
+            J.MethodDeclaration enclosingMethod = cursor.firstEnclosing(J.MethodDeclaration.class);
+            if (enclosingMethod == null || enclosingMethod.getBody() == null) {
+                return false;
+            }
+
+            // Check if a ConnectionManager variable exists in this method
+            for (org.openrewrite.java.tree.Statement stmt : enclosingMethod.getBody().getStatements()) {
+                if (stmt instanceof J.VariableDeclarations) {
+                    J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
+                    if (!vd.getVariables().isEmpty() &&
+                            TypeUtils.isOfClassType(vd.getVariables().get(0).getType(), HTTP_CLIENT_CONNECTION_MANAGER)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         @Override
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
             J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
 
-            // Check if this is a setConnectionManager call with SSLConnectionSocketFactory as argument
+            // Check if this is a setSSLSocketFactory call with SSLConnectionSocketFactory as argument
             if (SET_SSL_SOCKET_FACTORY.matches(mi)) {
                 if (mi.getArguments().size() == 1 && mi.getArguments().get(0) instanceof J.Identifier) {
                     J.Identifier arg = (J.Identifier) mi.getArguments().get(0);
@@ -184,9 +206,13 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     if (arg.getType() != null &&
                             (TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY) ||
                                     TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY))) {
+                        // Only transform if a ConnectionManager exists in the enclosing method
+                        if (!isInsideMethodWithConnectionManager(getCursor())) {
+                            return mi;
+                        }
                         maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY);
                         maybeRemoveImport(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY);
-                        // Always replace setSSLSocketFactory with setConnectionManager
+                        // Replace setSSLSocketFactory with setConnectionManager
                         return JavaTemplate.builder("#{any()}.setConnectionManager(cm)")
                                 .contextSensitive()
                                 .javaParser(JavaParser.fromJavaVersion()
