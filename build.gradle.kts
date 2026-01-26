@@ -64,7 +64,7 @@ dependencies {
 
     testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.13.3")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.14.2")
 
 }
 
