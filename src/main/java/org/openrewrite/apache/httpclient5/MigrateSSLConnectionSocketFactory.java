@@ -18,11 +18,7 @@ package org.openrewrite.apache.httpclient5;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.jspecify.annotations.Nullable;
-import org.openrewrite.Cursor;
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Preconditions;
-import org.openrewrite.Recipe;
-import org.openrewrite.TreeVisitor;
+import org.openrewrite.*;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
@@ -47,7 +43,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     String displayName = "Migrate deprecated `SSLConnectionSocketFactory` to `DefaultClientTlsStrategy`";
 
     String description = "Migrates usage of the deprecated `org.apache.http.conn.ssl.SSLConnectionSocketFactory` " +
-                "to `org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy` with proper connection manager setup.";
+            "to `org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy` with proper connection manager setup.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -90,29 +86,28 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                         TypeUtils.isAssignableTo("javax.net.ssl.HostnameVerifier", newClass.getArguments().get(1).getType());
 
                 if (hasOneArgSSLContext) {
-                    String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)})";
                     maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY);
                     maybeRemoveImport(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY);
                     maybeAddImport(TLS_SOCKET_STRATEGY);
                     maybeAddImport(DEFAULT_TLS_SOCKET_STRATEGY);
+                    String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)})";
                     return JavaTemplate.builder(code)
                             .javaParser(JavaParser.fromJavaVersion()
                                     .classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                            .imports(TLS_SOCKET_STRATEGY,
-                                    DEFAULT_TLS_SOCKET_STRATEGY)
+                            .imports(TLS_SOCKET_STRATEGY, DEFAULT_TLS_SOCKET_STRATEGY)
                             .build()
                             .apply(getCursor(), vd.getCoordinates().replace(), newClass.getArguments().get(0));
-                } else if (hasTwoArgsWithHostnameVerifier) {
-                    String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)}, #{any(javax.net.ssl.HostnameVerifier)})";
+                }
+                if (hasTwoArgsWithHostnameVerifier) {
                     maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY);
                     maybeRemoveImport(HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY);
                     maybeAddImport(TLS_SOCKET_STRATEGY);
                     maybeAddImport(DEFAULT_TLS_SOCKET_STRATEGY);
+                    String code = "TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(#{any(javax.net.ssl.SSLContext)}, #{any(javax.net.ssl.HostnameVerifier)})";
                     return JavaTemplate.builder(code)
                             .javaParser(JavaParser.fromJavaVersion()
                                     .classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                            .imports(TLS_SOCKET_STRATEGY,
-                                    DEFAULT_TLS_SOCKET_STRATEGY)
+                            .imports(TLS_SOCKET_STRATEGY, DEFAULT_TLS_SOCKET_STRATEGY)
                             .build()
                             .apply(getCursor(), vd.getCoordinates().replace(),
                                     newClass.getArguments().get(0), newClass.getArguments().get(1));
