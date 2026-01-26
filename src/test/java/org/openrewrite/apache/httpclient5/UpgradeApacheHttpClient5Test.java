@@ -737,6 +737,38 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         );
     }
 
+    @Issue("https://github.com/moderneinc/customer-requests/issues/1561")
+    @Test
+    void migratesGetDefaultHostnameVerifier() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import javax.net.ssl.HostnameVerifier;
+
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+
+              class A {
+                  HostnameVerifier getVerifier() {
+                      return SSLConnectionSocketFactory.getDefaultHostnameVerifier();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.ssl.HttpsSupport;
+
+              import javax.net.ssl.HostnameVerifier;
+
+              class A {
+                  HostnameVerifier getVerifier() {
+                      return HttpsSupport.getDefaultHostnameVerifier();
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Nested
     class Dependencies {
 

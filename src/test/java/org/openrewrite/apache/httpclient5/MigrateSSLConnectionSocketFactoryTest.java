@@ -254,6 +254,7 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
               import javax.net.ssl.SSLContext;
 
               import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.HttpsSupport;
               import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
               import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
               import org.apache.hc.core5.ssl.SSLContexts;
@@ -265,7 +266,7 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
                           if (hostname.equals("your.custom.hostname.com")) {
                               return true;
                           }
-                          return SSLConnectionSocketFactory.getDefaultHostnameVerifier().verify(hostname, session);
+                          return HttpsSupport.getDefaultHostnameVerifier().verify(hostname, session);
                       };
                       TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext, customHostnameVerifier);
                   }
