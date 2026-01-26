@@ -255,7 +255,6 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
 
               import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
               import org.apache.hc.client5.http.ssl.HttpsSupport;
-              import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
               import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
               import org.apache.hc.core5.ssl.SSLContexts;
 
