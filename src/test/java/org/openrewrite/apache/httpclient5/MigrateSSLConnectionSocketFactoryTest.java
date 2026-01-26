@@ -170,11 +170,10 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
         );
     }
 
-    /**
-     * TODO: The handling of other constructor arguments should be improved later.
-     */
     @Test
-    void moreConstructorArgumentsThanSSLContextOnlyChangeImports() {
+    void multipleConstructorArgsWithSetSSLSocketFactory() {
+        // This test verifies that when SSLConnectionSocketFactory is created with SSLContext and HostnameVerifier,
+        // the recipe fully migrates to DefaultClientTlsStrategy with connection manager setup.
         rewriteRun(
           //language=java
           java(
@@ -183,18 +182,15 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
               import javax.net.ssl.SSLContext;
 
               import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.HttpClients;
               import org.apache.http.ssl.SSLContexts;
 
               class HttpClientManager {
-                  void create(SSLContext sslContext) {
+                  void create() {
                       SSLContext sslContext = SSLContexts.createDefault();
-                      HostnameVerifier customHostnameVerifier = (hostname, session) -> {
-                          if (hostname.equals("your.custom.hostname.com")) {
-                              return true;
-                          }
-                          return SSLConnectionSocketFactory.getDefaultHostnameVerifier().verify(hostname, session);
-                      };
+                      HostnameVerifier customHostnameVerifier = (hostname, session) -> true;
                       SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, customHostnameVerifier);
+                      HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
                   }
               }
               """,
@@ -202,20 +198,20 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
               import javax.net.ssl.HostnameVerifier;
               import javax.net.ssl.SSLContext;
 
-              import org.apache.hc.client5.http.ssl.HttpsSupport;
-              import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
               import org.apache.hc.core5.ssl.SSLContexts;
 
               class HttpClientManager {
-                  void create(SSLContext sslContext) {
+                  void create() {
                       SSLContext sslContext = SSLContexts.createDefault();
-                      HostnameVerifier customHostnameVerifier = (hostname, session) -> {
-                          if (hostname.equals("your.custom.hostname.com")) {
-                              return true;
-                          }
-                          return HttpsSupport.getDefaultHostnameVerifier().verify(hostname, session);
-                      };
-                      SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, customHostnameVerifier);
+                      HostnameVerifier customHostnameVerifier = (hostname, session) -> true;
+                      TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext, customHostnameVerifier);
+                      HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
+                      HttpClients.custom().setConnectionManager(cm).build();
                   }
               }
               """
