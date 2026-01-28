@@ -294,4 +294,72 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void migratesIOReactorClasses() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+              import org.apache.http.nio.reactor.ConnectingIOReactor;
+
+              class A {
+                  ConnectingIOReactor getReactor() throws Exception {
+                      return new DefaultConnectingIOReactor();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.reactor.ConnectionInitiator;
+              import org.apache.hc.core5.reactor.DefaultConnectingIOReactor;
+
+              class A {
+                  ConnectionInitiator getReactor() throws Exception {
+                      return new DefaultConnectingIOReactor();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void addsCommentToNioEntityImports() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              package xyz;
+              import org.apache.http.nio.entity.NByteArrayEntity;
+              import org.apache.http.nio.entity.NStringEntity;
+              class A {
+                  NByteArrayEntity createByteEntity() {
+                      return new NByteArrayEntity("test".getBytes());
+                  }
+
+                  NStringEntity createStringEntity() throws Exception {
+                      return new NStringEntity("test");
+                  }
+              }
+              """,
+            """
+              package xyz;
+              /* NByteArrayEntity replaced with BasicAsyncEntityProducer - constructor and usage differs, manual migration required */
+              import org.apache.http.nio.entity.NByteArrayEntity;
+              /* NStringEntity replaced with StringAsyncEntityProducer - constructor and usage differs, manual migration required */
+              import org.apache.http.nio.entity.NStringEntity;
+              class A {
+                  NByteArrayEntity createByteEntity() {
+                      return new NByteArrayEntity("test".getBytes());
+                  }
+
+                  NStringEntity createStringEntity() throws Exception {
+                      return new NStringEntity("test");
+                  }
+              }
+              """
+          )
+        );
+    }
 }
