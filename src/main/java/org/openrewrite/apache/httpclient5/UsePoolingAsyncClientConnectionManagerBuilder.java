@@ -38,6 +38,7 @@ import org.openrewrite.marker.Markers;
 import java.util.*;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.Collections.emptyList;
 import static org.openrewrite.Tree.randomId;
 
 @Value
@@ -108,7 +109,7 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                         statementsToRemove.contains(stmt) ? null : stmt));
 
                 // Update variable declarations to include builder method calls
-                b = b.withStatements(ListUtils.map(b.getStatements(), stmt -> {
+                return b.withStatements(ListUtils.map(b.getStatements(), stmt -> {
                     if (stmt instanceof J.VariableDeclarations) {
                         J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
                         return vd.withVariables(ListUtils.map(vd.getVariables(), var -> {
@@ -130,8 +131,6 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                     }
                     return stmt;
                 }));
-
-                return b;
             }
 
             private boolean isBuilderBuildCall(Expression expr) {
@@ -168,7 +167,7 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                         randomId(),
                         Space.EMPTY,
                         Markers.EMPTY,
-                        Collections.emptyList(),
+                        emptyList(),
                         methodName,
                         updatedMethodType,
                         null
