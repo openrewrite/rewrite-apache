@@ -847,6 +847,11 @@ recipeList:
       methodPattern: org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager <constructor>(org.apache.http.nio.reactor.ConnectingIOReactor, org.apache.http.nio.NHttpConnectionFactory, org.apache.http.config.Registry, org.apache.http.conn.SchemePortResolver, org.apache.http.conn.DnsResolver, long, java.util.concurrent.TimeUnit)
   - org.openrewrite.apache.httpclient5.MigratePoolingNHttpClientConnectionManager
   - org.openrewrite.apache.httpclient5.UsePoolingAsyncClientConnectionManagerBuilder
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager closeIdleConnections(long, java.util.concurrent.TimeUnit)
+      newMethodName: closeIdle
+  # TODO: Need a more flexible version of `ChangeArgumentToTimeValue` that can change a pair of `long` and `TimeUnit` args into a `TimeValue`
+  # TODO: A few other methods to migrate still
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.nio.conn.NHttpClientConnectionManager
       newFullyQualifiedTypeName: org.apache.hc.client5.http.nio.AsyncClientConnectionManager

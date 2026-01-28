@@ -58,7 +58,7 @@ class UsePoolingAsyncClientConnectionManagerBuilderTest implements RewriteTest {
 
               class A {
                   void method() {
-                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxTotal(100).build();
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxConnTotal(100).build();
                   }
               }
               """
@@ -89,7 +89,7 @@ class UsePoolingAsyncClientConnectionManagerBuilderTest implements RewriteTest {
 
               class A {
                   void method() {
-                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxTotal(100).setDefaultMaxPerRoute(10).build();
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxConnTotal(100).setMaxConnPerRoute(10).build();
                   }
               }
               """
@@ -121,7 +121,7 @@ class UsePoolingAsyncClientConnectionManagerBuilderTest implements RewriteTest {
 
               class A {
                   void method() {
-                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxTotal(100).build();
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxConnTotal(100).build();
                       cm.close();
                       cm.setDefaultMaxPerRoute(10);
                   }

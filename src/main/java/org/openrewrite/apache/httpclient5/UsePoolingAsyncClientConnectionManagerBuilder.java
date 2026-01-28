@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 the original author or authors.
+ * Copyright 2026 the original author or authors.
  * <p>
  * Licensed under the Moderne Source Available License (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,13 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
     private static final String FQN_MANAGER = "org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager";
     private static final String FQN_BUILDER = "org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder";
 
-    // Methods that exist on both PoolingAsyncClientConnectionManager and PoolingAsyncClientConnectionManagerBuilder
-    private static final Set<String> BUILDER_METHODS = new HashSet<String>() {{
-        add("setMaxTotal");
-        add("setDefaultMaxPerRoute");
-        add("setConnectionTimeToLive");
-        add("setValidateAfterInactivity");
+    // Methods that can be moved from PoolingAsyncClientConnectionManager to PoolingAsyncClientConnectionManagerBuilder
+    // Some methods have different names on the builder
+    private static final Map<String, String> BUILDER_METHOD_MAPPINGS = new LinkedHashMap<String, String>() {{
+        put("setMaxTotal", "setMaxConnTotal");
+        put("setDefaultMaxPerRoute", "setMaxConnPerRoute");
+        put("setConnectionTimeToLive", "setConnectionTimeToLive");
+        put("setValidateAfterInactivity", "setValidateAfterInactivity");
     }};
 
     @Getter
@@ -86,8 +87,9 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                         }
                     } else if (currentVarName != null && stmt instanceof J.MethodInvocation) {
                         J.MethodInvocation mi = (J.MethodInvocation) stmt;
-                        if (isBuilderCompatibleMethodCall(mi, currentVarName)) {
-                            builderMethodCalls.get(currentVarName).add(new MethodCallInfo(mi.getName(), mi.getArguments()));
+                        String builderMethodName = getBuilderMethodName(mi, currentVarName);
+                        if (builderMethodName != null) {
+                            builderMethodCalls.get(currentVarName).add(new MethodCallInfo(builderMethodName, mi.getArguments()));
                             statementsToRemove.add(stmt);
                         } else {
                             currentVarName = null;
@@ -142,27 +144,42 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                 return false;
             }
 
-            private boolean isBuilderCompatibleMethodCall(J.MethodInvocation mi, String varName) {
+            /**
+             * Checks if the method invocation is on the given variable and returns the builder method name
+             * if it can be moved to the builder chain. Returns null if the method cannot be moved.
+             */
+            private String getBuilderMethodName(J.MethodInvocation mi, String varName) {
                 if (mi.getSelect() instanceof J.Identifier) {
                     J.Identifier select = (J.Identifier) mi.getSelect();
-                    return varName.equals(select.getSimpleName()) && BUILDER_METHODS.contains(mi.getSimpleName());
+                    if (varName.equals(select.getSimpleName())) {
+                        return BUILDER_METHOD_MAPPINGS.get(mi.getSimpleName());
+                    }
                 }
-                return false;
+                return null;
             }
 
-            private J.MethodInvocation createMethodInvocation(J.MethodInvocation builderChain, J.Identifier name, List<Expression> arguments) {
+            private J.MethodInvocation createMethodInvocation(J.MethodInvocation builderChain, String methodName, List<Expression> arguments) {
                 JavaType.Method updatedMethodType = null;
                 if (builderChain.getMethodType() != null) {
                     updatedMethodType = builderChain.getMethodType()
-                            .withName(name.getSimpleName());
+                            .withName(methodName);
                 }
+                J.Identifier name = new J.Identifier(
+                        randomId(),
+                        Space.EMPTY,
+                        Markers.EMPTY,
+                        Collections.emptyList(),
+                        methodName,
+                        updatedMethodType,
+                        null
+                );
                 return new J.MethodInvocation(
                         randomId(),
                         Space.EMPTY,
                         Markers.EMPTY,
                         JRightPadded.build(builderChain),
                         null,
-                        name.withType(updatedMethodType),
+                        name,
                         JContainer.build(arguments.stream()
                                 .map(arg -> JRightPadded.build((Expression) arg.withPrefix(Space.EMPTY)))
                                 .collect(toList())),
@@ -174,7 +191,7 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
 
     @Value
     private static class MethodCallInfo {
-        J.Identifier name;
+        String name;
         List<Expression> arguments;
     }
 }
