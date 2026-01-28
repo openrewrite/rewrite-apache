@@ -151,7 +151,6 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
             }
 
             private J.MethodInvocation createMethodInvocation(J.MethodInvocation builderChain, J.Identifier name, List<Expression> arguments) {
-                JavaType.FullyQualified builderType = JavaType.ShallowClass.build(FQN_BUILDER);
                 JavaType.Method updatedMethodType = null;
                 if (builderChain.getMethodType() != null) {
                     updatedMethodType = builderChain.getMethodType()
