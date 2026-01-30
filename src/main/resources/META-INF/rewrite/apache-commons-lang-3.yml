@@ -19,6 +19,8 @@ type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.commons.lang3.UseStandardCharsets
 displayName: Prefer `java.nio.charset.StandardCharsets`
 description: Prefer the Java standard library's `java.nio.charset.StandardCharsets` over `org.apache.commons.lang3.CharEncoding`.
+preconditions:
+  - org.openrewrite.Singleton
 tags:
   - apache
   - commons
@@ -64,6 +66,8 @@ type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.commons.lang3.MigrateSystemUtilsDeprecations
 displayName: Migrate deprecated SystemUtils constants
 description: Replaces deprecated constants in org.apache.commons.lang3.SystemUtils with their recommended replacements (e.g., File.separator, System.lineSeparator()).
+preconditions:
+  - org.openrewrite.Singleton
 recipeList:
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
       existingFullyQualifiedConstantName: org.apache.commons.lang3.SystemUtils.FILE_SEPARATOR
