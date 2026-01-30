@@ -23,6 +23,8 @@ displayName: Migrates to Apache Commons Lang 3.x
 description: >-
   Migrate applications to the latest Apache Commons Lang 3.x release. This recipe modifies
   application's build files, and changes the package as per [the migration release notes](https://commons.apache.org/proper/commons-lang/article3_0.html).
+preconditions:
+  - org.openrewrite.Singleton
 tags:
   - apache
   - commons
@@ -52,6 +54,8 @@ type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.commons.lang.WordUtilsToCommonsText
 displayName: Migrate `WordUtils` to Apache Commons Text
 description: Migrate `org.apache.commons.lang.WordUtils` to `org.apache.commons.text.WordUtils` and add the Commons Text dependency.
+preconditions:
+  - org.openrewrite.Singleton
 tags:
   - apache
   - commons
