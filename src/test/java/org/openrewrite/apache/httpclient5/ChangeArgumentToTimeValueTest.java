@@ -37,6 +37,8 @@ class ChangeArgumentToTimeValueTest implements RewriteTest {
             """
             import org.apache.hc.core5.util.TimeValue;
 
+            import java.util.concurrent.TimeUnit;
+
             class A {
                 private TimeValue storedValue;
 
@@ -46,6 +48,10 @@ class ChangeArgumentToTimeValueTest implements RewriteTest {
 
                 void method(TimeValue value) {
                     storedValue = value;
+                }
+
+                void method(long value, TimeUnit unit) {
+                    storedValue = TimeValue.of(value, unit);
                 }
             }
             """
@@ -94,6 +100,38 @@ class ChangeArgumentToTimeValueTest implements RewriteTest {
                   void test() {
                       A a = new A();
                       a.method(100);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.util.TimeValue;
+
+              import java.util.concurrent.TimeUnit;
+
+              class B {
+                  void test() {
+                      A a = new A();
+                      a.method(TimeValue.of(100, TimeUnit.SECONDS));
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void changeArgumentsToTimeValueWithLongAndTimeUnit() {
+        rewriteRun(
+          spec -> spec.recipe(new ChangeArgumentToTimeValue("A method(long, java.util.concurrent.TimeUnit)", null)),
+          //language=java
+          java(
+            """
+              import java.util.concurrent.TimeUnit;
+
+              class B {
+                  void test() {
+                      A a = new A();
+                      a.method(100, TimeUnit.SECONDS);
                   }
               }
               """,

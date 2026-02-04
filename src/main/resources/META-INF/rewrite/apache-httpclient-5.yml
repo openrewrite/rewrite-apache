@@ -30,6 +30,7 @@ tags:
 recipeList:
   - org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClientDependencies
+  - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_AsyncClientClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
   - org.openrewrite.maven.RemoveDuplicateDependencies
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
@@ -239,6 +240,19 @@ recipeList:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setSoLinger(int)
   - org.openrewrite.java.RemoveMethodInvocations:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setConnectTimeout(int)
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.reactor.ConnectingIOReactor
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.ConnectionInitiator
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor
+      newFullyQualifiedTypeName: org.apache.hc.core5.reactor.DefaultConnectingIOReactor
+  # NIO entity migrations - these require manual changes due to API differences
+  - org.openrewrite.java.AddCommentToImport:
+      comment: "NByteArrayEntity replaced with BasicAsyncEntityProducer - constructor and usage differs, manual migration required"
+      typePattern: org.apache.http.nio.entity.NByteArrayEntity
+  - org.openrewrite.java.AddCommentToImport:
+      comment: "NStringEntity replaced with StringAsyncEntityProducer - constructor and usage differs, manual migration required"
+      typePattern: org.apache.http.nio.entity.NStringEntity
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
@@ -540,6 +554,7 @@ recipeList:
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.impl.nio.client
       newPackageName: org.apache.hc.client5.http.impl.async
+
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.impl
       newPackageName: org.apache.hc.core5.http.impl.io
@@ -805,3 +820,42 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.client.CredentialsProvider
       newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.CredentialsStore
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_AsyncClientClassMapping
+displayName: Migrate Apache HttpAsyncClient 4.x classes to HttpClient 5.x
+description: >-
+  Migrates classes from Apache HttpAsyncClient 4.x `httpasyncclient` to their equivalents in HttpClient 5.x.
+tags:
+  - apache
+  - httpclient
+recipeList:
+  # Async client connection manager migration - uses builder pattern
+  # Add warnings for complex constructors that lose configuration when migrated
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: `PoolingNHttpClientConnectionManager` with `NHttpConnectionFactory` - the connection factory configuration is lost in migration. Configure via `PoolingAsyncClientConnectionManagerBuilder` if needed."
+      methodPattern: org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager <constructor>(org.apache.http.nio.reactor.ConnectingIOReactor, org.apache.http.nio.conn.NHttpConnectionFactory)
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: `PoolingNHttpClientConnectionManager` with `Registry` - the scheme registry configuration is lost in migration. Configure TLS via `PoolingAsyncClientConnectionManagerBuilder.setTlsStrategy(..)` if needed."
+      methodPattern: org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager <constructor>(org.apache.http.nio.reactor.ConnectingIOReactor, org.apache.http.config.Registry)
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: `PoolingNHttpClientConnectionManager` with `NHttpConnectionFactory` and `Registry` - both configurations are lost in migration. Configure via `PoolingAsyncClientConnectionManagerBuilder` if needed."
+      methodPattern: org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager <constructor>(org.apache.http.nio.reactor.ConnectingIOReactor, org.apache.http.nio.conn.NHttpConnectionFactory, org.apache.http.config.Registry)
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: `PoolingNHttpClientConnectionManager` with full configuration - connection factory, registry, port resolver, DNS resolver, and TTL are lost in migration. Configure via `PoolingAsyncClientConnectionManagerBuilder` methods if needed."
+      methodPattern: org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager <constructor>(org.apache.http.nio.reactor.ConnectingIOReactor, org.apache.http.nio.conn.NHttpConnectionFactory, org.apache.http.config.Registry, org.apache.http.conn.SchemePortResolver, org.apache.http.conn.DnsResolver, long, java.util.concurrent.TimeUnit)
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager closeIdleConnections(long, java.util.concurrent.TimeUnit)
+      newMethodName: closeIdle
+  - org.openrewrite.apache.httpclient5.ChangeArgumentToTimeValue:
+      methodPattern: org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager closeIdle(long, java.util.concurrent.TimeUnit)
+  - org.openrewrite.apache.httpclient5.MigratePoolingNHttpClientConnectionManager
+  - org.openrewrite.apache.httpclient5.UsePoolingAsyncClientConnectionManagerBuilder
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.conn.NHttpClientConnectionManager
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.nio.AsyncClientConnectionManager
+
+  # Async HTTP client interfaces
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.client.HttpAsyncClient
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.async.HttpAsyncClient

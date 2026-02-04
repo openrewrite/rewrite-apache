@@ -14,6 +14,7 @@ recipeDependencies {
     parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.+")
     parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.+")
     parserClasspath("org.apache.httpcomponents:httpclient:4.5.14")
+    parserClasspath("org.apache.httpcomponents:httpasyncclient:4.1.5")
     parserClasspath("org.apache.httpcomponents:httpcore-nio:4.4.16")
     parserClasspath("org.apache.httpcomponents:httpcore:4.4.16")
     parserClasspath("org.apache.httpcomponents:httpmime:4.5.14")
