@@ -110,8 +110,8 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                 boolean hasRelevantReturnTypeExpression = method.getReturnTypeExpression() != null && TypeUtils.isOfClassType(method.getReturnTypeExpression().getType(), FQN_OLD);
                 J.MethodDeclaration md = (J.MethodDeclaration) super.visitMethodDeclaration(method, ctx);
                 if (hasRelevantReturnTypeExpression) {
-                    maybeAddImport(FQN_NEW);
                     maybeRemoveImport(FQN_OLD);
+                    maybeAddImport(FQN_NEW);
                     JavaType.FullyQualified newType = JavaType.ShallowClass.build(FQN_NEW);
                     if (md.getReturnTypeExpression() instanceof J.Identifier) {
                         md = md.withReturnTypeExpression(((J.Identifier) md.getReturnTypeExpression())
