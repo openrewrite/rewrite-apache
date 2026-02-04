@@ -46,10 +46,10 @@ public class ChangeArgumentToTimeValue extends Recipe {
     String displayName = "Changes an argument (or pair of arguments) to a `TimeValue` for matched method invocations";
 
     String description = "In Apache Http Client 5.x migration, some methods that previously took a single `long` argument, or a pair of arguments " +
-                "of type `long` and `TimeUnit` respectively, have changed to take a `TimeValue`. Previously in 4.x, all these single `long` argument " +
-                "methods were implicitly having the value expressed in milliseconds. By default this recipe uses `TimeUnit.MILLISECONDS` for the " +
-                "`TimeUnit` when creating a `TimeValue`. It is possible to specify this as a option. The `timeUnit` option will be ignored for cases " +
-                "matching `*(long, TimeUnit).";
+            "of type `long` and `TimeUnit` respectively, have changed to take a `TimeValue`. Previously in 4.x, all these single `long` argument " +
+            "methods were implicitly having the value expressed in milliseconds. By default this recipe uses `TimeUnit.MILLISECONDS` for the " +
+            "`TimeUnit` when creating a `TimeValue`. It is possible to specify this as a option. The `timeUnit` option will be ignored for cases " +
+            "matching `*(long, TimeUnit).";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

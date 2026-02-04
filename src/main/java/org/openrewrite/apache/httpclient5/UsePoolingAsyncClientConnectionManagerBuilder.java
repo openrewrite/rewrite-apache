@@ -63,7 +63,7 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
     String displayName = "Use `PoolingAsyncClientConnectionManagerBuilder` for configuration";
 
     String description = "Moves method calls that exist on both `PoolingAsyncClientConnectionManager` and " +
-                         "`PoolingAsyncClientConnectionManagerBuilder` into the builder chain.";
+            "`PoolingAsyncClientConnectionManagerBuilder` into the builder chain.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -140,8 +140,8 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                 if (expr instanceof J.MethodInvocation) {
                     J.MethodInvocation mi = (J.MethodInvocation) expr;
                     return "build".equals(mi.getSimpleName()) &&
-                           mi.getMethodType() != null &&
-                           TypeUtils.isOfClassType(mi.getMethodType().getDeclaringType(), FQN_BUILDER);
+                            mi.getMethodType() != null &&
+                            TypeUtils.isOfClassType(mi.getMethodType().getDeclaringType(), FQN_BUILDER);
                 }
                 return false;
             }

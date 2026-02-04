@@ -41,7 +41,7 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
     String displayName = "Migrate `PoolingNHttpClientConnectionManager` to `PoolingAsyncClientConnectionManager`";
 
     String description = "Migrates `PoolingNHttpClientConnectionManager` from Apache HttpAsyncClient 4.x to " +
-                         "`PoolingAsyncClientConnectionManager` in HttpClient 5.x using the builder pattern.";
+            "`PoolingAsyncClientConnectionManager` in HttpClient 5.x using the builder pattern.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -72,7 +72,7 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                     maybeRemoveImport(FQN_OLD);
                     JavaType.FullyQualified newType = JavaType.ShallowClass.build(FQN_NEW);
                     if (vd.getTypeExpression() instanceof J.Identifier) {
-                        vd = vd.withTypeExpression(((J.Identifier)vd.getTypeExpression())
+                        vd = vd.withTypeExpression(((J.Identifier) vd.getTypeExpression())
                                 .withType(newType)
                                 .withSimpleName("PoolingAsyncClientConnectionManager")
                         );
@@ -105,7 +105,6 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
             }
 
 
-
             @Override
             public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
                 boolean hasRelevantReturnTypeExpression = method.getReturnTypeExpression() != null && TypeUtils.isOfClassType(method.getReturnTypeExpression().getType(), FQN_OLD);
@@ -115,7 +114,7 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                     maybeRemoveImport(FQN_OLD);
                     JavaType.FullyQualified newType = JavaType.ShallowClass.build(FQN_NEW);
                     if (md.getReturnTypeExpression() instanceof J.Identifier) {
-                        md = md.withReturnTypeExpression(((J.Identifier)md.getReturnTypeExpression())
+                        md = md.withReturnTypeExpression(((J.Identifier) md.getReturnTypeExpression())
                                 .withType(newType)
                                 .withSimpleName("PoolingAsyncClientConnectionManager")
                         );
