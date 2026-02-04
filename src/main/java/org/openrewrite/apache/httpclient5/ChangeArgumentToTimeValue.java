@@ -73,7 +73,8 @@ public class ChangeArgumentToTimeValue extends Recipe {
                                         m.getArguments().get(0),
                                         timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
                                 );
-                    } else if (m.getArguments().size() == 2) {
+                    }
+                    if (m.getArguments().size() == 2) {
                         return JavaTemplate
                                 .builder("TimeValue.of(#{any()}, #{any()})")
                                 .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
