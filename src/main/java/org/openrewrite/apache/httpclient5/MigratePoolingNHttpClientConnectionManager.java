@@ -16,7 +16,6 @@
 package org.openrewrite.apache.httpclient5;
 
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Value;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
@@ -31,18 +30,16 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
 
-@Value
 @EqualsAndHashCode(callSuper = false)
+@Value
 public class MigratePoolingNHttpClientConnectionManager extends Recipe {
 
     private static final String FQN_OLD = "org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager";
     private static final String FQN_NEW = "org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager";
     private static final String FQN_BUILDER = "org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder";
 
-    @Getter
     String displayName = "Migrate `PoolingNHttpClientConnectionManager` to `PoolingAsyncClientConnectionManager`";
 
-    @Getter
     String description = "Migrates `PoolingNHttpClientConnectionManager` from Apache HttpAsyncClient 4.x to " +
                          "`PoolingAsyncClientConnectionManager` in HttpClient 5.x using the builder pattern.";
 

@@ -16,7 +16,6 @@
 package org.openrewrite.apache.httpclient5;
 
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Value;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
@@ -37,12 +36,13 @@ import org.openrewrite.marker.Markers;
 
 import java.util.*;
 
+import static java.lang.System.lineSeparator;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.openrewrite.Tree.randomId;
 
-@Value
 @EqualsAndHashCode(callSuper = false)
+@Value
 public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
 
     private static final String FQN_MANAGER = "org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager";
@@ -51,16 +51,17 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
     // Methods that can be moved from PoolingAsyncClientConnectionManager to PoolingAsyncClientConnectionManagerBuilder
     // Some methods have different names on the builder
     private static final Map<String, String> BUILDER_METHOD_MAPPINGS = new LinkedHashMap<String, String>() {{
-        put("setMaxTotal", "setMaxConnTotal");
+        put("setConnectionConfigResolver", "setConnectionConfigResolver");
+        put("setDefaultConnectionConfig", "setDefaultConnectionConfig");
         put("setDefaultMaxPerRoute", "setMaxConnPerRoute");
-        put("setConnectionTimeToLive", "setConnectionTimeToLive");
+        put("setDefaultTlsConfig", "setDefaultTlsConfig");
+        put("setMaxTotal", "setMaxConnTotal");
+        put("setTlsConfigResolver", "setTlsConfigResolver");
         put("setValidateAfterInactivity", "setValidateAfterInactivity");
     }};
 
-    @Getter
     String displayName = "Use `PoolingAsyncClientConnectionManagerBuilder` for configuration";
 
-    @Getter
     String description = "Moves method calls that exist on both `PoolingAsyncClientConnectionManager` and " +
                          "`PoolingAsyncClientConnectionManagerBuilder` into the builder chain.";
 
@@ -109,7 +110,7 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                         statementsToRemove.contains(stmt) ? null : stmt));
 
                 // Update variable declarations to include builder method calls
-                return b.withStatements(ListUtils.map(b.getStatements(), stmt -> {
+                return maybeAutoFormat(b, b.withStatements(ListUtils.map(b.getStatements(), stmt -> {
                     if (stmt instanceof J.VariableDeclarations) {
                         J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
                         return vd.withVariables(ListUtils.map(vd.getVariables(), var -> {
@@ -124,13 +125,15 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                                 }
 
                                 // Reconstruct the .build() call with the new chain
-                                return var.withInitializer(buildCall.withSelect(builderChain));
+                                return var.withInitializer(
+                                        buildCall.getPadding().withSelect(
+                                                new JRightPadded<>(builderChain, Space.build(lineSeparator(), emptyList()), Markers.EMPTY)));
                             }
                             return var;
                         }));
                     }
                     return stmt;
-                }));
+                })), ctx);
             }
 
             private boolean isBuilderBuildCall(Expression expr) {
@@ -176,7 +179,7 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                         randomId(),
                         Space.EMPTY,
                         Markers.EMPTY,
-                        JRightPadded.build(builderChain),
+                        new JRightPadded<>(builderChain, Space.build(lineSeparator(), emptyList()), Markers.EMPTY),
                         null,
                         name,
                         JContainer.build(arguments.stream()

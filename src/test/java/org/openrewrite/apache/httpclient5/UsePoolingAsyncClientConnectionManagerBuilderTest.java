@@ -57,7 +57,9 @@ class UsePoolingAsyncClientConnectionManagerBuilderTest implements RewriteTest {
 
               class A {
                   void method() {
-                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxConnTotal(100).build();
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setMaxConnTotal(100)
+                              .build();
                   }
               }
               """
@@ -88,7 +90,10 @@ class UsePoolingAsyncClientConnectionManagerBuilderTest implements RewriteTest {
 
               class A {
                   void method() {
-                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxConnTotal(100).setMaxConnPerRoute(10).build();
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setMaxConnTotal(100)
+                              .setMaxConnPerRoute(10)
+                              .build();
                   }
               }
               """
@@ -120,7 +125,9 @@ class UsePoolingAsyncClientConnectionManagerBuilderTest implements RewriteTest {
 
               class A {
                   void method() {
-                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().setMaxConnTotal(100).build();
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setMaxConnTotal(100)
+                              .build();
                       cm.close();
                       cm.setDefaultMaxPerRoute(10);
                   }
@@ -143,6 +150,252 @@ class UsePoolingAsyncClientConnectionManagerBuilderTest implements RewriteTest {
                   void method() {
                       PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
                       System.out.println(cm);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void foldsSetDefaultConnectionConfigIntoBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.client5.http.config.ConnectionConfig;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+
+              class A {
+                  void method() {
+                      ConnectionConfig config = ConnectionConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+                      cm.setDefaultConnectionConfig(config);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.config.ConnectionConfig;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+
+              class A {
+                  void method() {
+                      ConnectionConfig config = ConnectionConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setDefaultConnectionConfig(config)
+                              .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void foldsSetDefaultTlsConfigIntoBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.client5.http.config.TlsConfig;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+
+              class A {
+                  void method() {
+                      TlsConfig config = TlsConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+                      cm.setDefaultTlsConfig(config);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.config.TlsConfig;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+
+              class A {
+                  void method() {
+                      TlsConfig config = TlsConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setDefaultTlsConfig(config)
+                              .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void foldsSetConnectionConfigResolverIntoBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.client5.http.config.ConnectionConfig;
+              import org.apache.hc.client5.http.HttpRoute;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.function.Resolver;
+
+              class A {
+                  void method() {
+                      Resolver<HttpRoute, ConnectionConfig> resolver = route -> ConnectionConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+                      cm.setConnectionConfigResolver(resolver);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.config.ConnectionConfig;
+              import org.apache.hc.client5.http.HttpRoute;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.function.Resolver;
+
+              class A {
+                  void method() {
+                      Resolver<HttpRoute, ConnectionConfig> resolver = route -> ConnectionConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setConnectionConfigResolver(resolver)
+                              .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void foldsSetTlsConfigResolverIntoBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.client5.http.config.TlsConfig;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.function.Resolver;
+              import org.apache.hc.core5.http.HttpHost;
+
+              class A {
+                  void method() {
+                      Resolver<HttpHost, TlsConfig> resolver = host -> TlsConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+                      cm.setTlsConfigResolver(resolver);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.config.TlsConfig;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.function.Resolver;
+              import org.apache.hc.core5.http.HttpHost;
+
+              class A {
+                  void method() {
+                      Resolver<HttpHost, TlsConfig> resolver = host -> TlsConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setTlsConfigResolver(resolver)
+                              .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void foldsSetValidateAfterInactivityIntoBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.util.TimeValue;
+
+              class A {
+                  void method() {
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+                      cm.setValidateAfterInactivity(TimeValue.ofSeconds(30));
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.util.TimeValue;
+
+              class A {
+                  void method() {
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setValidateAfterInactivity(TimeValue.ofSeconds(30))
+                              .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void foldsAllBuilderMethodMappingsIntoBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.hc.client5.http.config.ConnectionConfig;
+              import org.apache.hc.client5.http.config.TlsConfig;
+              import org.apache.hc.client5.http.HttpRoute;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.function.Resolver;
+              import org.apache.hc.core5.http.HttpHost;
+              import org.apache.hc.core5.util.TimeValue;
+
+              class A {
+                  void method() {
+                      Resolver<HttpRoute, ConnectionConfig> connResolver = route -> ConnectionConfig.DEFAULT;
+                      Resolver<HttpHost, TlsConfig> tlsResolver = host -> TlsConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+                      cm.setConnectionConfigResolver(connResolver);
+                      cm.setDefaultConnectionConfig(ConnectionConfig.DEFAULT);
+                      cm.setDefaultMaxPerRoute(10);
+                      cm.setDefaultTlsConfig(TlsConfig.DEFAULT);
+                      cm.setMaxTotal(100);
+                      cm.setTlsConfigResolver(tlsResolver);
+                      cm.setValidateAfterInactivity(TimeValue.ofSeconds(30));
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.config.ConnectionConfig;
+              import org.apache.hc.client5.http.config.TlsConfig;
+              import org.apache.hc.client5.http.HttpRoute;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+              import org.apache.hc.core5.function.Resolver;
+              import org.apache.hc.core5.http.HttpHost;
+              import org.apache.hc.core5.util.TimeValue;
+
+              class A {
+                  void method() {
+                      Resolver<HttpRoute, ConnectionConfig> connResolver = route -> ConnectionConfig.DEFAULT;
+                      Resolver<HttpHost, TlsConfig> tlsResolver = host -> TlsConfig.DEFAULT;
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                              .setConnectionConfigResolver(connResolver)
+                              .setDefaultConnectionConfig(ConnectionConfig.DEFAULT)
+                              .setMaxConnPerRoute(10)
+                              .setDefaultTlsConfig(TlsConfig.DEFAULT)
+                              .setMaxConnTotal(100)
+                              .setTlsConfigResolver(tlsResolver)
+                              .setValidateAfterInactivity(TimeValue.ofSeconds(30))
+                              .build();
                   }
               }
               """

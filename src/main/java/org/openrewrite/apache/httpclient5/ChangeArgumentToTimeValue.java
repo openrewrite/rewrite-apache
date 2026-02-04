@@ -43,13 +43,13 @@ public class ChangeArgumentToTimeValue extends Recipe {
     @Nullable
     TimeUnit timeUnit;
 
-    String displayName = "Changes an argument to a `TimeValue` for matched method invocations";
+    String displayName = "Changes an argument (or pair of arguments) to a `TimeValue` for matched method invocations";
 
-    String description = "In Apache Http Client 5.x migration, some methods that previously took a single long argument have changed to take a `TimeValue`. " +
-                "Previously in 4.x, all these methods were implicitly having the value expressed in milliseconds. By default this recipe uses " +
-                "`TimeUnit.MILLISECONDS` for the `TimeUnit` when creating a `TimeValue`. It is possible to specify this as a parameter. Since all " +
-                "affected methods of the Apache Http Client 5.x migration only have one long argument, the recipe applies with matched method " +
-                "invocations of exactly one parameter.";
+    String description = "In Apache Http Client 5.x migration, some methods that previously took a single `long` argument, or a pair of arguments " +
+                "of type `long` and `TimeUnit` respectively, have changed to take a `TimeValue`. Previously in 4.x, all these single `long` argument " +
+                "methods were implicitly having the value expressed in milliseconds. By default this recipe uses `TimeUnit.MILLISECONDS` for the " +
+                "`TimeUnit` when creating a `TimeValue`. It is possible to specify this as a option. The `timeUnit` option will be ignored for cases " +
+                "matching `*(long, TimeUnit).";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -58,20 +58,34 @@ public class ChangeArgumentToTimeValue extends Recipe {
             @Override
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
-                if (matcher.matches(m) && m.getArguments().size() == 1) {
+                if (matcher.matches(m)) {
                     maybeAddImport("org.apache.hc.core5.util.TimeValue");
-                    maybeAddImport("java.util.concurrent.TimeUnit");
-                    return JavaTemplate
-                            .builder("TimeValue.of(#{any()}, TimeUnit.#{})")
-                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
-                            .imports("org.apache.hc.core5.util.TimeValue", "java.util.concurrent.TimeUnit")
-                            .build()
-                            .apply(
-                                    updateCursor(m),
-                                    m.getCoordinates().replaceArguments(),
-                                    m.getArguments().get(0),
-                                    timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
-                            );
+                    if (m.getArguments().size() == 1) {
+                        maybeAddImport("java.util.concurrent.TimeUnit");
+                        return JavaTemplate
+                                .builder("TimeValue.of(#{any()}, TimeUnit.#{})")
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
+                                .imports("org.apache.hc.core5.util.TimeValue", "java.util.concurrent.TimeUnit")
+                                .build()
+                                .apply(
+                                        updateCursor(m),
+                                        m.getCoordinates().replaceArguments(),
+                                        m.getArguments().get(0),
+                                        timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
+                                );
+                    } else if (m.getArguments().size() == 2) {
+                        return JavaTemplate
+                                .builder("TimeValue.of(#{any()}, #{any()})")
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
+                                .imports("org.apache.hc.core5.util.TimeValue")
+                                .build()
+                                .apply(
+                                        updateCursor(m),
+                                        m.getCoordinates().replaceArguments(),
+                                        m.getArguments().get(0),
+                                        m.getArguments().get(1)
+                                );
+                    }
                 }
                 return m;
             }
