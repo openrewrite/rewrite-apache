@@ -52,8 +52,8 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                 J.NewClass nc = (J.NewClass) super.visitNewClass(newClass, ctx);
                 JavaType type = nc.getType();
                 if (TypeUtils.isOfClassType(type, FQN_OLD)) {
-                    maybeAddImport(FQN_BUILDER);
                     maybeRemoveImport(FQN_OLD);
+                    maybeAddImport(FQN_BUILDER);
                     return JavaTemplate.builder("PoolingAsyncClientConnectionManagerBuilder.create().build()")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports(FQN_BUILDER)
@@ -68,8 +68,8 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                 boolean hasRelevantTypeExpression = multiVariable.getTypeExpression() != null && TypeUtils.isOfClassType(multiVariable.getTypeExpression().getType(), FQN_OLD);
                 J.VariableDeclarations vd = (J.VariableDeclarations) super.visitVariableDeclarations(multiVariable, ctx);
                 if (hasRelevantTypeExpression) {
-                    maybeAddImport(FQN_NEW);
                     maybeRemoveImport(FQN_OLD);
+                    maybeAddImport(FQN_NEW);
                     JavaType.FullyQualified newType = JavaType.ShallowClass.build(FQN_NEW);
                     if (vd.getTypeExpression() instanceof J.Identifier) {
                         vd = vd.withTypeExpression(((J.Identifier) vd.getTypeExpression())
