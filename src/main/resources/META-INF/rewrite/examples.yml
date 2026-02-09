@@ -900,6 +900,36 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient5.MigratePoolingNHttpClientConnectionManager
+examples:
+- description: '`MigratePoolingNHttpClientConnectionManagerTest#migratesPoolingNHttpClientConnectionManagerToBuilder`'
+  sources:
+  - before: |
+      import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
+      import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+      import org.apache.http.nio.reactor.ConnectingIOReactor;
+
+      class A {
+          void method() throws Exception {
+              ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor();
+              PoolingNHttpClientConnectionManager cm = new PoolingNHttpClientConnectionManager(ioReactor);
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+      import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+      import org.apache.http.nio.reactor.ConnectingIOReactor;
+
+      class A {
+          void method() throws Exception {
+              ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor();
+              PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.MigrateStringEntityStringCharsetConstructor
 examples:
 - description: '`MigrateStringEntityStringCharsetConstructorTest#migratesWithin4xIfNotAlreadyMigratedTo5x`'
@@ -1168,6 +1198,28 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
 examples:
+- description: '`MigrateApacheHttpAsyncClientTest#migratesPoolingNHttpClientConnectionManagerToBuilder`'
+  sources:
+  - before: |
+      import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
+      import org.apache.http.nio.reactor.ConnectingIOReactor;
+
+      class A {
+          void method(ConnectingIOReactor ioReactor) {
+              PoolingNHttpClientConnectionManager cm = new PoolingNHttpClientConnectionManager(ioReactor);
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+      import org.apache.hc.core5.reactor.ConnectionInitiator;
+
+      class A {
+          void method(ConnectionInitiator ioReactor) {
+              PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+          }
+      }
+    language: java
 - description: '`MigrateApacheHttpCoreNioTest#migratesIOReactorConfig`'
   sources:
   - before: |
@@ -1210,6 +1262,34 @@ examples:
               TimeValue selectInterval = ioReactorConfig.getSelectInterval();
               Timeout soTimeout = ioReactorConfig.getSoTimeout();
               TimeValue soLinger = ioReactorConfig.getSoLinger();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.httpclient5.UsePoolingAsyncClientConnectionManagerBuilder
+examples:
+- description: '`UsePoolingAsyncClientConnectionManagerBuilderTest#foldsSetMaxTotalIntoBuilder`'
+  sources:
+  - before: |
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+
+      class A {
+          void method() {
+              PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+              cm.setMaxTotal(100);
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+      import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+
+      class A {
+          void method() {
+              PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
+                      .setMaxConnTotal(100)
+                      .build();
           }
       }
     language: java
