@@ -22,6 +22,7 @@ recipeDependencies {
     parserClasspath("org.apache.maven.shared:maven-shared-utils:3.+")
 
     parserClasspath("org.apache.poi:poi:3.16")
+    parserClasspath("org.apache.poi:poi-ooxml:3.16")
 
     parserClasspath("org.codehaus.plexus:plexus-utils:3.+")
 }
