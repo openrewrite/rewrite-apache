@@ -30,7 +30,7 @@ class UpgradeApachePoi_4_1Test implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .recipeFromResources("org.openrewrite.apache.poi.UpgradeApachePoi_4_1")
-          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi"));
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi-3"));
     }
 
     @DocumentExample
