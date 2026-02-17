@@ -1,0 +1,52 @@
+#
+# Copyright 2024 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.poi.UpgradeApachePoi_4_1
+displayName: Migrates to Apache POI 4.1.2
+description: >-
+  Migrates to the last Apache POI 4.x release. This recipe modifies
+  build files and makes changes to deprecated/preferred APIs that have
+  changed between versions.
+tags:
+  - apache
+  - poi
+recipeList:
+  - org.openrewrite.apache.poi.UpgradeApachePoi_3_17
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.poi
+      artifactId: poi*
+      newVersion: 4.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.poi
+      artifactId: poi-ooxml-schemas
+      newVersion: 4.x
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.poi.poifs.filesystem.NPOIFSFileSystem
+      newFullyQualifiedTypeName: org.apache.poi.poifs.filesystem.POIFSFileSystem
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.poi.poifs.filesystem.OPOIFSFileSystem
+      newFullyQualifiedTypeName: org.apache.poi.poifs.filesystem.POIFSFileSystem
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.poi.xwpf.usermodel.TextSegement
+      newFullyQualifiedTypeName: org.apache.poi.xwpf.usermodel.TextSegment
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.poi.extractor.ExtractorFactory
+      newFullyQualifiedTypeName: org.apache.poi.ooxml.extractor.ExtractorFactory
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.poi.openxml4j.util.Nullable
+      newFullyQualifiedTypeName: java.util.Optional
