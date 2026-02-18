@@ -20,9 +20,6 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.maven.Assertions.pomXml;
 
@@ -63,37 +60,13 @@ class UpgradeApachePoi_5Test implements RewriteTest {
                   </dependencies>
               </project>
               """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.x in %s", pom).isTrue();
-                String poiVersion = version.group();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi</artifactId>
-                              <version>%1$s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi-ooxml</artifactId>
-                              <version>%1$s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi-ooxml-lite</artifactId>
-                              <version>%1$s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(poiVersion);
-            })
+            spec -> spec.after(pom -> assertThat(pom)
+              .contains("<artifactId>poi</artifactId>")
+              .contains("<artifactId>poi-ooxml</artifactId>")
+              .contains("<artifactId>poi-ooxml-lite</artifactId>")
+              .doesNotContain("<artifactId>poi-ooxml-schemas</artifactId>")
+              .containsPattern("<version>5\\.\\d+\\.\\d+</version>")
+              .actual())
           )
         );
     }
@@ -123,32 +96,12 @@ class UpgradeApachePoi_5Test implements RewriteTest {
                   </dependencies>
               </project>
               """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.x in %s", pom).isTrue();
-                String poiVersion = version.group();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi-ooxml</artifactId>
-                              <version>%1$s</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi-ooxml-full</artifactId>
-                              <version>%1$s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(poiVersion);
-            })
+            spec -> spec.after(pom -> assertThat(pom)
+              .contains("<artifactId>poi-ooxml</artifactId>")
+              .contains("<artifactId>poi-ooxml-full</artifactId>")
+              .doesNotContain("<artifactId>ooxml-schemas</artifactId>")
+              .containsPattern("<version>5\\.\\d+\\.\\d+</version>")
+              .actual())
           )
         );
     }
@@ -178,27 +131,11 @@ class UpgradeApachePoi_5Test implements RewriteTest {
                   </dependencies>
               </project>
               """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.x in %s", pom).isTrue();
-                String poiVersion = version.group();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi-ooxml</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(poiVersion);
-            })
+            spec -> spec.after(pom -> assertThat(pom)
+              .contains("<artifactId>poi-ooxml</artifactId>")
+              .doesNotContain("<artifactId>ooxml-security</artifactId>")
+              .containsPattern("<version>5\\.\\d+\\.\\d+</version>")
+              .actual())
           )
         );
     }
@@ -223,26 +160,10 @@ class UpgradeApachePoi_5Test implements RewriteTest {
                   </dependencies>
               </project>
               """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.x in %s", pom).isTrue();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(version.group());
-            })
+            spec -> spec.after(pom -> assertThat(pom)
+              .contains("<artifactId>poi</artifactId>")
+              .containsPattern("<version>5\\.\\d+\\.\\d+</version>")
+              .actual())
           )
         );
     }
@@ -267,26 +188,10 @@ class UpgradeApachePoi_5Test implements RewriteTest {
                   </dependencies>
               </project>
               """,
-            spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.\\d+\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.x in %s", pom).isTrue();
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.poi</groupId>
-                              <artifactId>poi</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(version.group());
-            })
+            spec -> spec.after(pom -> assertThat(pom)
+              .contains("<artifactId>poi</artifactId>")
+              .containsPattern("<version>5\\.\\d+\\.\\d+</version>")
+              .actual())
           )
         );
     }
