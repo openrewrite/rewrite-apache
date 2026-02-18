@@ -1,0 +1,49 @@
+#
+# Copyright 2024 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.poi.UpgradeApachePoi_5
+displayName: Migrates to Apache POI 5.x
+description: >-
+  Migrates to the latest Apache POI 5.x release. This recipe modifies
+  build files to account for artifact renames and upgrades dependency
+  versions. It also chains the 4.1 recipe to handle all prior API
+  migrations.
+tags:
+  - apache
+  - poi
+recipeList:
+  - org.openrewrite.apache.poi.UpgradeApachePoi_4_1
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.apache.poi
+      oldArtifactId: poi-ooxml-schemas
+      newGroupId: org.apache.poi
+      newArtifactId: poi-ooxml-lite
+      newVersion: 5.x
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.apache.poi
+      oldArtifactId: ooxml-schemas
+      newGroupId: org.apache.poi
+      newArtifactId: poi-ooxml-full
+      newVersion: 5.x
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.poi
+      artifactId: ooxml-security
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.poi
+      artifactId: poi*
+      newVersion: 5.x
