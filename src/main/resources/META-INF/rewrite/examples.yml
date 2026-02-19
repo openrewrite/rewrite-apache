@@ -1429,6 +1429,67 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.poi.UpgradeApachePoi_4_1
+examples:
+- description: '`UpgradeApachePoi_4_1Test#npoifsToPoifs`'
+  sources:
+  - before: |
+      import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+
+      import java.io.File;
+      import java.io.IOException;
+
+      class Test {
+          void method(File file) throws IOException {
+              NPOIFSFileSystem fs = new NPOIFSFileSystem(file);
+          }
+      }
+    after: |
+      import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+
+      import java.io.File;
+      import java.io.IOException;
+
+      class Test {
+          void method(File file) throws IOException {
+              POIFSFileSystem fs = new POIFSFileSystem(file);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.poi.UpgradeApachePoi_5
+examples:
+- description: '`UpgradeApachePoi_5Test#upgradePoiOoxmlSchemasDependency`'
+  sources:
+  - before: |
+      <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>org.example</groupId>
+          <artifactId>example</artifactId>
+          <version>1.0.0</version>
+          <dependencies>
+              <dependency>
+                  <groupId>org.apache.poi</groupId>
+                  <artifactId>poi</artifactId>
+                  <version>4.1.2</version>
+              </dependency>
+              <dependency>
+                  <groupId>org.apache.poi</groupId>
+                  <artifactId>poi-ooxml</artifactId>
+                  <version>4.1.2</version>
+              </dependency>
+              <dependency>
+                  <groupId>org.apache.poi</groupId>
+                  <artifactId>poi-ooxml-schemas</artifactId>
+                  <version>4.1.2</version>
+              </dependency>
+          </dependencies>
+      </project>
+    path: pom.xml
+    language: xml
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.codehaus.plexus.AbstractLogEnabledToSlf4j
 examples:
 - description: '`AbstractLogEnabledToSlf4jTest#addAndUseLoggerField`'
