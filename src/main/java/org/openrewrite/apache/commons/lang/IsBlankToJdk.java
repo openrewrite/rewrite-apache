@@ -74,10 +74,7 @@ public class IsBlankToJdk extends Recipe {
                     return super.visitUnary(unary, ctx);
                 }
 
-                Expression expr = unary.getExpression();
-                if (expr instanceof J.Parentheses) {
-                    expr = (Expression) ((J.Parentheses<?>) expr).getTree();
-                }
+                Expression expr = unary.getExpression().unwrap();
 
                 if (!(expr instanceof J.MethodInvocation)) {
                     return super.visitUnary(unary, ctx);
@@ -99,7 +96,7 @@ public class IsBlankToJdk extends Recipe {
                 maybeRemoveImport("org.apache.commons.lang3.StringUtils");
                 maybeRemoveImport("org.apache.maven.shared.utils.StringUtils");
                 maybeRemoveImport("org.codehaus.plexus.util.StringUtils");
-                doAfterVisit(new org.openrewrite.staticanalysis.UnnecessaryParentheses().getVisitor());
+
                 return JavaTemplate.apply(template, updateCursor(unary), unary.getCoordinates().replace(), arg, arg);
             }
 
@@ -118,7 +115,7 @@ public class IsBlankToJdk extends Recipe {
                     maybeRemoveImport("org.apache.commons.lang3.StringUtils");
                     maybeRemoveImport("org.apache.maven.shared.utils.StringUtils");
                     maybeRemoveImport("org.codehaus.plexus.util.StringUtils");
-                    doAfterVisit(new org.openrewrite.staticanalysis.UnnecessaryParentheses().getVisitor());
+    
                     return JavaTemplate.apply(template, updateCursor(mi), mi.getCoordinates().replace(), arg, arg);
                 }
 
