@@ -44,7 +44,7 @@ dependencies {
     compileOnly("commons-io:commons-io:2.+")
     compileOnly("org.apache.commons:commons-lang3:3.+")
     compileOnly("org.apache.maven.shared:maven-shared-utils:3.+")
-    compileOnly("org.codehaus.plexus:plexus-utils:3.+")
+    compileOnly("org.codehaus.plexus:plexus-utils:4.+")
 
     implementation("org.jspecify:jspecify:1.0.0")
 
