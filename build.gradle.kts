@@ -23,7 +23,7 @@ recipeDependencies {
 
     parserClasspath("org.apache.poi:poi:3.16")
 
-    parserClasspath("org.codehaus.plexus:plexus-utils:3.+")
+    parserClasspath("org.codehaus.plexus:plexus-utils:4.+")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
