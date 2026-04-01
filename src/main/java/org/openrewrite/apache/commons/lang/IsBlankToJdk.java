@@ -62,15 +62,46 @@ public class IsBlankToJdk extends Recipe {
                         new UsesMethod<>("org.codehaus.plexus.util.StringUtils isNotBlank(..)")));
 
         return Preconditions.check(precondition, new JavaVisitor<ExecutionContext>() {
+            private static final String IS_BLANK_REPLACEMENT = "#{any(String)} == null || #{any(String)}.isBlank()";
+            private static final String IS_NOT_BLANK_REPLACEMENT = "#{any(String)} != null && !#{any(String)}.isBlank()";
+
             private final MethodMatcher isBlankMatcher = new MethodMatcher("*..StringUtils isBlank(..)");
             private final MethodMatcher isNotBlankMatcher = new MethodMatcher("*..StringUtils isNotBlank(..)");
 
-            private final JavaTemplate isBlankReplacement = JavaTemplate
-                    .builder("#{any(String)} == null || #{any(String)}.isBlank()")
-                    .build();
-            private final JavaTemplate isNotBlankReplacement = JavaTemplate
-                    .builder("#{any(String)} != null && !#{any(String)}.isBlank()")
-                    .build();
+            @Override
+            public J visitUnary(J.Unary unary, ExecutionContext ctx) {
+                if (unary.getOperator() != J.Unary.Type.Not) {
+                    return super.visitUnary(unary, ctx);
+                }
+
+                Expression expr = unary.getExpression();
+                if (expr instanceof J.Parentheses) {
+                    expr = (Expression) ((J.Parentheses<?>) expr).getTree();
+                }
+
+                if (!(expr instanceof J.MethodInvocation)) {
+                    return super.visitUnary(unary, ctx);
+                }
+
+                J.MethodInvocation mi = (J.MethodInvocation) expr;
+                boolean isBlankCall = isBlankMatcher.matches(mi);
+                if (!isBlankCall && !isNotBlankMatcher.matches(mi)) {
+                    return super.visitUnary(unary, ctx);
+                }
+
+                Expression arg = mi.getArguments().get(0);
+                if (!isRepeatableArgument(arg)) {
+                    return super.visitUnary(unary, ctx);
+                }
+
+                // Swap: !isBlank -> isNotBlank replacement, !isNotBlank -> isBlank replacement
+                String template = isBlankCall ? IS_NOT_BLANK_REPLACEMENT : IS_BLANK_REPLACEMENT;
+                maybeRemoveImport("org.apache.commons.lang3.StringUtils");
+                maybeRemoveImport("org.apache.maven.shared.utils.StringUtils");
+                maybeRemoveImport("org.codehaus.plexus.util.StringUtils");
+                doAfterVisit(new org.openrewrite.staticanalysis.UnnecessaryParentheses().getVisitor());
+                return JavaTemplate.apply(template, updateCursor(unary), unary.getCoordinates().replace(), arg, arg);
+            }
 
             @Override
             public J visitMethodInvocation(J.MethodInvocation mi, ExecutionContext ctx) {
@@ -83,14 +114,12 @@ public class IsBlankToJdk extends Recipe {
 
                 // Replace StringUtils.isBlank(var) with var == null || var.isBlank()
                 if (isRepeatableArgument(arg)) {
-                    JavaTemplate replacementTemplate = isBlankCall ? isBlankReplacement : isNotBlankReplacement;
-                    // Maybe remove imports
+                    String template = isBlankCall ? IS_BLANK_REPLACEMENT : IS_NOT_BLANK_REPLACEMENT;
                     maybeRemoveImport("org.apache.commons.lang3.StringUtils");
                     maybeRemoveImport("org.apache.maven.shared.utils.StringUtils");
                     maybeRemoveImport("org.codehaus.plexus.util.StringUtils");
-                    // Remove excess parentheses inserted in lambda that may be required depending on the context
                     doAfterVisit(new org.openrewrite.staticanalysis.UnnecessaryParentheses().getVisitor());
-                    return replacementTemplate.apply(updateCursor(mi), mi.getCoordinates().replace(), arg, arg);
+                    return JavaTemplate.apply(template, updateCursor(mi), mi.getCoordinates().replace(), arg, arg);
                 }
 
                 return super.visitMethodInvocation(mi, ctx);

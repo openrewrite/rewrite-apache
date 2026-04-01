@@ -98,14 +98,14 @@ class IsBlankToJdkTest implements RewriteTest {
     }
 
     @CsvSource(delimiter = '#', textBlock = """
-      org.apache.commons.lang3.StringUtils # !StringUtils.isBlank(first) # !(first == null || first.isBlank())
-      org.apache.commons.lang3.StringUtils # !StringUtils.isNotBlank(first) # !(first != null && !first.isBlank())
-      org.apache.commons.lang3.StringUtils # !(StringUtils.isBlank(first)) # !(first == null || first.isBlank())
-      org.apache.commons.lang3.StringUtils # !(StringUtils.isNotBlank(first)) # !(first != null && !first.isBlank())
-      org.apache.maven.shared.utils.StringUtils # !StringUtils.isBlank(first) # !(first == null || first.isBlank())
-      org.apache.maven.shared.utils.StringUtils # !StringUtils.isNotBlank(first) # !(first != null && !first.isBlank())
-      org.codehaus.plexus.util.StringUtils # !StringUtils.isBlank(first) # !(first == null || first.isBlank())
-      org.codehaus.plexus.util.StringUtils # !StringUtils.isNotBlank(first) # !(first != null && !first.isBlank())
+      org.apache.commons.lang3.StringUtils # !StringUtils.isBlank(first) # first != null && !first.isBlank()
+      org.apache.commons.lang3.StringUtils # !StringUtils.isNotBlank(first) # first == null || first.isBlank()
+      org.apache.commons.lang3.StringUtils # !(StringUtils.isBlank(first)) # first != null && !first.isBlank()
+      org.apache.commons.lang3.StringUtils # !(StringUtils.isNotBlank(first)) # first == null || first.isBlank()
+      org.apache.maven.shared.utils.StringUtils # !StringUtils.isBlank(first) # first != null && !first.isBlank()
+      org.apache.maven.shared.utils.StringUtils # !StringUtils.isNotBlank(first) # first == null || first.isBlank()
+      org.codehaus.plexus.util.StringUtils # !StringUtils.isBlank(first) # first != null && !first.isBlank()
+      org.codehaus.plexus.util.StringUtils # !StringUtils.isNotBlank(first) # first == null || first.isBlank()
       """)
     @ParameterizedTest
     void replaceNegated(String classname, String beforeLine, String afterLine) {
@@ -192,8 +192,8 @@ class IsBlankToJdkTest implements RewriteTest {
                   String getLabel() { return ""; }
 
                   void test(String override, String label) {
-                      if (!(override == null || override.isBlank())) {
-                          if (!(label == null || label.isBlank())) {
+                      if (override != null && !override.isBlank()) {
+                          if (label != null && !label.isBlank()) {
                               System.out.println("both set");
                           }
                       }
