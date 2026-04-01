@@ -52,25 +52,25 @@ public class IsBlankToJdk extends Recipe {
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         TreeVisitor<?, ExecutionContext> precondition = Preconditions.and(
-            new UsesJavaVersion<>(11),
-            Preconditions.or(
-                    new UsesMethod<>("org.apache.commons.lang3.StringUtils isBlank(..)"),
-                    new UsesMethod<>("org.apache.commons.lang3.StringUtils isNotBlank(..)"),
-                    new UsesMethod<>("org.apache.maven.shared.utils.StringUtils isBlank(..)"),
-                    new UsesMethod<>("org.apache.maven.shared.utils.StringUtils isNotBlank(..)"),
-                    new UsesMethod<>("org.codehaus.plexus.util.StringUtils isBlank(..)"),
-                    new UsesMethod<>("org.codehaus.plexus.util.StringUtils isNotBlank(..)")));
+                new UsesJavaVersion<>(11),
+                Preconditions.or(
+                        new UsesMethod<>("org.apache.commons.lang3.StringUtils isBlank(..)"),
+                        new UsesMethod<>("org.apache.commons.lang3.StringUtils isNotBlank(..)"),
+                        new UsesMethod<>("org.apache.maven.shared.utils.StringUtils isBlank(..)"),
+                        new UsesMethod<>("org.apache.maven.shared.utils.StringUtils isNotBlank(..)"),
+                        new UsesMethod<>("org.codehaus.plexus.util.StringUtils isBlank(..)"),
+                        new UsesMethod<>("org.codehaus.plexus.util.StringUtils isNotBlank(..)")));
 
         return Preconditions.check(precondition, new JavaVisitor<ExecutionContext>() {
             private final MethodMatcher isBlankMatcher = new MethodMatcher("*..StringUtils isBlank(..)");
             private final MethodMatcher isNotBlankMatcher = new MethodMatcher("*..StringUtils isNotBlank(..)");
 
             private final JavaTemplate isBlankReplacement = JavaTemplate
-                .builder("#{any(String)} == null || #{any(String)}.isBlank()")
-                .build();
+                    .builder("#{any(String)} == null || #{any(String)}.isBlank()")
+                    .build();
             private final JavaTemplate isNotBlankReplacement = JavaTemplate
-                .builder("#{any(String)} != null && !#{any(String)}.isBlank()")
-                .build();
+                    .builder("#{any(String)} != null && !#{any(String)}.isBlank()")
+                    .build();
 
             @Override
             public J visitMethodInvocation(J.MethodInvocation mi, ExecutionContext ctx) {

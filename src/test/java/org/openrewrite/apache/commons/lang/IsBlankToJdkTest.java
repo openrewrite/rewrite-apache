@@ -32,9 +32,9 @@ class IsBlankToJdkTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.parser(JavaParser.fromJavaVersion()
-                .classpathFromResources(new InMemoryExecutionContext(), "commons-lang3", "plexus-utils", "maven-shared-utils"))
-                .recipe(new IsBlankToJdk())
-                .allSources(s -> s.markers(javaVersion(21)));
+            .classpathFromResources(new InMemoryExecutionContext(), "commons-lang3", "plexus-utils", "maven-shared-utils"))
+          .recipe(new IsBlankToJdk())
+          .allSources(s -> s.markers(javaVersion(21)));
     }
 
     @DocumentExample
@@ -44,21 +44,21 @@ class IsBlankToJdkTest implements RewriteTest {
           // language=java
           java(
             """
-            import org.apache.commons.lang3.StringUtils;
+              import org.apache.commons.lang3.StringUtils;
 
-            class A {
-                boolean test(String first) {
-                    return StringUtils.isBlank(first);
-                }
-            }
-            """,
+              class A {
+                  boolean test(String first) {
+                      return StringUtils.isBlank(first);
+                  }
+              }
+              """,
             """
-            class A {
-                boolean test(String first) {
-                    return first == null || first.isBlank();
-                }
-            }
-            """
+              class A {
+                  boolean test(String first) {
+                      return first == null || first.isBlank();
+                  }
+              }
+              """
           ));
     }
 
@@ -171,35 +171,35 @@ class IsBlankToJdkTest implements RewriteTest {
           // language=java
           java(
             """
-            import org.apache.commons.lang3.StringUtils;
+              import org.apache.commons.lang3.StringUtils;
 
-            class DeclarativeDockerUtils {
-                String getOverride() { return ""; }
-                String getLabel() { return ""; }
+              class DeclarativeDockerUtils {
+                  String getOverride() { return ""; }
+                  String getLabel() { return ""; }
 
-                void test(String override, String label) {
-                    if (!StringUtils.isBlank(override)) {
-                        if (!StringUtils.isBlank(label)) {
-                            System.out.println("both set");
-                        }
-                    }
-                }
-            }
-            """,
+                  void test(String override, String label) {
+                      if (!StringUtils.isBlank(override)) {
+                          if (!StringUtils.isBlank(label)) {
+                              System.out.println("both set");
+                          }
+                      }
+                  }
+              }
+              """,
             """
-            class DeclarativeDockerUtils {
-                String getOverride() { return ""; }
-                String getLabel() { return ""; }
+              class DeclarativeDockerUtils {
+                  String getOverride() { return ""; }
+                  String getLabel() { return ""; }
 
-                void test(String override, String label) {
-                    if (!(override == null || override.isBlank())) {
-                        if (!(label == null || label.isBlank())) {
-                            System.out.println("both set");
-                        }
-                    }
-                }
-            }
-            """
+                  void test(String override, String label) {
+                      if (!(override == null || override.isBlank())) {
+                          if (!(label == null || label.isBlank())) {
+                              System.out.println("both set");
+                          }
+                      }
+                  }
+              }
+              """
           ));
     }
 
