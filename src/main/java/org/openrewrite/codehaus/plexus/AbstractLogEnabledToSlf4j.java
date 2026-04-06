@@ -107,7 +107,7 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                                     }
                                     return super.visitVariableDeclarations(multiVariable, ref);
                                 }
-                            }.visitClassDeclaration(cd, loggerFieldReference);
+                            }.visit(cd, loggerFieldReference, getCursor().getParentTreeCursor());
 
                             // Replace calls to getLogger() with the logger field
                             cd = (J.ClassDeclaration) new JavaVisitor<ExecutionContext>() {

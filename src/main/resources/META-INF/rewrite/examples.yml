@@ -607,6 +607,27 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.IsBlankToJdk
+examples:
+- description: '`IsBlankToJdkTest#exampleUse`'
+  sources:
+  - before: |
+      import org.apache.commons.lang3.StringUtils;
+
+      class A {
+          boolean test(String first) {
+              return StringUtils.isBlank(first);
+          }
+      }
+    after: |
+      class A {
+          boolean test(String first) {
+              return first == null || first.isBlank();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang.IsNotEmptyToJdk
 examples:
 - description: '`IsNotEmptyToJdkTest#exampleUse`'

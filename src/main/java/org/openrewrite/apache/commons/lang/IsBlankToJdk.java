@@ -115,7 +115,7 @@ public class IsBlankToJdk extends Recipe {
                     maybeRemoveImport("org.apache.commons.lang3.StringUtils");
                     maybeRemoveImport("org.apache.maven.shared.utils.StringUtils");
                     maybeRemoveImport("org.codehaus.plexus.util.StringUtils");
-    
+
                     return JavaTemplate.apply(template, updateCursor(mi), mi.getCoordinates().replace(), arg, arg);
                 }
 
