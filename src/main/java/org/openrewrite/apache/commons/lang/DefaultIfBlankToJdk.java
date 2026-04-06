@@ -36,6 +36,10 @@ import java.util.Set;
 import static org.openrewrite.apache.commons.lang.RepeatableArgumentMatcher.isRepeatableArgument;
 
 public class DefaultIfBlankToJdk extends Recipe {
+    private static final String DEFAULT_IF_BLANK_REPLACEMENT =
+            "#{any(String)} == null || #{any(String)}.isBlank() ? #{any(String)} : #{any(String)}";
+
+    private static final MethodMatcher defaultIfBlankMatcher = new MethodMatcher("*..StringUtils defaultIfBlank(..)");
 
     @Getter
     final String displayName = "Replace StringUtils#defaultIfBlank(String, String) with JDK equivalent";
@@ -53,29 +57,18 @@ public class DefaultIfBlankToJdk extends Recipe {
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         TreeVisitor<?, ExecutionContext> precondition = Preconditions.and(
                 new UsesJavaVersion<>(11),
-                new UsesMethod<>("org.apache.commons.lang3.StringUtils defaultIfBlank(..)"));
+                new UsesMethod<>("org.apache.commons.lang3.StringUtils defaultIfBlank(*, *)"));
 
         return Preconditions.check(precondition, new JavaVisitor<ExecutionContext>() {
-            private static final String DEFAULT_IF_BLANK_REPLACEMENT =
-                    "#{any(String)} == null || #{any(String)}.isBlank() ? #{any(String)} : #{any(String)}";
-
-            private final MethodMatcher defaultIfBlankMatcher = new MethodMatcher("*..StringUtils defaultIfBlank(..)");
-
             @Override
             public J visitMethodInvocation(J.MethodInvocation mi, ExecutionContext ctx) {
-                if (!defaultIfBlankMatcher.matches(mi)) {
+                if (!defaultIfBlankMatcher.matches(mi) || !isRepeatableArgument(mi.getArguments().get(0))) {
                     return super.visitMethodInvocation(mi, ctx);
                 }
 
                 Expression arg0 = mi.getArguments().get(0);
                 Expression arg1 = mi.getArguments().get(1);
-
-                if (!isRepeatableArgument(arg0)) {
-                    return super.visitMethodInvocation(mi, ctx);
-                }
-
                 maybeRemoveImport("org.apache.commons.lang3.StringUtils");
-
                 return JavaTemplate.apply(DEFAULT_IF_BLANK_REPLACEMENT,
                         updateCursor(mi), mi.getCoordinates().replace(),
                         arg0, arg0, arg1, arg0);
