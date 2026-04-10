@@ -607,6 +607,27 @@ examples:
     language: java
 ---
 type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.DefaultIfBlankToJdk
+examples:
+- description: '`DefaultIfBlankToJdkTest#exampleUse`'
+  sources:
+  - before: |
+      import org.apache.commons.lang3.StringUtils;
+
+      class A {
+          String test(String input) {
+              return StringUtils.defaultIfBlank(input, "default");
+          }
+      }
+    after: |
+      class A {
+          String test(String input) {
+              return input == null || input.isBlank() ? "default" : input;
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.apache.commons.lang.IsBlankToJdk
 examples:
 - description: '`IsBlankToJdkTest#exampleUse`'
