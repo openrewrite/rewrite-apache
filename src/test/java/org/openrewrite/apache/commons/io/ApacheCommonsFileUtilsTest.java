@@ -89,6 +89,11 @@ class ApacheCommonsFileUtilsTest implements RewriteTest {
                       FileUtils.writeByteArrayToFile(fileA, bytes);
                       FileUtils.writeLines(fileA, collection);
                       FileUtils.writeStringToFile(fileA, s);
+                      str = FileUtils.readFileToString(fileA);
+                      strList = FileUtils.readLines(fileA);
+                      FileUtils.write(fileA, charSeq);
+                      FileUtils.write(fileA, charSeq, true);
+                      FileUtils.writeStringToFile(fileA, s, true);
                   }
               }
               """,
@@ -99,6 +104,7 @@ class ApacheCommonsFileUtilsTest implements RewriteTest {
               import java.io.FileFilter;
               import java.net.URL;
               import java.nio.charset.Charset;
+              import java.nio.charset.StandardCharsets;
               import java.nio.file.Files;
               import java.util.Collection;
               import java.util.Collections;
@@ -145,6 +151,11 @@ class ApacheCommonsFileUtilsTest implements RewriteTest {
                       FileUtils.writeByteArrayToFile(fileA, bytes);
                       FileUtils.writeLines(fileA, collection);
                       Files.write(fileA.toPath(), s.getBytes());
+                      str = FileUtils.readFileToString(fileA, StandardCharsets.UTF_8);
+                      strList = FileUtils.readLines(fileA, StandardCharsets.UTF_8);
+                      FileUtils.write(fileA, charSeq, StandardCharsets.UTF_8, false);
+                      FileUtils.write(fileA, charSeq, StandardCharsets.UTF_8, true);
+                      FileUtils.writeStringToFile(fileA, s, StandardCharsets.UTF_8, true);
                   }
               }
               """

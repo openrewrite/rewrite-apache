@@ -21,7 +21,10 @@ import org.apache.commons.io.FileUtils;
 import org.openrewrite.java.template.RecipeDescriptor;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.List;
 
 public class ApacheCommonsFileUtils {
     @RecipeDescriptor(
@@ -65,6 +68,86 @@ public class ApacheCommonsFileUtils {
         @AfterTemplate
         void after(File a, String s) throws Exception {
             Files.write(a.toPath(), s.getBytes());
+        }
+    }
+
+    @RecipeDescriptor(
+            name = "Replace `FileUtils.readFileToString(File)` with `FileUtils.readFileToString(File, StandardCharsets.UTF_8)`",
+            description = "Replace deprecated `FileUtils.readFileToString(File)` with `FileUtils.readFileToString(File, StandardCharsets.UTF_8)`.")
+    @SuppressWarnings("deprecation")
+    public static class ReadFileToStringWithCharset {
+        @BeforeTemplate
+        String before(File file) throws IOException {
+            return FileUtils.readFileToString(file);
+        }
+
+        @AfterTemplate
+        String after(File file) throws IOException {
+            return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+        }
+    }
+
+    @RecipeDescriptor(
+            name = "Replace `FileUtils.readLines(File)` with `FileUtils.readLines(File, StandardCharsets.UTF_8)`",
+            description = "Replace deprecated `FileUtils.readLines(File)` with `FileUtils.readLines(File, StandardCharsets.UTF_8)`.")
+    @SuppressWarnings("deprecation")
+    public static class ReadLinesWithCharset {
+        @BeforeTemplate
+        List<String> before(File file) throws IOException {
+            return FileUtils.readLines(file);
+        }
+
+        @AfterTemplate
+        List<String> after(File file) throws IOException {
+            return FileUtils.readLines(file, StandardCharsets.UTF_8);
+        }
+    }
+
+    @RecipeDescriptor(
+            name = "Replace `FileUtils.write(File, CharSequence)` with `FileUtils.write(File, CharSequence, StandardCharsets.UTF_8, false)`",
+            description = "Replace deprecated `FileUtils.write(File, CharSequence)` with `FileUtils.write(File, CharSequence, StandardCharsets.UTF_8, false)`.")
+    @SuppressWarnings("deprecation")
+    public static class WriteWithCharset {
+        @BeforeTemplate
+        void before(File file, CharSequence data) throws IOException {
+            FileUtils.write(file, data);
+        }
+
+        @AfterTemplate
+        void after(File file, CharSequence data) throws IOException {
+            FileUtils.write(file, data, StandardCharsets.UTF_8, false);
+        }
+    }
+
+    @RecipeDescriptor(
+            name = "Replace `FileUtils.write(File, CharSequence, boolean)` with `FileUtils.write(File, CharSequence, StandardCharsets.UTF_8, boolean)`",
+            description = "Replace deprecated `FileUtils.write(File, CharSequence, boolean)` with `FileUtils.write(File, CharSequence, StandardCharsets.UTF_8, boolean)`.")
+    @SuppressWarnings("deprecation")
+    public static class WriteAppendWithCharset {
+        @BeforeTemplate
+        void before(File file, CharSequence data, boolean append) throws IOException {
+            FileUtils.write(file, data, append);
+        }
+
+        @AfterTemplate
+        void after(File file, CharSequence data, boolean append) throws IOException {
+            FileUtils.write(file, data, StandardCharsets.UTF_8, append);
+        }
+    }
+
+    @RecipeDescriptor(
+            name = "Replace `FileUtils.writeStringToFile(File, String, boolean)` with `FileUtils.writeStringToFile(File, String, StandardCharsets.UTF_8, boolean)`",
+            description = "Replace deprecated `FileUtils.writeStringToFile(File, String, boolean)` with `FileUtils.writeStringToFile(File, String, StandardCharsets.UTF_8, boolean)`.")
+    @SuppressWarnings("deprecation")
+    public static class WriteStringToFileAppendWithCharset {
+        @BeforeTemplate
+        void before(File file, String data, boolean append) throws IOException {
+            FileUtils.writeStringToFile(file, data, append);
+        }
+
+        @AfterTemplate
+        void after(File file, String data, boolean append) throws IOException {
+            FileUtils.writeStringToFile(file, data, StandardCharsets.UTF_8, append);
         }
     }
 }
