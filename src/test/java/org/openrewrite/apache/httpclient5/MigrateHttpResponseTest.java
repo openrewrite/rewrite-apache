@@ -124,4 +124,50 @@ class MigrateHttpResponseTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void migratesResponseHandlerToHttpClientResponseHandler() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.io.IOException;
+              import java.nio.charset.Charset;
+
+              import org.apache.http.HttpEntity;
+              import org.apache.http.HttpResponse;
+              import org.apache.http.client.ClientProtocolException;
+              import org.apache.http.util.EntityUtils;
+              import org.apache.http.client.ResponseHandler;
+
+              public class StringResponseHandler implements ResponseHandler<String> {
+                  private static final String DEFAULT_CHAR_SET = "UTF-8";
+                  public String handleResponse(
+                          final HttpResponse response) throws IOException {
+                      HttpEntity entity = response.getEntity();
+                      return entity == null ? null : EntityUtils.toString(entity, Charset.forName(DEFAULT_CHAR_SET));
+                  }
+              }
+              """,
+            """
+              import java.io.IOException;
+              import java.nio.charset.Charset;
+              import org.apache.hc.core5.http.ClassicHttpResponse;
+              import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+              import org.apache.hc.core5.http.io.entity.EntityUtils;
+              import org.apache.hc.core5.http.HttpEntity;
+              import org.apache.hc.client5.http.ClientProtocolException;
+
+              public class StringResponseHandler implements HttpClientResponseHandler<String> {
+                  private static final String DEFAULT_CHAR_SET = "UTF-8";
+                  public String handleResponse(
+                          final ClassicHttpResponse response) throws IOException {
+                      HttpEntity entity = response.getEntity();
+                      return entity == null ? null : EntityUtils.toString(entity, Charset.forName(DEFAULT_CHAR_SET));
+                  }
+              }
+              """
+          )
+        );
+    }
 }
