@@ -36,8 +36,8 @@ recipeList:
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
   - org.openrewrite.apache.httpclient5.StatusLine
-  - org.openrewrite.apache.httpclient5.MigrateAuthState
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
+  - org.openrewrite.apache.httpclient5.MigrateAuthState
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
   - org.openrewrite.apache.httpclient5.MigrateAuthScope
@@ -834,13 +834,13 @@ tags:
   - httpclient
 recipeList:
   - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.auth.AuthState
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.auth.AuthState
       newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.AuthExchange
   - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.auth.AuthProtocolState
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.auth.AuthProtocolState
       newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.AuthExchange$State
   - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.http.auth.AuthOption
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.auth.AuthOption
       newFullyQualifiedTypeName: org.apache.hc.client5.http.auth.AuthScheme
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.hc.client5.http.auth.AuthExchange setAuthScheme(org.apache.hc.client5.http.auth.AuthScheme)
@@ -848,10 +848,16 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.hc.client5.http.auth.AuthExchange setAuthOptions(java.util.Queue)
       newMethodName: setOptions
-  - org.openrewrite.java.AddCommentToMethodInvocations:
-      comment: " HttpClient 5: AuthScheme no longer exposes credentials directly. Credentials are owned by a CredentialsProvider and resolved per-request inside AuthScheme.isResponseReady(host, provider, context)."
-      methodPattern: org.apache.hc.client5.http.auth.AuthScheme getCredentials()
   - org.openrewrite.apache.httpclient5.MigrateAuthSchemeCredentials
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: " HttpClient 5: credentials must be registered with a CredentialsProvider, not on AuthScheme. "
+      methodPattern: org.apache.hc.client5.http.auth.AuthExchange update(org.apache.hc.client5.http.auth.AuthScheme, org.apache.hc.client5.http.auth.Credentials)
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: " HttpClient 5: credentials must be registered with a CredentialsProvider, not on AuthScheme. "
+      methodPattern: org.apache.hc.client5.http.auth.AuthExchange setCredentials(org.apache.hc.client5.http.auth.Credentials)
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: " HttpClient 5: AuthScheme.getCredentials() is gone; credentials live on CredentialsProvider. "
+      methodPattern: org.apache.hc.client5.http.auth.AuthScheme getCredentials()
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_AsyncClientClassMapping

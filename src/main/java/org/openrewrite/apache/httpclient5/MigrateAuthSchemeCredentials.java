@@ -25,17 +25,12 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.java.tree.Comment;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.Space;
 import org.openrewrite.java.tree.Statement;
-import org.openrewrite.java.tree.TextComment;
 import org.openrewrite.java.tree.TypeUtils;
-import org.openrewrite.marker.Markers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = false)
@@ -47,20 +42,16 @@ public class MigrateAuthSchemeCredentials extends Recipe {
     private static final String FQN_BASIC_SCHEME = "org.apache.hc.client5.http.impl.auth.BasicScheme";
     private static final String FQN_CREDENTIALS = "org.apache.hc.client5.http.auth.Credentials";
 
-    private static final MethodMatcher UPDATE = new MethodMatcher(FQN_AUTH_EXCHANGE + " update(..)");
-    private static final MethodMatcher SET_CREDENTIALS = new MethodMatcher(FQN_AUTH_EXCHANGE + " setCredentials(..)");
-    private static final MethodMatcher GET_AUTH_SCHEME_ON_SCHEME = new MethodMatcher(FQN_AUTH_SCHEME + " getAuthScheme()");
-
-    private static final List<String> CREDENTIAL_BINDING_COMMENT = Arrays.asList(
-            " HttpClient 5: AuthScheme no longer stores credentials directly. For preemptive Basic auth,",
-            " cast to BasicScheme and call initPreemptive(creds). Otherwise, register the credentials with",
-            " a CredentialsProvider on HttpClientBuilder and let the scheme look them up per-request.");
+    private static final MethodMatcher UPDATE = new MethodMatcher(
+            FQN_AUTH_EXCHANGE + " update(" + FQN_AUTH_SCHEME + ", " + FQN_CREDENTIALS + ")");
+    private static final MethodMatcher GET_AUTH_SCHEME_ON_SCHEME = new MethodMatcher(
+            FQN_AUTH_SCHEME + " getAuthScheme()");
 
     String displayName = "Migrate `AuthScheme` credential handling";
 
     String description = "Rewrites `AuthExchange#update(BasicScheme, Credentials)` to `BasicScheme#initPreemptive(Credentials)` followed by `AuthExchange#select(AuthScheme)`. " +
-            "Adds explanatory comments for non-`BasicScheme` `update`/`setCredentials` call sites. " +
-            "Unwraps leftover `AuthOption#getAuthScheme()` calls (now on `AuthScheme` after the type rename) to the receiver itself.";
+            "Unwraps leftover `AuthOption#getAuthScheme()` calls (now on `AuthScheme` after the type rename) to the receiver itself. " +
+            "Other `update`/`setCredentials`/`getCredentials` call sites are flagged separately by `AddCommentToMethodInvocations`.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -73,7 +64,7 @@ public class MigrateAuthSchemeCredentials extends Recipe {
                 for (Statement stmt : b.getStatements()) {
                     if (stmt instanceof J.MethodInvocation) {
                         J.MethodInvocation mi = (J.MethodInvocation) stmt;
-                        if (UPDATE.matches(mi) && mi.getArguments().size() == 2 && mi.getSelect() != null
+                        if (UPDATE.matches(mi)
                                 && TypeUtils.isOfClassType(mi.getArguments().get(0).getType(), FQN_BASIC_SCHEME)) {
                             basicSchemeUpdates.add(mi);
                         }
@@ -103,42 +94,11 @@ public class MigrateAuthSchemeCredentials extends Recipe {
             @Override
             public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
-
-                // option.getAuthScheme() -> option (after AuthOption -> AuthScheme type rename)
                 if (GET_AUTH_SCHEME_ON_SCHEME.matches(m) && m.getSelect() != null) {
                     return m.getSelect().withPrefix(m.getPrefix());
                 }
-
-                // authExchange.update(non-BasicScheme, creds) — comment only; BasicScheme case handled in visitBlock.
-                if (UPDATE.matches(m) && m.getArguments().size() == 2 && m.getSelect() != null) {
-                    if (!TypeUtils.isOfClassType(m.getArguments().get(0).getType(), FQN_BASIC_SCHEME)) {
-                        return addLeadingComments(m, CREDENTIAL_BINDING_COMMENT);
-                    }
-                    return m;
-                }
-
-                // authExchange.setCredentials(creds) — no clean rewrite; comment.
-                if (SET_CREDENTIALS.matches(m)) {
-                    return addLeadingComments(m, CREDENTIAL_BINDING_COMMENT);
-                }
-
                 return m;
             }
         };
-    }
-
-    private static J.MethodInvocation addLeadingComments(J.MethodInvocation m, List<String> lines) {
-        Space prefix = m.getPrefix();
-        for (Comment existing : prefix.getComments()) {
-            if (existing instanceof TextComment && lines.get(0).equals(((TextComment) existing).getText())) {
-                return m;
-            }
-        }
-        String suffix = prefix.getWhitespace();
-        List<Comment> updated = new ArrayList<>(prefix.getComments());
-        for (String line : lines) {
-            updated.add(new TextComment(false, line, suffix, Markers.EMPTY));
-        }
-        return m.withPrefix(prefix.withComments(updated));
     }
 }

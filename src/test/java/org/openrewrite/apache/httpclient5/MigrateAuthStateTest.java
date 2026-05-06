@@ -37,7 +37,6 @@ class MigrateAuthStateTest implements RewriteTest {
     @Test
     void renameTypeAndStateEnumAndMethods() {
         rewriteRun(
-          spec -> spec.expectedCyclesThatMakeChanges(2),
           //language=java
           java(
             """
@@ -73,7 +72,6 @@ class MigrateAuthStateTest implements RewriteTest {
     @Test
     void updateWithBasicSchemeRewritesToInitPreemptiveAndSelect() {
         rewriteRun(
-          spec -> spec.expectedCyclesThatMakeChanges(2),
           //language=java
           java(
             """
@@ -128,9 +126,7 @@ class MigrateAuthStateTest implements RewriteTest {
 
               class A {
                   void m(AuthExchange s, AuthScheme scheme, Credentials creds) {
-                      // HttpClient 5: AuthScheme no longer stores credentials directly. For preemptive Basic auth,
-                      // cast to BasicScheme and call initPreemptive(creds). Otherwise, register the credentials with
-                      // a CredentialsProvider on HttpClientBuilder and let the scheme look them up per-request.
+                      /* HttpClient 5: credentials must be registered with a CredentialsProvider, not on AuthScheme. */
                       s.update(scheme, creds);
                   }
               }
@@ -160,9 +156,7 @@ class MigrateAuthStateTest implements RewriteTest {
 
               class A {
                   void m(AuthExchange s, Credentials creds) {
-                      // HttpClient 5: AuthScheme no longer stores credentials directly. For preemptive Basic auth,
-                      // cast to BasicScheme and call initPreemptive(creds). Otherwise, register the credentials with
-                      // a CredentialsProvider on HttpClientBuilder and let the scheme look them up per-request.
+                      /* HttpClient 5: credentials must be registered with a CredentialsProvider, not on AuthScheme. */
                       s.setCredentials(creds);
                   }
               }
@@ -225,7 +219,7 @@ class MigrateAuthStateTest implements RewriteTest {
 
               class A {
                   Credentials creds(AuthScheme opt) {
-                      return /* HttpClient 5: AuthScheme no longer exposes credentials directly. Credentials are owned by a CredentialsProvider and resolved per-request inside AuthScheme.isResponseReady(host, provider, context). */ opt.getCredentials();
+                      return /* HttpClient 5: AuthScheme.getCredentials() is gone; credentials live on CredentialsProvider. */ opt.getCredentials();
                   }
               }
               """
