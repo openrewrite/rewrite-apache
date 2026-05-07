@@ -25,13 +25,9 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @EqualsAndHashCode(callSuper = false)
 @Value
@@ -59,34 +55,23 @@ public class MigrateAuthSchemeCredentials extends Recipe {
             @Override
             public J.Block visitBlock(J.Block block, ExecutionContext ctx) {
                 J.Block b = (J.Block) super.visitBlock(block, ctx);
-
-                List<J.MethodInvocation> basicSchemeUpdates = new ArrayList<>();
                 for (Statement stmt : b.getStatements()) {
-                    if (stmt instanceof J.MethodInvocation) {
-                        J.MethodInvocation mi = (J.MethodInvocation) stmt;
-                        if (UPDATE.matches(mi)
-                                && TypeUtils.isOfClassType(mi.getArguments().get(0).getType(), FQN_BASIC_SCHEME)) {
-                            basicSchemeUpdates.add(mi);
-                        }
+                    if (!(stmt instanceof J.MethodInvocation)) {
+                        continue;
                     }
-                }
-
-                for (J.MethodInvocation mi : basicSchemeUpdates) {
-                    Expression schemeArg = mi.getArguments().get(0);
-                    Expression credsArg = mi.getArguments().get(1);
-                    Expression receiver = mi.getSelect();
-
-                    b = JavaTemplate.builder("#{any(" + FQN_BASIC_SCHEME + ")}.initPreemptive(#{any(" + FQN_CREDENTIALS + ")});")
-                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                            .build()
-                            .apply(new Cursor(getCursor().getParent(), b), mi.getCoordinates().before(),
-                                    schemeArg, credsArg);
-
-                    b = JavaTemplate.builder("#{any(" + FQN_AUTH_EXCHANGE + ")}.select(#{any(" + FQN_AUTH_SCHEME + ")})")
+                    J.MethodInvocation mi = (J.MethodInvocation) stmt;
+                    if (!UPDATE.matches(mi) ||
+                            !TypeUtils.isOfClassType(mi.getArguments().get(0).getType(), FQN_BASIC_SCHEME)) {
+                        continue;
+                    }
+                    b = JavaTemplate.builder(
+                                    "#{any(" + FQN_BASIC_SCHEME + ")}.initPreemptive(#{any(" + FQN_CREDENTIALS + ")});\n" +
+                                            "#{any(" + FQN_AUTH_EXCHANGE + ")}.select(#{any(" + FQN_AUTH_SCHEME + ")});")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .build()
                             .apply(new Cursor(getCursor().getParent(), b), mi.getCoordinates().replace(),
-                                    receiver, schemeArg);
+                                    mi.getArguments().get(0), mi.getArguments().get(1),
+                                    mi.getSelect(), mi.getArguments().get(0));
                 }
                 return b;
             }
