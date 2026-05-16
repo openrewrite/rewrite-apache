@@ -1056,6 +1056,33 @@ examples:
           }
       }
     language: java
+- description: '`MigrateAuthStateTest#renameTypeAndStateEnumAndMethods`'
+  sources:
+  - before: |
+      import org.apache.http.auth.AuthScheme;
+      import org.apache.http.auth.AuthState;
+      import org.apache.http.auth.AuthProtocolState;
+
+      class A {
+          void m(AuthState s, AuthScheme scheme) {
+              s.setAuthScheme(scheme);
+              s.setState(AuthProtocolState.CHALLENGED);
+              s.reset();
+          }
+      }
+    after: |
+      import org.apache.hc.client5.http.auth.AuthExchange.State;
+      import org.apache.hc.client5.http.auth.AuthScheme;
+      import org.apache.hc.client5.http.auth.AuthExchange;
+
+      class A {
+          void m(AuthExchange s, AuthScheme scheme) {
+              s.select(scheme);
+              s.setState(AuthExchange.State.CHALLENGED);
+              s.reset();
+          }
+      }
+    language: java
 - description: '`MigrateHttpResponseTest#migratesHttpResponseToClassicHttpResponse`'
   sources:
   - before: |
