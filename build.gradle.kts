@@ -65,8 +65,6 @@ dependencies {
 
     testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.14.2")
-
 }
 
 tasks.withType<JavaCompile> {
