@@ -62,7 +62,7 @@ class DefaultIfBlankToJdkTest implements RewriteTest {
           ));
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.defaultIfBlank(first, "fallback") # first == null || first.isBlank() ? "fallback" : first
       org.apache.commons.lang3.StringUtils # StringUtils.defaultIfBlank(field, "fallback") # field == null || field.isBlank() ? "fallback" : field
       """)
@@ -90,7 +90,7 @@ class DefaultIfBlankToJdkTest implements RewriteTest {
               """.formatted(afterLine)));
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.defaultIfBlank(foo(), "fallback")
       org.apache.commons.lang3.StringUtils # StringUtils.defaultIfBlank(first + second, "fallback")
       """)

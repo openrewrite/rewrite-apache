@@ -106,7 +106,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
         );
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(first) # first == null || first.isEmpty()
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(field) # field == null || field.isEmpty()
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(this.field) # this.field == null || this.field.isEmpty()
@@ -141,7 +141,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
               """.formatted(afterLine)));
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # !StringUtils.isEmpty(first) # !(first == null || first.isEmpty())
       org.apache.commons.lang3.StringUtils # !StringUtils.isNotEmpty(first) # !(first != null && !first.isEmpty())
       org.apache.commons.lang3.StringUtils # !(StringUtils.isEmpty(first)) # !(first == null || first.isEmpty())
@@ -209,7 +209,7 @@ class IsNotEmptyToJdkTest implements RewriteTest {
         );
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(foo())
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(first + second)
       org.apache.commons.lang3.StringUtils # StringUtils.isNotEmpty(foo())
