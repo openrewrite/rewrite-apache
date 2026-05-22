@@ -62,7 +62,7 @@ class IsBlankToJdkTest implements RewriteTest {
           ));
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isBlank(first) # first == null || first.isBlank()
       org.apache.commons.lang3.StringUtils # StringUtils.isBlank(field) # field == null || field.isBlank()
       org.apache.commons.lang3.StringUtils # StringUtils.isBlank(this.field) # this.field == null || this.field.isBlank()
@@ -97,7 +97,7 @@ class IsBlankToJdkTest implements RewriteTest {
               """.formatted(afterLine)));
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # !StringUtils.isBlank(first) # first != null && !first.isBlank()
       org.apache.commons.lang3.StringUtils # !StringUtils.isNotBlank(first) # first == null || first.isBlank()
       org.apache.commons.lang3.StringUtils # !(StringUtils.isBlank(first)) # first != null && !first.isBlank()
@@ -203,7 +203,7 @@ class IsBlankToJdkTest implements RewriteTest {
           ));
     }
 
-    @CsvSource(delimiter = '#', textBlock = """
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isBlank(foo())
       org.apache.commons.lang3.StringUtils # StringUtils.isBlank(first + second)
       org.apache.commons.lang3.StringUtils # StringUtils.isNotBlank(foo())
