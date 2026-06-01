@@ -60,7 +60,10 @@ public class ApacheBase64ToJavaBase64 extends Recipe {
                 } else if (apacheEncode64.matches(mi)) {
                     templatePrefix = "Base64.getEncoder().encode(#{anyArray()})";
                 } else if (apacheDecode.matches(mi)) {
-                    templatePrefix = "Base64.getDecoder().decode(#{any(String)})";
+                    // Apache's `decodeBase64` accepts both the standard (`+/`) and URL-safe (`-_`) alphabets.
+                    // `getMimeDecoder()` is the closest `java.util.Base64` equivalent that decodes both variants,
+                    // whereas `getDecoder()` throws `IllegalArgumentException` on URL-safe input.
+                    templatePrefix = "Base64.getMimeDecoder().decode(#{any(String)})";
                 } else if (apacheEncode64UrlSafe.matches(mi)) {
                     templatePrefix = "Base64.getUrlEncoder().withoutPadding().encode(#{anyArray()})";
                 } else if (apacheEncode64UrlSafeString.matches(mi)) {

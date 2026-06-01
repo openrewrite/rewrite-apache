@@ -67,10 +67,10 @@ class ApacheBase64ToJavaBase64Test implements RewriteTest {
 
               class Test {
                   static byte[] decodeBytes(byte[] encodedBytes) {
-                      return Base64.getDecoder().decode(encodedBytes);
+                      return Base64.getMimeDecoder().decode(encodedBytes);
                   }
                   static byte[] decodeToBytes(String encodedString) {
-                      return Base64.getDecoder().decode(encodedString);
+                      return Base64.getMimeDecoder().decode(encodedString);
                   }
                   static String encodeToString(byte[] decodedByteArr) {
                       return Base64.getEncoder().encodeToString(decodedByteArr);
