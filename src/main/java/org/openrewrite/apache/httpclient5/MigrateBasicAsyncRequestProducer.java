@@ -17,6 +17,7 @@ package org.openrewrite.apache.httpclient5;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -24,9 +25,11 @@ import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
+import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.HashMap;
@@ -46,6 +49,17 @@ public class MigrateBasicAsyncRequestProducer extends Recipe {
     private static final String FQN_N_BYTE_ARRAY_ENTITY = "org.apache.http.nio.entity.NByteArrayEntity";
     private static final String FQN_N_FILE_ENTITY = "org.apache.http.nio.entity.NFileEntity";
 
+    private static final MethodMatcher HTTP_HOST_CREATE = new MethodMatcher(FQN_HTTP_HOST + " create(String)");
+
+    private static final MethodMatcher HTTP_GET_CTOR = new MethodMatcher("org.apache.http.client.methods.HttpGet <constructor>(String)");
+    private static final MethodMatcher HTTP_POST_CTOR = new MethodMatcher("org.apache.http.client.methods.HttpPost <constructor>(String)");
+    private static final MethodMatcher HTTP_PUT_CTOR = new MethodMatcher("org.apache.http.client.methods.HttpPut <constructor>(String)");
+    private static final MethodMatcher HTTP_DELETE_CTOR = new MethodMatcher("org.apache.http.client.methods.HttpDelete <constructor>(String)");
+
+    private static final MethodMatcher N_STRING_ENTITY_CTOR = new MethodMatcher(FQN_N_STRING_ENTITY + " <constructor>(..)");
+    private static final MethodMatcher N_BYTE_ARRAY_ENTITY_CTOR = new MethodMatcher(FQN_N_BYTE_ARRAY_ENTITY + " <constructor>(..)");
+    private static final MethodMatcher N_FILE_ENTITY_CTOR = new MethodMatcher(FQN_N_FILE_ENTITY + " <constructor>(..)");
+
     private static final Map<String, String> VERB_BY_HTTP_METHOD = new HashMap<String, String>() {{
         put("org.apache.http.client.methods.HttpGet", "get");
         put("org.apache.http.client.methods.HttpPost", "post");
@@ -61,205 +75,147 @@ public class MigrateBasicAsyncRequestProducer extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new UsesType<>(FQN_PRODUCER, false), new JavaVisitor<ExecutionContext>() {
+        return Preconditions.check(
+                Preconditions.and(
+                        new UsesType<>(FQN_PRODUCER, false),
+                        Preconditions.or(
+                                new UsesType<>(FQN_N_STRING_ENTITY, false),
+                                new UsesType<>(FQN_N_BYTE_ARRAY_ENTITY, false),
+                                new UsesType<>(FQN_N_FILE_ENTITY, false))),
+                new JavaVisitor<ExecutionContext>() {
 
-            @Override
-            public J visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
-                J.NewClass nc = (J.NewClass) super.visitNewClass(newClass, ctx);
-                if (!isNewClassOfName(nc, "BasicAsyncRequestProducer", FQN_PRODUCER)) {
-                    return nc;
-                }
-                List<Expression> args = nc.getArguments();
-                if (args == null || args.size() != 2) {
-                    return nc;
-                }
-
-                String uriLiteral = extractHttpHostCreateLiteral(args.get(0));
-                if (uriLiteral == null) {
-                    return nc;
-                }
-
-                Expression requestArg = args.get(1);
-                MethodInvocationInfo setEntity = asSetEntityChain(requestArg);
-                if (setEntity == null) {
-                    return nc;
-                }
-
-                String pathLiteral = extractHttpMethodPathLiteral(setEntity.select);
-                String verb = extractHttpMethodVerb(setEntity.select);
-                if (pathLiteral == null || verb == null) {
-                    return nc;
-                }
-
-                J.NewClass entityCtor = asNEntityCtor(setEntity.argument);
-                if (entityCtor == null) {
-                    return nc;
-                }
-
-                String combinedUri = joinUriAndPath(uriLiteral, pathLiteral);
-                List<Expression> entityArgs = entityCtor.getArguments();
-                if (entityArgs == null || entityArgs.isEmpty()) {
-                    return nc;
-                }
-
-                maybeRemoveImport(FQN_PRODUCER);
-                maybeRemoveImport(FQN_HTTP_HOST);
-                maybeRemoveImport(FQN_N_STRING_ENTITY);
-                maybeRemoveImport(FQN_N_BYTE_ARRAY_ENTITY);
-                maybeRemoveImport(FQN_N_FILE_ENTITY);
-                maybeAddImport(FQN_ASYNC_REQUEST_BUILDER);
-                maybeAddImport(FQN_ASYNC_ENTITY_PRODUCERS);
-
-                StringBuilder producer = new StringBuilder("AsyncEntityProducers.create(");
-                for (int i = 0; i < entityArgs.size(); i++) {
-                    if (i > 0) {
-                        producer.append(", ");
-                    }
-                    producer.append("#{any()}");
-                }
-                producer.append(")");
-
-                String template = "AsyncRequestBuilder." + verb + "(\"" + combinedUri + "\").setEntity(" + producer + ").build()";
-                return JavaTemplate.builder(template)
-                        .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                        .imports(FQN_ASYNC_REQUEST_BUILDER, FQN_ASYNC_ENTITY_PRODUCERS)
-                        .build()
-                        .apply(getCursor(), nc.getCoordinates().replace(), entityArgs.toArray());
-            }
-
-            private String extractHttpHostCreateLiteral(Expression expr) {
-                if (!(expr instanceof J.MethodInvocation)) {
-                    return null;
-                }
-                J.MethodInvocation mi = (J.MethodInvocation) expr;
-                if (!"create".equals(mi.getSimpleName()) || mi.getMethodType() == null) {
-                    return null;
-                }
-                if (!TypeUtils.isOfClassType(mi.getMethodType().getDeclaringType(), FQN_HTTP_HOST)) {
-                    return null;
-                }
-                if (mi.getArguments().size() != 1) {
-                    return null;
-                }
-                return asStringLiteral(mi.getArguments().get(0));
-            }
-
-            private MethodInvocationInfo asSetEntityChain(Expression expr) {
-                if (!(expr instanceof J.MethodInvocation)) {
-                    return null;
-                }
-                J.MethodInvocation mi = (J.MethodInvocation) expr;
-                if (!"setEntity".equals(mi.getSimpleName()) || mi.getSelect() == null) {
-                    return null;
-                }
-                if (mi.getArguments().size() != 1) {
-                    return null;
-                }
-                return new MethodInvocationInfo(mi.getSelect(), mi.getArguments().get(0));
-            }
-
-            private String extractHttpMethodPathLiteral(Expression expr) {
-                if (!(expr instanceof J.NewClass)) {
-                    return null;
-                }
-                J.NewClass nc = (J.NewClass) expr;
-                if (matchedHttpMethodFqn(nc) == null) {
-                    return null;
-                }
-                if (nc.getArguments() == null || nc.getArguments().size() != 1) {
-                    return null;
-                }
-                return asStringLiteral(nc.getArguments().get(0));
-            }
-
-            private String extractHttpMethodVerb(Expression expr) {
-                if (!(expr instanceof J.NewClass)) {
-                    return null;
-                }
-                String fqn = matchedHttpMethodFqn((J.NewClass) expr);
-                return fqn == null ? null : VERB_BY_HTTP_METHOD.get(fqn);
-            }
-
-            private String matchedHttpMethodFqn(J.NewClass nc) {
-                String typeFqn = fullyQualifiedName(nc.getType());
-                if (typeFqn != null && VERB_BY_HTTP_METHOD.containsKey(typeFqn)) {
-                    return typeFqn;
-                }
-                String simple = simpleNameOfNewClass(nc);
-                if (simple != null) {
-                    for (String fqn : VERB_BY_HTTP_METHOD.keySet()) {
-                        if (fqn.endsWith("." + simple)) {
-                            return fqn;
+                    @Override
+                    public J visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
+                        J.NewClass nc = (J.NewClass) super.visitNewClass(newClass, ctx);
+                        if (!isProducerNewClass(nc)) {
+                            return nc;
                         }
+                        List<Expression> args = nc.getArguments();
+                        if (args == null || args.size() != 2) {
+                            return nc;
+                        }
+
+                        Expression uriLiteral = extractHttpHostCreateLiteral(args.get(0));
+                        if (uriLiteral == null) {
+                            return nc;
+                        }
+
+                        J.MethodInvocation setEntity = asSetEntityChain(args.get(1));
+                        if (setEntity == null || !(setEntity.getSelect() instanceof J.NewClass)) {
+                            return nc;
+                        }
+                        J.NewClass requestCtor = (J.NewClass) setEntity.getSelect();
+                        String verb = verbFor(requestCtor);
+                        Expression pathLiteral = pathLiteralFor(requestCtor);
+                        if (verb == null || pathLiteral == null) {
+                            return nc;
+                        }
+
+                        J.NewClass entityCtor = asNEntityCtor(setEntity.getArguments().get(0));
+                        if (entityCtor == null || entityCtor.getArguments() == null || entityCtor.getArguments().isEmpty()) {
+                            return nc;
+                        }
+                        List<Expression> entityArgs = entityCtor.getArguments();
+
+                        maybeRemoveImport(FQN_PRODUCER);
+                        maybeRemoveImport(FQN_HTTP_HOST);
+                        maybeRemoveImport(FQN_N_STRING_ENTITY);
+                        maybeRemoveImport(FQN_N_BYTE_ARRAY_ENTITY);
+                        maybeRemoveImport(FQN_N_FILE_ENTITY);
+                        maybeAddImport(FQN_ASYNC_REQUEST_BUILDER);
+                        maybeAddImport(FQN_ASYNC_ENTITY_PRODUCERS);
+
+                        StringBuilder producer = new StringBuilder("AsyncEntityProducers.create(");
+                        for (int i = 0; i < entityArgs.size(); i++) {
+                            if (i > 0) {
+                                producer.append(", ");
+                            }
+                            producer.append("#{any()}");
+                        }
+                        producer.append(")");
+
+                        String template = "AsyncRequestBuilder." + verb +
+                                "(#{any(java.lang.String)} + #{any(java.lang.String)})" +
+                                ".setEntity(" + producer + ").build()";
+                        Object[] templateArgs = new Object[entityArgs.size() + 2];
+                        templateArgs[0] = uriLiteral;
+                        templateArgs[1] = pathLiteral;
+                        for (int i = 0; i < entityArgs.size(); i++) {
+                            templateArgs[i + 2] = entityArgs.get(i);
+                        }
+                        return JavaTemplate.builder(template)
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                                .imports(FQN_ASYNC_REQUEST_BUILDER, FQN_ASYNC_ENTITY_PRODUCERS)
+                                .build()
+                                .apply(getCursor(), nc.getCoordinates().replace(), templateArgs);
                     }
-                }
-                return null;
-            }
 
-            private J.NewClass asNEntityCtor(Expression expr) {
-                if (!(expr instanceof J.NewClass)) {
-                    return null;
-                }
-                J.NewClass nc = (J.NewClass) expr;
-                if (isNewClassOfName(nc, "NStringEntity", FQN_N_STRING_ENTITY) ||
-                        isNewClassOfName(nc, "NByteArrayEntity", FQN_N_BYTE_ARRAY_ENTITY) ||
-                        isNewClassOfName(nc, "NFileEntity", FQN_N_FILE_ENTITY)) {
-                    return nc;
-                }
-                return null;
-            }
+                    private boolean isProducerNewClass(J.NewClass nc) {
+                        if (TypeUtils.isOfClassType(nc.getType(), FQN_PRODUCER)) {
+                            return true;
+                        }
+                        if (nc.getClazz() != null) {
+                            JavaType.FullyQualified fq = TypeUtils.asFullyQualified(nc.getClazz().getType());
+                            if (fq != null && FQN_PRODUCER.equals(fq.getFullyQualifiedName())) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
 
-            private boolean isNewClassOfName(J.NewClass nc, String simpleName, String fqn) {
-                String typeFqn = fullyQualifiedName(nc.getType());
-                if (fqn.equals(typeFqn)) {
-                    return true;
-                }
-                return simpleName.equals(simpleNameOfNewClass(nc));
-            }
+                    private @Nullable Expression extractHttpHostCreateLiteral(Expression expr) {
+                        if (!(expr instanceof J.MethodInvocation)) {
+                            return null;
+                        }
+                        J.MethodInvocation mi = (J.MethodInvocation) expr;
+                        if (!HTTP_HOST_CREATE.matches(mi) || mi.getArguments().size() != 1) {
+                            return null;
+                        }
+                        return isStringLiteral(mi.getArguments().get(0)) ? mi.getArguments().get(0) : null;
+                    }
 
-            private String simpleNameOfNewClass(J.NewClass nc) {
-                if (nc.getClazz() instanceof J.Identifier) {
-                    return ((J.Identifier) nc.getClazz()).getSimpleName();
-                }
-                if (nc.getClazz() instanceof J.FieldAccess) {
-                    return ((J.FieldAccess) nc.getClazz()).getSimpleName();
-                }
-                return null;
-            }
+                    private J.@Nullable MethodInvocation asSetEntityChain(Expression expr) {
+                        if (!(expr instanceof J.MethodInvocation)) {
+                            return null;
+                        }
+                        J.MethodInvocation mi = (J.MethodInvocation) expr;
+                        if (!"setEntity".equals(mi.getSimpleName()) || mi.getSelect() == null || mi.getArguments().size() != 1) {
+                            return null;
+                        }
+                        return mi;
+                    }
 
-            private String fullyQualifiedName(org.openrewrite.java.tree.JavaType type) {
-                if (type instanceof org.openrewrite.java.tree.JavaType.FullyQualified) {
-                    return ((org.openrewrite.java.tree.JavaType.FullyQualified) type).getFullyQualifiedName();
-                }
-                return null;
-            }
+                    private @Nullable String verbFor(J.NewClass nc) {
+                        if (HTTP_GET_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpGet");
+                        if (HTTP_POST_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpPost");
+                        if (HTTP_PUT_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpPut");
+                        if (HTTP_DELETE_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpDelete");
+                        JavaType.FullyQualified fq = TypeUtils.asFullyQualified(nc.getType());
+                        return fq == null ? null : VERB_BY_HTTP_METHOD.get(fq.getFullyQualifiedName());
+                    }
 
-            private String asStringLiteral(Expression expr) {
-                if (expr instanceof J.Literal) {
-                    Object v = ((J.Literal) expr).getValue();
-                    return v instanceof String ? (String) v : null;
-                }
-                return null;
-            }
+                    private @Nullable Expression pathLiteralFor(J.NewClass nc) {
+                        if (nc.getArguments() == null || nc.getArguments().size() != 1) {
+                            return null;
+                        }
+                        Expression arg = nc.getArguments().get(0);
+                        return isStringLiteral(arg) ? arg : null;
+                    }
 
-            private String joinUriAndPath(String uri, String path) {
-                if (path.isEmpty()) {
-                    return uri;
-                }
-                if (uri.endsWith("/") && path.startsWith("/")) {
-                    return uri + path.substring(1);
-                }
-                if (!uri.endsWith("/") && !path.startsWith("/")) {
-                    return uri + "/" + path;
-                }
-                return uri + path;
-            }
-        });
-    }
+                    private J.@Nullable NewClass asNEntityCtor(Expression expr) {
+                        if (!(expr instanceof J.NewClass)) {
+                            return null;
+                        }
+                        J.NewClass nc = (J.NewClass) expr;
+                        if (N_STRING_ENTITY_CTOR.matches(nc) || N_BYTE_ARRAY_ENTITY_CTOR.matches(nc) || N_FILE_ENTITY_CTOR.matches(nc)) {
+                            return nc;
+                        }
+                        return null;
+                    }
 
-    @Value
-    private static class MethodInvocationInfo {
-        Expression select;
-        Expression argument;
+                    private boolean isStringLiteral(Expression expr) {
+                        return expr instanceof J.Literal && ((J.Literal) expr).getValue() instanceof String;
+                    }
+                });
     }
 }

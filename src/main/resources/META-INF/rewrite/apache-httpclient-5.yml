@@ -248,6 +248,7 @@ recipeList:
       oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor
       newFullyQualifiedTypeName: org.apache.hc.core5.reactor.DefaultConnectingIOReactor
   - org.openrewrite.apache.httpclient5.MigrateHttpAsyncMethods
+  - org.openrewrite.apache.httpclient5.InlineBasicAsyncRequestProducerLocals
   - org.openrewrite.apache.httpclient5.MigrateBasicAsyncRequestProducer
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.nio.entity.NStringEntity
