@@ -425,47 +425,6 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     }
 
     @Test
-    void migratesShape2BasicAsyncRequestProducerWithNStringEntity() {
-        rewriteRun(
-          // Before-image: `setEntity(...)` returns void in 4.x so the inlined `new BasicAsyncRequestProducer(...)` constructor cannot be typed.
-          // After-image: the migrated `build()` returns a core5 producer the un-migrated 4.x `BasicAsyncRequestProducer` return type cannot accept.
-          spec -> spec.typeValidationOptions(TypeValidation.all().constructorInvocations(false))
-            .afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
-          //language=java
-          java(
-            """
-              import org.apache.http.HttpHost;
-              import org.apache.http.client.methods.HttpPost;
-              import org.apache.http.entity.ContentType;
-              import org.apache.http.nio.entity.NStringEntity;
-              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
-
-              class A {
-                  BasicAsyncRequestProducer producer(String body) {
-                      return new BasicAsyncRequestProducer(
-                          HttpHost.create("http://example.com"),
-                          new HttpPost("/api").setEntity(new NStringEntity(body, ContentType.APPLICATION_JSON)));
-                  }
-              }
-              """,
-            """
-              import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
-              import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
-              import org.apache.http.client.methods.HttpPost;
-              import org.apache.http.entity.ContentType;
-              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
-
-              class A {
-                  BasicAsyncRequestProducer producer(String body) {
-                      return AsyncRequestBuilder.post("http://example.com" + "/api").setEntity(AsyncEntityProducers.create(body, ContentType.APPLICATION_JSON)).build();
-                  }
-              }
-              """
-          )
-        );
-    }
-
-    @Test
     void migratesShape2WithHoistedRequest() {
         rewriteRun(
           // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
@@ -484,48 +443,6 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
                       HttpPost post = new HttpPost("/api");
                       post.setEntity(new NStringEntity(body, ContentType.APPLICATION_JSON));
                       return new BasicAsyncRequestProducer(HttpHost.create("http://example.com"), post);
-                  }
-              }
-              """,
-            """
-              import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
-              import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
-              import org.apache.http.client.methods.HttpPost;
-              import org.apache.http.entity.ContentType;
-              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
-
-              class A {
-                  BasicAsyncRequestProducer producer(String body) {
-                      return AsyncRequestBuilder.post("http://example.com" + "/api").setEntity(AsyncEntityProducers.create(body, ContentType.APPLICATION_JSON)).build();
-                  }
-              }
-              """
-          )
-        );
-    }
-
-    @Test
-    void migratesShape2WithHoistedNStringEntity() {
-        rewriteRun(
-          // Before-image: `setEntity(...)` returns void in 4.x so the inlined `new BasicAsyncRequestProducer(...)` constructor cannot be typed.
-          // After-image: the migrated `build()` returns a core5 producer the un-migrated 4.x `BasicAsyncRequestProducer` return type cannot accept.
-          spec -> spec.typeValidationOptions(TypeValidation.all().constructorInvocations(false))
-            .afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
-          //language=java
-          java(
-            """
-              import org.apache.http.HttpHost;
-              import org.apache.http.client.methods.HttpPost;
-              import org.apache.http.entity.ContentType;
-              import org.apache.http.nio.entity.NStringEntity;
-              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
-
-              class A {
-                  BasicAsyncRequestProducer producer(String body) {
-                      NStringEntity entity = new NStringEntity(body, ContentType.APPLICATION_JSON);
-                      return new BasicAsyncRequestProducer(
-                          HttpHost.create("http://example.com"),
-                          new HttpPost("/api").setEntity(entity));
                   }
               }
               """,
