@@ -427,8 +427,10 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape2BasicAsyncRequestProducerWithNStringEntity() {
         rewriteRun(
-          // `setEntity(...)` returns void in 4.x so the inlined `new BasicAsyncRequestProducer(...)` before-image cannot be typed, and the migrated `build()` returns a core5 producer the un-migrated 4.x return type cannot accept.
-          spec -> spec.typeValidationOptions(TypeValidation.all().constructorInvocations(false).methodInvocations(false)),
+          // Before-image: `setEntity(...)` returns void in 4.x so the inlined `new BasicAsyncRequestProducer(...)` constructor cannot be typed.
+          // After-image: the migrated `build()` returns a core5 producer the un-migrated 4.x `BasicAsyncRequestProducer` return type cannot accept.
+          spec -> spec.typeValidationOptions(TypeValidation.all().constructorInvocations(false))
+            .afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
             """
@@ -466,8 +468,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape2WithHoistedRequest() {
         rewriteRun(
-          // The migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
-          spec -> spec.typeValidationOptions(TypeValidation.all().methodInvocations(false)),
+          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
             """
@@ -505,8 +507,10 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape2WithHoistedNStringEntity() {
         rewriteRun(
-          // `setEntity(...)` returns void in 4.x so the inlined `new BasicAsyncRequestProducer(...)` before-image cannot be typed, and the migrated `build()` returns a core5 producer the un-migrated 4.x return type cannot accept.
-          spec -> spec.typeValidationOptions(TypeValidation.all().constructorInvocations(false).methodInvocations(false)),
+          // Before-image: `setEntity(...)` returns void in 4.x so the inlined `new BasicAsyncRequestProducer(...)` constructor cannot be typed.
+          // After-image: the migrated `build()` returns a core5 producer the un-migrated 4.x `BasicAsyncRequestProducer` return type cannot accept.
+          spec -> spec.typeValidationOptions(TypeValidation.all().constructorInvocations(false))
+            .afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
             """
@@ -545,8 +549,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape2WithHoistedRequestAndEntity() {
         rewriteRun(
-          // The migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
-          spec -> spec.typeValidationOptions(TypeValidation.all().methodInvocations(false)),
+          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
             """
@@ -626,8 +630,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape3HttpAsyncMethodsCreatePost() {
         rewriteRun(
-          // The migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
-          spec -> spec.typeValidationOptions(TypeValidation.all().methodInvocations(false)),
+          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
             """
