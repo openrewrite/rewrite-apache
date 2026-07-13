@@ -22,7 +22,6 @@ import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
-import org.openrewrite.test.TypeValidation;
 
 import static org.openrewrite.java.Assertions.java;
 
@@ -31,7 +30,6 @@ class MigrateAuthScopeTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient-4", "httpcore-4", "httpclient5", "httpcore5"))
-          .afterTypeValidationOptions(TypeValidation.none())
           .recipe(Environment.builder()
             .scanRuntimeClasspath("org.openrewrite")
             .build()

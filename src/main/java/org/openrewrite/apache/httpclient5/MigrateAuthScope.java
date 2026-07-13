@@ -49,7 +49,7 @@ public class MigrateAuthScope extends Recipe {
                             maybeAddImport("org.apache.hc.client5.http.auth.AuthScope");
                             return JavaTemplate.builder("new AuthScope(null, -1)")
                                     .imports("org.apache.hc.client5.http.auth.AuthScope")
-                                    .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpcore5"))
+                                    .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                                     .build()
                                     .apply(updateCursor(f), f.getCoordinates().replace());
                         }

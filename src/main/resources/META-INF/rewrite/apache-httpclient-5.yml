@@ -247,13 +247,18 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor
       newFullyQualifiedTypeName: org.apache.hc.core5.reactor.DefaultConnectingIOReactor
-  # NIO entity migrations - these require manual changes due to API differences
-  - org.openrewrite.java.AddCommentToImport:
-      comment: "NByteArrayEntity replaced with BasicAsyncEntityProducer - constructor and usage differs, manual migration required"
-      typePattern: org.apache.http.nio.entity.NByteArrayEntity
-  - org.openrewrite.java.AddCommentToImport:
-      comment: "NStringEntity replaced with StringAsyncEntityProducer - constructor and usage differs, manual migration required"
-      typePattern: org.apache.http.nio.entity.NStringEntity
+  - org.openrewrite.apache.httpclient5.MigrateHttpAsyncMethods
+  - org.openrewrite.apache.httpclient5.InlineBasicAsyncRequestProducerLocals
+  - org.openrewrite.apache.httpclient5.MigrateBasicAsyncRequestProducer
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.entity.NStringEntity
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.entity.StringEntity
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.entity.NByteArrayEntity
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.entity.ByteArrayEntity
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.entity.NFileEntity
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.io.entity.FileEntity
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping

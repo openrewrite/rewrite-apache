@@ -22,6 +22,7 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
+import org.openrewrite.test.TypeValidation;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,7 +35,9 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpcore-4", "httpcore-nio-4", "httpcore5"))
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),
+            "httpclient-4", "httpcore-4", "httpasyncclient-4", "httpcore-nio-4",
+            "httpclient5", "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping");
     }
 
@@ -325,37 +328,317 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     }
 
     @Test
-    void addsCommentToNioEntityImports() {
+    void migratesShape1NStringEntityToStringEntity() {
         rewriteRun(
           //language=java
           java(
             """
-              package xyz;
-              import org.apache.http.nio.entity.NByteArrayEntity;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
               import org.apache.http.nio.entity.NStringEntity;
-              class A {
-                  NByteArrayEntity createByteEntity() {
-                      return new NByteArrayEntity("test".getBytes());
-                  }
 
-                  NStringEntity createStringEntity() throws Exception {
-                      return new NStringEntity("test");
+              class A {
+                  void method(HttpPost post, String json) {
+                      post.setEntity(new NStringEntity(json, ContentType.APPLICATION_JSON));
                   }
               }
               """,
             """
-              package xyz;
-              /* NByteArrayEntity replaced with BasicAsyncEntityProducer - constructor and usage differs, manual migration required */
-              import org.apache.http.nio.entity.NByteArrayEntity;
-              /* NStringEntity replaced with StringAsyncEntityProducer - constructor and usage differs, manual migration required */
-              import org.apache.http.nio.entity.NStringEntity;
-              class A {
-                  NByteArrayEntity createByteEntity() {
-                      return new NByteArrayEntity("test".getBytes());
-                  }
+              import org.apache.hc.core5.http.io.entity.StringEntity;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
 
-                  NStringEntity createStringEntity() throws Exception {
-                      return new NStringEntity("test");
+              class A {
+                  void method(HttpPost post, String json) {
+                      post.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesShape1NByteArrayEntityToByteArrayEntity() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.entity.NByteArrayEntity;
+
+              class A {
+                  void method(HttpPost post, byte[] bytes) {
+                      post.setEntity(new NByteArrayEntity(bytes, ContentType.APPLICATION_OCTET_STREAM));
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+
+              class A {
+                  void method(HttpPost post, byte[] bytes) {
+                      post.setEntity(new ByteArrayEntity(bytes, ContentType.APPLICATION_OCTET_STREAM));
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesShape1NFileEntityToFileEntity() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.entity.NFileEntity;
+
+              import java.io.File;
+
+              class A {
+                  void method(HttpPost post, File file) {
+                      post.setEntity(new NFileEntity(file, ContentType.APPLICATION_OCTET_STREAM));
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.io.entity.FileEntity;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+
+              import java.io.File;
+
+              class A {
+                  void method(HttpPost post, File file) {
+                      post.setEntity(new FileEntity(file, ContentType.APPLICATION_OCTET_STREAM));
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesShape2WithHoistedRequest() {
+        rewriteRun(
+          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpHost;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.entity.NStringEntity;
+              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
+
+              class A {
+                  BasicAsyncRequestProducer producer(String body) {
+                      HttpPost post = new HttpPost("/api");
+                      post.setEntity(new NStringEntity(body, ContentType.APPLICATION_JSON));
+                      return new BasicAsyncRequestProducer(HttpHost.create("http://example.com"), post);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
+              import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
+
+              class A {
+                  BasicAsyncRequestProducer producer(String body) {
+                      return AsyncRequestBuilder.post("http://example.com" + "/api").setEntity(AsyncEntityProducers.create(body, ContentType.APPLICATION_JSON)).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesShape2WithHoistedRequestAndEntity() {
+        rewriteRun(
+          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpHost;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.entity.NStringEntity;
+              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
+
+              class A {
+                  BasicAsyncRequestProducer producer(String body) {
+                      NStringEntity entity = new NStringEntity(body, ContentType.APPLICATION_JSON);
+                      HttpPost post = new HttpPost("/api");
+                      post.setEntity(entity);
+                      return new BasicAsyncRequestProducer(HttpHost.create("http://example.com"), post);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
+              import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
+
+              class A {
+                  BasicAsyncRequestProducer producer(String body) {
+                      return AsyncRequestBuilder.post("http://example.com" + "/api").setEntity(AsyncEntityProducers.create(body, ContentType.APPLICATION_JSON)).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void doesNotInlineMultiUseLocal() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpHost;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.entity.NStringEntity;
+              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
+
+              class A {
+                  BasicAsyncRequestProducer producer(String body) {
+                      HttpPost post = new HttpPost("/api");
+                      post.setEntity(new NStringEntity(body, ContentType.APPLICATION_JSON));
+                      post.addHeader("X-Extra", "1");
+                      return new BasicAsyncRequestProducer(HttpHost.create("http://example.com"), post);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.io.entity.StringEntity;
+              import org.apache.http.HttpHost;
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.protocol.BasicAsyncRequestProducer;
+
+              class A {
+                  BasicAsyncRequestProducer producer(String body) {
+                      HttpPost post = new HttpPost("/api");
+                      post.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+                      post.addHeader("X-Extra", "1");
+                      return new BasicAsyncRequestProducer(HttpHost.create("http://example.com"), post);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesShape3HttpAsyncMethodsCreatePost() {
+        rewriteRun(
+          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.client.methods.HttpAsyncMethods;
+              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
+
+              import java.net.URI;
+
+              class A {
+                  HttpAsyncRequestProducer producer(URI uri, String body) throws Exception {
+                      return HttpAsyncMethods.createPost(uri, body, ContentType.APPLICATION_JSON);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
+              import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
+
+              import java.net.URI;
+
+              class A {
+                  HttpAsyncRequestProducer producer(URI uri, String body) throws Exception {
+                      return AsyncRequestBuilder.post(uri).setEntity(AsyncEntityProducers.create(body, ContentType.APPLICATION_JSON)).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesShape3HttpAsyncMethodsCreateGet() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.nio.client.methods.HttpAsyncMethods;
+              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
+
+              import java.net.URI;
+
+              class A {
+                  HttpAsyncRequestProducer producer(URI uri) {
+                      return HttpAsyncMethods.createGet(uri);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
+              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
+
+              import java.net.URI;
+
+              class A {
+                  HttpAsyncRequestProducer producer(URI uri) {
+                      return AsyncRequestBuilder.get(uri).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesShape3HttpAsyncMethodsCreateConsumer() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpResponse;
+              import org.apache.http.nio.client.methods.HttpAsyncMethods;
+              import org.apache.http.nio.protocol.HttpAsyncResponseConsumer;
+
+              class A {
+                  HttpAsyncResponseConsumer<HttpResponse> consumer() {
+                      return HttpAsyncMethods.createConsumer();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.async.methods.SimpleResponseConsumer;
+              import org.apache.http.HttpResponse;
+              import org.apache.http.nio.protocol.HttpAsyncResponseConsumer;
+
+              class A {
+                  HttpAsyncResponseConsumer<HttpResponse> consumer() {
+                      return SimpleResponseConsumer.create();
                   }
               }
               """
