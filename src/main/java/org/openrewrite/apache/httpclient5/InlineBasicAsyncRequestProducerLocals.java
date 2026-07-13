@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @EqualsAndHashCode(callSuper = false)
@@ -69,7 +70,11 @@ public class InlineBasicAsyncRequestProducerLocals extends Recipe {
                 if (md.getBody() == null || !methodContainsProducer(md)) {
                     return md;
                 }
-                for (int guard = 0; guard < 16; guard++) {
+                // `findCandidate` returning null is the real exit condition, reached once every inlinable
+                // local is consumed. The counter is only a termination backstop: each pass deletes at least
+                // its declaration statement and never adds one, so passes cannot exceed the initial statement count.
+                int maxPasses = md.getBody().getStatements().size();
+                for (int guard = 0; guard < maxPasses; guard++) {
                     Candidate candidate = findCandidate(md);
                     if (candidate == null) {
                         break;
@@ -80,22 +85,20 @@ public class InlineBasicAsyncRequestProducerLocals extends Recipe {
             }
 
             private boolean methodContainsProducer(J.MethodDeclaration md) {
-                Boolean[] found = {false};
-                new JavaVisitor<Boolean[]>() {
+                return new JavaVisitor<AtomicBoolean>() {
                     @Override
-                    public J visitNewClass(J.NewClass newClass, Boolean[] f) {
+                    public J visitNewClass(J.NewClass newClass, AtomicBoolean found) {
                         if (TypeUtils.isOfClassType(newClass.getType(), FQN_PRODUCER)) {
-                            f[0] = true;
+                            found.set(true);
                         } else if (newClass.getClazz() != null) {
                             JavaType.FullyQualified fq = TypeUtils.asFullyQualified(newClass.getClazz().getType());
                             if (fq != null && FQN_PRODUCER.equals(fq.getFullyQualifiedName())) {
-                                f[0] = true;
+                                found.set(true);
                             }
                         }
-                        return super.visitNewClass(newClass, f);
+                        return super.visitNewClass(newClass, found);
                     }
-                }.visit(md, found);
-                return found[0];
+                }.reduce(md, new AtomicBoolean()).get();
             }
 
             private @Nullable Candidate findCandidate(J.MethodDeclaration md) {
@@ -129,8 +132,7 @@ public class InlineBasicAsyncRequestProducerLocals extends Recipe {
             }
 
             private int countReferences(J.MethodDeclaration md, String name) {
-                AtomicInteger count = new AtomicInteger();
-                new JavaVisitor<AtomicInteger>() {
+                return new JavaVisitor<AtomicInteger>() {
                     @Override
                     public J visitIdentifier(J.Identifier identifier, AtomicInteger c) {
                         if (name.equals(identifier.getSimpleName()) &&
@@ -139,8 +141,7 @@ public class InlineBasicAsyncRequestProducerLocals extends Recipe {
                         }
                         return super.visitIdentifier(identifier, c);
                     }
-                }.visit(md, count);
-                return count.get();
+                }.reduce(md, new AtomicInteger()).get();
             }
 
             private J.@Nullable MethodInvocation findSetEntityOn(List<Statement> statements, int declIndex, String name) {
