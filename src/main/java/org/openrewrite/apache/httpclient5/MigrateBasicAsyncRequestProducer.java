@@ -186,10 +186,18 @@ public class MigrateBasicAsyncRequestProducer extends Recipe {
                     }
 
                     private @Nullable String verbFor(J.NewClass nc) {
-                        if (HTTP_GET_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpGet");
-                        if (HTTP_POST_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpPost");
-                        if (HTTP_PUT_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpPut");
-                        if (HTTP_DELETE_CTOR.matches(nc)) return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpDelete");
+                        if (HTTP_GET_CTOR.matches(nc)) {
+                            return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpGet");
+                        }
+                        if (HTTP_POST_CTOR.matches(nc)) {
+                            return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpPost");
+                        }
+                        if (HTTP_PUT_CTOR.matches(nc)) {
+                            return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpPut");
+                        }
+                        if (HTTP_DELETE_CTOR.matches(nc)) {
+                            return VERB_BY_HTTP_METHOD.get("org.apache.http.client.methods.HttpDelete");
+                        }
                         JavaType.FullyQualified fq = TypeUtils.asFullyQualified(nc.getType());
                         return fq == null ? null : VERB_BY_HTTP_METHOD.get(fq.getFullyQualifiedName());
                     }
