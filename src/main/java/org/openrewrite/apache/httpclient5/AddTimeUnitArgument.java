@@ -24,7 +24,6 @@ import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.Expression;
@@ -70,7 +69,6 @@ public class AddTimeUnitArgument extends Recipe {
                 if (matcher.matches(m)) {
                     J.MethodInvocation templated = JavaTemplate
                             .builder("TimeUnit.#{}")
-                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports("java.util.concurrent.TimeUnit")
                             .build()
                             .apply(
