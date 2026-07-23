@@ -68,18 +68,16 @@ public class AddTimeUnitArgument extends Recipe {
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
                 if (matcher.matches(m)) {
-                    JavaTemplate template = JavaTemplate
+                    J.MethodInvocation templated = JavaTemplate
                             .builder("TimeUnit.#{}")
-                            .contextSensitive()
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports("java.util.concurrent.TimeUnit")
-                            .build();
-
-                    J.MethodInvocation templated = template.apply(
-                            updateCursor(m),
-                            m.getCoordinates().replaceArguments(),
-                            timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
-                    );
+                            .build()
+                            .apply(
+                                    updateCursor(m),
+                                    m.getCoordinates().replaceArguments(),
+                                    timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
+                            );
                     Expression timeUnitArgument = templated.getArguments().get(0).withPrefix(Space.SINGLE_SPACE);
                     m = m.withArguments(ListUtils.concat(m.getArguments(), timeUnitArgument));
 
