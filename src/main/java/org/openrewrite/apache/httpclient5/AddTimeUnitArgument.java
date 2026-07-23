@@ -22,6 +22,7 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
@@ -31,8 +32,6 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Space;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @EqualsAndHashCode(callSuper = false)
@@ -82,18 +81,13 @@ public class AddTimeUnitArgument extends Recipe {
                             timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
                     );
                     Expression timeUnitArgument = templated.getArguments().get(0).withPrefix(Space.SINGLE_SPACE);
-
-                    List<Expression> arguments = new ArrayList<>(m.getArguments());
-                    arguments.add(timeUnitArgument);
-                    m = m.withArguments(arguments);
+                    m = m.withArguments(ListUtils.concat(m.getArguments(), timeUnitArgument));
 
                     JavaType.Method methodType = m.getMethodType();
                     if (methodType != null) {
-                        List<JavaType> parameterTypes = new ArrayList<>(methodType.getParameterTypes());
-                        parameterTypes.add(timeUnitArgument.getType());
-                        List<String> parameterNames = new ArrayList<>(methodType.getParameterNames());
-                        parameterNames.add("timeUnit");
-                        methodType = methodType.withParameterTypes(parameterTypes).withParameterNames(parameterNames);
+                        methodType = methodType
+                                .withParameterTypes(ListUtils.concat(methodType.getParameterTypes(), timeUnitArgument.getType()))
+                                .withParameterNames(ListUtils.concat(methodType.getParameterNames(), "timeUnit"));
                         m = m.withMethodType(methodType).withName(m.getName().withType(methodType));
                     }
                     maybeAddImport("java.util.concurrent.TimeUnit");
