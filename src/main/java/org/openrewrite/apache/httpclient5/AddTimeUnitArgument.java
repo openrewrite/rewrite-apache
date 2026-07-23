@@ -22,12 +22,14 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
-import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.Space;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,20 +70,32 @@ public class AddTimeUnitArgument extends Recipe {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
                 if (matcher.matches(m)) {
                     JavaTemplate template = JavaTemplate
-                            .builder(StringUtils.repeat("#{any()}, ", m.getArguments().size()) + "TimeUnit.#{}")
+                            .builder("TimeUnit.#{}")
                             .contextSensitive()
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports("java.util.concurrent.TimeUnit")
                             .build();
 
-                    List<Object> arguments = new ArrayList<>(m.getArguments());
-                    arguments.add(timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS);
-
-                    m = template.apply(
+                    J.MethodInvocation templated = template.apply(
                             updateCursor(m),
                             m.getCoordinates().replaceArguments(),
-                            arguments.toArray(new Object[0])
+                            timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS
                     );
+                    Expression timeUnitArgument = templated.getArguments().get(0).withPrefix(Space.SINGLE_SPACE);
+
+                    List<Expression> arguments = new ArrayList<>(m.getArguments());
+                    arguments.add(timeUnitArgument);
+                    m = m.withArguments(arguments);
+
+                    JavaType.Method methodType = m.getMethodType();
+                    if (methodType != null) {
+                        List<JavaType> parameterTypes = new ArrayList<>(methodType.getParameterTypes());
+                        parameterTypes.add(timeUnitArgument.getType());
+                        List<String> parameterNames = new ArrayList<>(methodType.getParameterNames());
+                        parameterNames.add("timeUnit");
+                        methodType = methodType.withParameterTypes(parameterTypes).withParameterNames(parameterNames);
+                        m = m.withMethodType(methodType).withName(m.getName().withType(methodType));
+                    }
                     maybeAddImport("java.util.concurrent.TimeUnit");
                 }
                 return m;

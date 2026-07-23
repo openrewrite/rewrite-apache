@@ -123,6 +123,35 @@ class AddTimeUnitArgumentTest implements RewriteTest {
     }
 
     @Test
+    void arithmeticTimeoutArgument() {
+        rewriteRun(
+          spec -> spec.recipe(new AddTimeUnitArgument("A method(int)", null)),
+          stubCode,
+          //language=java
+          java(
+                """
+            class B {
+                void test() {
+                    A a = new A();
+                    a.method(60 * 1000);
+                }
+            }
+            """,
+          """
+            import java.util.concurrent.TimeUnit;
+
+            class B {
+                void test() {
+                    A a = new A();
+                    a.method(60 * 1000, TimeUnit.MILLISECONDS);
+                }
+            }
+            """
+          )
+        );
+    }
+
+    @Test
     void doesModifyMethodsWithMoreThanOneArgument() {
         rewriteRun(
           spec -> spec.recipe(new AddTimeUnitArgument("A method(int, float)", null)),
