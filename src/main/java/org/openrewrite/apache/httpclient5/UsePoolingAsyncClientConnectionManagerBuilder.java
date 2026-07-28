@@ -50,15 +50,17 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
 
     // Methods that can be moved from PoolingAsyncClientConnectionManager to PoolingAsyncClientConnectionManagerBuilder
     // Some methods have different names on the builder
-    private static final Map<String, String> BUILDER_METHOD_MAPPINGS = new LinkedHashMap<String, String>() {{
-        put("setConnectionConfigResolver", "setConnectionConfigResolver");
-        put("setDefaultConnectionConfig", "setDefaultConnectionConfig");
-        put("setDefaultMaxPerRoute", "setMaxConnPerRoute");
-        put("setDefaultTlsConfig", "setDefaultTlsConfig");
-        put("setMaxTotal", "setMaxConnTotal");
-        put("setTlsConfigResolver", "setTlsConfigResolver");
-        put("setValidateAfterInactivity", "setValidateAfterInactivity");
-    }};
+    private static final Map<String, String> BUILDER_METHOD_MAPPINGS;
+    static {
+        BUILDER_METHOD_MAPPINGS = new LinkedHashMap<String, String>();
+        BUILDER_METHOD_MAPPINGS.put("setConnectionConfigResolver", "setConnectionConfigResolver");
+        BUILDER_METHOD_MAPPINGS.put("setDefaultConnectionConfig", "setDefaultConnectionConfig");
+        BUILDER_METHOD_MAPPINGS.put("setDefaultMaxPerRoute", "setMaxConnPerRoute");
+        BUILDER_METHOD_MAPPINGS.put("setDefaultTlsConfig", "setDefaultTlsConfig");
+        BUILDER_METHOD_MAPPINGS.put("setMaxTotal", "setMaxConnTotal");
+        BUILDER_METHOD_MAPPINGS.put("setTlsConfigResolver", "setTlsConfigResolver");
+        BUILDER_METHOD_MAPPINGS.put("setValidateAfterInactivity", "setValidateAfterInactivity");
+    }
 
     String displayName = "Use `PoolingAsyncClientConnectionManagerBuilder` for configuration";
 

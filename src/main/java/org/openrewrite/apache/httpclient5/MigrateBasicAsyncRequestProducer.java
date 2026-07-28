@@ -60,12 +60,14 @@ public class MigrateBasicAsyncRequestProducer extends Recipe {
     private static final MethodMatcher N_BYTE_ARRAY_ENTITY_CTOR = new MethodMatcher(FQN_N_BYTE_ARRAY_ENTITY + " <constructor>(..)");
     private static final MethodMatcher N_FILE_ENTITY_CTOR = new MethodMatcher(FQN_N_FILE_ENTITY + " <constructor>(..)");
 
-    private static final Map<String, String> VERB_BY_HTTP_METHOD = new HashMap<String, String>() {{
-        put("org.apache.http.client.methods.HttpGet", "get");
-        put("org.apache.http.client.methods.HttpPost", "post");
-        put("org.apache.http.client.methods.HttpPut", "put");
-        put("org.apache.http.client.methods.HttpDelete", "delete");
-    }};
+    private static final Map<String, String> VERB_BY_HTTP_METHOD;
+    static {
+        VERB_BY_HTTP_METHOD = new HashMap<String, String>();
+        VERB_BY_HTTP_METHOD.put("org.apache.http.client.methods.HttpGet", "get");
+        VERB_BY_HTTP_METHOD.put("org.apache.http.client.methods.HttpPost", "post");
+        VERB_BY_HTTP_METHOD.put("org.apache.http.client.methods.HttpPut", "put");
+        VERB_BY_HTTP_METHOD.put("org.apache.http.client.methods.HttpDelete", "delete");
+    }
 
     String displayName = "Migrate `BasicAsyncRequestProducer` to `AsyncRequestBuilder`";
 
