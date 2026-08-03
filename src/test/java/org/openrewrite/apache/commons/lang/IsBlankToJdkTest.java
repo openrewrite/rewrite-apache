@@ -32,7 +32,10 @@ class IsBlankToJdkTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.parser(JavaParser.fromJavaVersion()
-            .classpathFromResources(new InMemoryExecutionContext(), "commons-lang3", "plexus-utils", "maven-shared-utils"))
+            .classpathFromResources(new InMemoryExecutionContext(),
+                "commons-lang3",
+                "plexus-utils",
+                "maven-shared-utils"))
           .recipe(new IsBlankToJdk())
           .allSources(s -> s.markers(javaVersion(21)));
     }

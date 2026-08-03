@@ -30,8 +30,12 @@ class MigrateApacheHttpAsyncClientTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),
-            "httpclient-4", "httpcore-4", "httpasyncclient-4", "httpcore-nio-4",
-            "httpclient5", "httpcore5"))
+            "httpclient-4",
+            "httpcore-4",
+            "httpasyncclient-4",
+            "httpcore-nio-4",
+            "httpclient5",
+            "httpcore5"))
           .recipeFromResources(
             "org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_AsyncClientClassMapping",
             "org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping"
