@@ -27,6 +27,13 @@ description: >-
 tags:
   - apache
   - httpclient
+preconditions:
+  # Skip modules that pull in REST Assured; it is still on HttpClient 4 (rest-assured/rest-assured#1696).
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: io.rest-assured
+      artifactIdPattern: rest-assured
+      scope: compile
+      invertMarking: true
 recipeList:
   - org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClientDependencies
