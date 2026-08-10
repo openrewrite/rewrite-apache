@@ -130,8 +130,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
               </project>
               """,
             spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("4\\.5\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 4.5.x in %s", pom).isTrue();
+                Matcher version = Pattern.compile("<commons-collections\\.version>(4\\.\\d+\\.\\d+)</commons-collections\\.version>").matcher(pom);
+                assertThat(version.find()).describedAs("Expected 4.x in %s", pom).isTrue();
                 //language=xml
                 return """
                   <project>
@@ -150,7 +150,7 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
                           </dependency>
                       </dependencies>
                   </project>
-                  """.formatted(version.group(0));
+                  """.formatted(version.group(1));
             })
           )
         );
