@@ -1069,5 +1069,135 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               )
             );
         }
+
+        @Test
+        void skipsModulesThatDependOnRestAssured() {
+            rewriteRun(
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                    import org.apache.http.impl.client.CloseableHttpClient;
+                    import org.apache.http.impl.client.HttpClients;
+
+                    public class A {
+                        CloseableHttpClient getClient() {
+                            return HttpClients.createDefault();
+                        }
+                    }
+                    """
+                  )
+                ),
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents</groupId>
+                                <artifactId>httpclient</artifactId>
+                                <version>4.5.14</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>io.rest-assured</groupId>
+                                <artifactId>rest-assured</artifactId>
+                                <version>5.5.0</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """
+                )
+              )
+            );
+        }
+
+        @Test
+        void stillMigratesWhenRestAssuredIsTestScopeOnly() {
+            rewriteRun(
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                    import org.apache.http.impl.client.CloseableHttpClient;
+                    import org.apache.http.impl.client.HttpClients;
+
+                    public class A {
+                        CloseableHttpClient getClient() {
+                            return HttpClients.createDefault();
+                        }
+                    }
+                    """,
+                    """
+                    import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+                    import org.apache.hc.client5.http.impl.classic.HttpClients;
+
+                    public class A {
+                        CloseableHttpClient getClient() {
+                            return HttpClients.createDefault();
+                        }
+                    }
+                    """
+                  )
+                ),
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents</groupId>
+                                <artifactId>httpclient</artifactId>
+                                <version>4.5.14</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>io.rest-assured</groupId>
+                                <artifactId>rest-assured</artifactId>
+                                <version>5.5.0</version>
+                                <scope>test</scope>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """,
+                  spec -> spec.after(pom -> {
+                      Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                      assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                      String httpClientVersion = version.group();
+                      //language=xml
+                      return """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>org.example</groupId>
+                            <artifactId>example</artifactId>
+                            <version>1.0.0</version>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>org.apache.httpcomponents.client5</groupId>
+                                    <artifactId>httpclient5</artifactId>
+                                    <version>%s</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>io.rest-assured</groupId>
+                                    <artifactId>rest-assured</artifactId>
+                                    <version>5.5.0</version>
+                                    <scope>test</scope>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """.formatted(httpClientVersion);
+                  })
+                )
+              )
+            );
+        }
     }
 }
