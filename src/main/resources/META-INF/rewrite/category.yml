@@ -31,9 +31,19 @@ packageName: org.openrewrite.apache.httpclient5
 description: Recipes for migrating to [Apache HttpClient 5.x](https://hc.apache.org/httpcomponents-client-5.4.x/).
 ---
 type: specs.openrewrite.org/v1beta/category
+name: Apache Commons
+packageName: org.openrewrite.apache.commons
+description: Recipes for [Apache Commons](https://commons.apache.org/) library upgrades and migrations.
+---
+type: specs.openrewrite.org/v1beta/category
 name: Commons Lang
 packageName: org.openrewrite.apache.commons.lang
 description: Recipes for [Apache Commons Lang](https://commons.apache.org/proper/commons-lang/) upgrades and migrations.
+---
+type: specs.openrewrite.org/v1beta/category
+name: Commons Lang 3
+packageName: org.openrewrite.apache.commons.lang3
+description: Recipes for [Apache Commons Lang 3](https://commons.apache.org/proper/commons-lang/) migrations.
 ---
 type: specs.openrewrite.org/v1beta/category
 name: Commons Codec
@@ -51,7 +61,22 @@ packageName: org.openrewrite.apache.commons.collections
 description: Recipes for [Apache Commons Collections](https://commons.apache.org/proper/commons-collections/) migrations.
 ---
 type: specs.openrewrite.org/v1beta/category
+name: Commons Math
+packageName: org.openrewrite.apache.commons.math
+description: Recipes for [Apache Commons Math](https://commons.apache.org/proper/commons-math/) migrations.
+---
+type: specs.openrewrite.org/v1beta/category
 name: Apache POI
 packageName: org.openrewrite.apache.poi
 description: Recipes for [Apache POI](https://poi.apache.org/) spreadsheet library.
+---
+type: specs.openrewrite.org/v1beta/category
+name: Maven Shared Utils
+packageName: org.openrewrite.apache.maven.shared
+description: Recipes for replacing [Maven Shared Utils](https://maven.apache.org/shared/maven-shared-utils/) APIs with Java standard library equivalents.
+---
+type: specs.openrewrite.org/v1beta/category
+name: Plexus
+packageName: org.openrewrite.codehaus.plexus
+description: Recipes for replacing [Plexus](https://codehaus-plexus.github.io/) utilities with Java standard library and SLF4J equivalents.
 ---
