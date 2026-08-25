@@ -65,78 +65,76 @@ public class MigrateRequestConfig extends Recipe {
                         // Cheap check first, to avoid more expensive search
                         new UsesMethod<>(MATCHER_STALE_CHECK_ENABLED),
                         callsSetStaleCheckEnabledFalse()
-                ), new MigrateRequestConfigVisitor());
-    }
+                ), new JavaIsoVisitor<ExecutionContext>() {
 
-    private static class MigrateRequestConfigVisitor extends JavaIsoVisitor<ExecutionContext> {
-
-        @Override
-        public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
-            // setStaleConnectionCheckEnabled is only related to PoolingHttpClientConnectionManager
-            boolean staleEnabled = callsSetStaleCheckEnabledFalse().visitNonNull(method, ctx, getCursor().getParentOrThrow()) != method;
-            if (staleEnabled) {
-                // Find or create a new PoolingHttpClientConnectionManager
-                J.VariableDeclarations connectionManagerVD = findExistingConnectionPool(method);
-                boolean needsNewConnectionManager = connectionManagerVD == null;
-                if (needsNewConnectionManager) {
-                    maybeAddImport(FQN_POOL_CONN_MANAGER5);
-                    method = JavaTemplate.builder(
-                                    "PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = " +
-                                    "new PoolingHttpClientConnectionManager();")
-                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                            .imports(FQN_POOL_CONN_MANAGER5)
-                            .build()
-                            .apply(getCursor(), method.getBody().getCoordinates().firstStatement());
-                    connectionManagerVD = (J.VariableDeclarations) method.getBody().getStatements().get(0);
-                }
-
-                // Set `setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND)`
-                J.Identifier connectionManagerIdentifier = connectionManagerVD.getVariables().get(0).getName();
-                maybeAddImport(FQN_TIME_VALUE);
-                method = JavaTemplate.builder("#{any(" + FQN_POOL_CONN_MANAGER5 + ")}.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);")
-                        .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                        .imports(FQN_TIME_VALUE)
-                        .build()
-                        .apply(updateCursor(method), connectionManagerVD.getCoordinates().after(), connectionManagerIdentifier);
-
-                // Make the connection manager available to set in the method invocation visit below
-                if (needsNewConnectionManager) {
-                    getCursor().putMessage(KEY_POOL_CONN_MANAGER, connectionManagerIdentifier);
-                }
-            }
-            return super.visitMethodDeclaration(method, ctx);
-        }
-
-        private J.@Nullable VariableDeclarations findExistingConnectionPool(J.MethodDeclaration method) {
-            AtomicReference<J.VariableDeclarations> existingConnManager = new AtomicReference<>();
-            new JavaIsoVisitor<AtomicReference<J.VariableDeclarations>>() {
-                @Override
-                public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, AtomicReference<J.VariableDeclarations> ref) {
-                    J.VariableDeclarations vd = super.visitVariableDeclarations(multiVariable, ref);
-                    if (TypeUtils.isOfClassType(vd.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER4)) {
-                        ref.set(vd);
+            @Override
+            public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
+                // setStaleConnectionCheckEnabled is only related to PoolingHttpClientConnectionManager
+                boolean staleEnabled = callsSetStaleCheckEnabledFalse().visitNonNull(method, ctx, getCursor().getParentOrThrow()) != method;
+                if (staleEnabled) {
+                    // Find or create a new PoolingHttpClientConnectionManager
+                    J.VariableDeclarations connectionManagerVD = findExistingConnectionPool(method);
+                    boolean needsNewConnectionManager = connectionManagerVD == null;
+                    if (needsNewConnectionManager) {
+                        maybeAddImport(FQN_POOL_CONN_MANAGER5);
+                        method = JavaTemplate.builder(
+                                        "PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = " +
+                                        "new PoolingHttpClientConnectionManager();")
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                                .imports(FQN_POOL_CONN_MANAGER5)
+                                .build()
+                                .apply(getCursor(), method.getBody().getCoordinates().firstStatement());
+                        connectionManagerVD = (J.VariableDeclarations) method.getBody().getStatements().get(0);
                     }
-                    return vd;
-                }
-            }.visitNonNull(method, existingConnManager, getCursor().getParentOrThrow());
-            return existingConnManager.get();
-        }
 
-        @Override
-        public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-            if (MATCHER_STALE_CHECK_ENABLED.matches(method)) {
-                doAfterVisit(new RemoveMethodInvocationsVisitor(singletonList(PATTERN_STALE_CHECK_ENABLED)));
-            } else if (MATCHER_REQUEST_CONFIG.matches(method)) {
-                J.Identifier connectionManagerIdentifier = getCursor().pollNearestMessage(KEY_POOL_CONN_MANAGER);
-                if (connectionManagerIdentifier != null) {
-                    method = JavaTemplate.builder("#{any()}.setConnectionManager(#{any()});")
+                    // Set `setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND)`
+                    J.Identifier connectionManagerIdentifier = connectionManagerVD.getVariables().get(0).getName();
+                    maybeAddImport(FQN_TIME_VALUE);
+                    method = JavaTemplate.builder("#{any(" + FQN_POOL_CONN_MANAGER5 + ")}.setValidateAfterInactivity(TimeValue.NEG_ONE_MILLISECOND);")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                            .imports(FQN_POOL_CONN_MANAGER5)
+                            .imports(FQN_TIME_VALUE)
                             .build()
-                            .apply(getCursor(), method.getCoordinates().replace(), method, connectionManagerIdentifier);
+                            .apply(updateCursor(method), connectionManagerVD.getCoordinates().after(), connectionManagerIdentifier);
+
+                    // Make the connection manager available to set in the method invocation visit below
+                    if (needsNewConnectionManager) {
+                        getCursor().putMessage(KEY_POOL_CONN_MANAGER, connectionManagerIdentifier);
+                    }
                 }
+                return super.visitMethodDeclaration(method, ctx);
             }
-            return super.visitMethodInvocation(method, ctx);
-        }
+
+            private J.@Nullable VariableDeclarations findExistingConnectionPool(J.MethodDeclaration method) {
+                AtomicReference<J.VariableDeclarations> existingConnManager = new AtomicReference<>();
+                new JavaIsoVisitor<AtomicReference<J.VariableDeclarations>>() {
+                    @Override
+                    public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, AtomicReference<J.VariableDeclarations> ref) {
+                        J.VariableDeclarations vd = super.visitVariableDeclarations(multiVariable, ref);
+                        if (TypeUtils.isOfClassType(vd.getTypeAsFullyQualified(), FQN_POOL_CONN_MANAGER4)) {
+                            ref.set(vd);
+                        }
+                        return vd;
+                    }
+                }.visitNonNull(method, existingConnManager, getCursor().getParentOrThrow());
+                return existingConnManager.get();
+            }
+
+            @Override
+            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                if (MATCHER_STALE_CHECK_ENABLED.matches(method)) {
+                    doAfterVisit(new RemoveMethodInvocationsVisitor(singletonList(PATTERN_STALE_CHECK_ENABLED)));
+                } else if (MATCHER_REQUEST_CONFIG.matches(method)) {
+                    J.Identifier connectionManagerIdentifier = getCursor().pollNearestMessage(KEY_POOL_CONN_MANAGER);
+                    if (connectionManagerIdentifier != null) {
+                        method = JavaTemplate.builder("#{any()}.setConnectionManager(#{any()});")
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                                .imports(FQN_POOL_CONN_MANAGER5)
+                                .build()
+                                .apply(getCursor(), method.getCoordinates().replace(), method, connectionManagerIdentifier);
+                    }
+                }
+                return super.visitMethodInvocation(method, ctx);
+            }
+        });
     }
 }
