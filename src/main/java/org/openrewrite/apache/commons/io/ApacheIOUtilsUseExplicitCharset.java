@@ -99,7 +99,6 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
                         List<Object> args = new ArrayList<>(mi.getArguments());
                         args.add(encoding == null ? "UTF_8" : encoding);
                         mi = JavaTemplate.builder(entry.getValue())
-                                .contextSensitive()
                                 .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-io"))
                                 .imports("java.nio.charset.StandardCharsets")
                                 .build()

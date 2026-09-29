@@ -19,11 +19,13 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.kotlin.KotlinParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.java.Assertions.srcMainJava;
+import static org.openrewrite.kotlin.Assertions.kotlin;
 
 class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
 
@@ -129,6 +131,38 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
                 }
                 """
             )
+          )
+        );
+    }
+
+    @Test
+    void useCharsetInKotlin() {
+        //language=kotlin
+        rewriteRun(
+          spec -> spec.parser(KotlinParser.builder()
+            .classpathFromResources(new InMemoryExecutionContext(), "commons-io")),
+          kotlin(
+            """
+              import org.apache.commons.io.IOUtils
+              import java.io.InputStream
+
+              object SbtVersionDetector {
+                  fun readLinesFromStream(inputStream: InputStream): List<String> {
+                      return IOUtils.readLines(inputStream)
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.io.IOUtils
+              import java.io.InputStream
+              import java.nio.charset.StandardCharsets
+
+              object SbtVersionDetector {
+                  fun readLinesFromStream(inputStream: InputStream): List<String> {
+                      return IOUtils.readLines(inputStream, StandardCharsets.UTF_8)
+                  }
+              }
+              """
           )
         );
     }
