@@ -311,12 +311,10 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
                     </dependencies>
                 </project>
                 """,
-              spec -> spec.after(pom -> {
-                  assertThat(pom)
-                    .doesNotContain("<groupId>commons-collections</groupId>")
-                    .containsOnlyOnce("<artifactId>commons-collections4</artifactId>");
-                  return pom;
-              })
+              spec -> spec.after(pom -> assertThat(pom)
+                .doesNotContain("<groupId>commons-collections</groupId>")
+                .containsOnlyOnce("<artifactId>commons-collections4</artifactId>")
+                .actual())
             ),
             srcMainJava(
               //language=java
