@@ -206,6 +206,53 @@ class IsBlankToJdkTest implements RewriteTest {
           ));
     }
 
+    @Test
+    void replaceNestedInsideOtherCall() {
+        rewriteRun(
+          // language=java
+          java(
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  void test(String first) {
+                      System.out.println(StringUtils.isBlank(first));
+                  }
+              }
+              """,
+            """
+              class A {
+                  void test(String first) {
+                      System.out.println(first == null || first.isBlank());
+                  }
+              }
+              """
+          ));
+    }
+
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
+      StringUtils.isBlank(builder)
+      StringUtils.isNotBlank(builder)
+      !StringUtils.isBlank(builder)
+      StringUtils.isBlank(sequence)
+      StringUtils.isNotBlank(sequence)
+      """)
+    @ParameterizedTest
+    void retainNonStringCharSequence(String beforeLine) {
+        // language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  boolean test(StringBuilder builder, CharSequence sequence) {
+                      return %s;
+                  }
+              }
+              """.formatted(beforeLine)));
+    }
+
     @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isBlank(foo())
       org.apache.commons.lang3.StringUtils # StringUtils.isBlank(first + second)

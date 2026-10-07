@@ -212,6 +212,52 @@ class IsNotEmptyToJdkTest implements RewriteTest {
         );
     }
 
+    @Test
+    void replaceNestedInsideOtherCall() {
+        rewriteRun(
+          // language=java
+          java(
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  void test(String first) {
+                      System.out.println(StringUtils.isEmpty(first));
+                  }
+              }
+              """,
+            """
+              class A {
+                  void test(String first) {
+                      System.out.println(first == null || first.isEmpty());
+                  }
+              }
+              """
+          ));
+    }
+
+    @ValueSource(strings = {
+      "StringUtils.isEmpty(builder)",
+      "StringUtils.isNotEmpty(builder)",
+      "StringUtils.isEmpty(sequence)",
+      "StringUtils.isNotEmpty(sequence)"
+    })
+    @ParameterizedTest
+    void retainNonStringCharSequence(String beforeLine) {
+        // language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  boolean test(StringBuilder builder, CharSequence sequence) {
+                      return %s;
+                  }
+              }
+              """.formatted(beforeLine)));
+    }
+
     @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(foo())
       org.apache.commons.lang3.StringUtils # StringUtils.isEmpty(first + second)

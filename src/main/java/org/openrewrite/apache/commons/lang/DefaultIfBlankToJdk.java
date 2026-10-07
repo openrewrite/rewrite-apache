@@ -27,6 +27,7 @@ import org.openrewrite.java.search.UsesJavaVersion;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.TypeUtils;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -68,6 +69,10 @@ public class DefaultIfBlankToJdk extends Recipe {
 
                 Expression arg0 = mi.getArguments().get(0);
                 Expression arg1 = mi.getArguments().get(1);
+                if (!TypeUtils.isString(arg0.getType()) ||
+                    !TypeUtils.isString(arg1.getType()) && !J.Literal.isLiteralValue(arg1, null)) {
+                    return super.visitMethodInvocation(mi, ctx);
+                }
                 maybeRemoveImport("org.apache.commons.lang3.StringUtils");
                 return JavaTemplate.apply(DEFAULT_IF_BLANK_REPLACEMENT,
                         updateCursor(mi), mi.getCoordinates().replace(),
