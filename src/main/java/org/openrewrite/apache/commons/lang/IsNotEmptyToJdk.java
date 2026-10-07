@@ -28,6 +28,7 @@ import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.template.Semantics;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.TypeUtils;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -75,13 +76,13 @@ public class IsNotEmptyToJdk extends Recipe {
             public J visitMethodInvocation(J.MethodInvocation mi, ExecutionContext ctx) {
                 boolean isEmptyCall = isEmptyMatcher.matches(mi);
                 if (!isEmptyCall && !isNotEmptyMatcher.matches(mi)) {
-                    return mi;
+                    return super.visitMethodInvocation(mi, ctx);
                 }
 
                 Expression arg = mi.getArguments().get(0);
 
                 // Replace StringUtils.isEmpty(var) with var == null || var.isEmpty()
-                if (isRepeatableArgument(arg)) {
+                if (isRepeatableArgument(arg) && TypeUtils.isString(arg.getType())) {
                     JavaTemplate replacementTemplate = isEmptyCall ? isEmptyReplacement : isNotEmptyReplacement;
                     // Maybe remove imports
                     maybeRemoveImport("org.apache.commons.lang3.StringUtils");

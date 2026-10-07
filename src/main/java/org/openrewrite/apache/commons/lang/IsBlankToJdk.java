@@ -27,6 +27,7 @@ import org.openrewrite.java.search.UsesJavaVersion;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.TypeUtils;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -87,7 +88,7 @@ public class IsBlankToJdk extends Recipe {
                 }
 
                 Expression arg = mi.getArguments().get(0);
-                if (!isRepeatableArgument(arg)) {
+                if (!isRepeatableArgument(arg) || !TypeUtils.isString(arg.getType())) {
                     return super.visitUnary(unary, ctx);
                 }
 
@@ -104,13 +105,13 @@ public class IsBlankToJdk extends Recipe {
             public J visitMethodInvocation(J.MethodInvocation mi, ExecutionContext ctx) {
                 boolean isBlankCall = isBlankMatcher.matches(mi);
                 if (!isBlankCall && !isNotBlankMatcher.matches(mi)) {
-                    return mi;
+                    return super.visitMethodInvocation(mi, ctx);
                 }
 
                 Expression arg = mi.getArguments().get(0);
 
                 // Replace StringUtils.isBlank(var) with var == null || var.isBlank()
-                if (isRepeatableArgument(arg)) {
+                if (isRepeatableArgument(arg) && TypeUtils.isString(arg.getType())) {
                     String template = isBlankCall ? IS_BLANK_REPLACEMENT : IS_NOT_BLANK_REPLACEMENT;
                     maybeRemoveImport("org.apache.commons.lang3.StringUtils");
                     maybeRemoveImport("org.apache.maven.shared.utils.StringUtils");

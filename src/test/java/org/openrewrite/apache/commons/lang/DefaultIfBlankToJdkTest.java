@@ -65,6 +65,7 @@ class DefaultIfBlankToJdkTest implements RewriteTest {
     @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
       org.apache.commons.lang3.StringUtils # StringUtils.defaultIfBlank(first, "fallback") # first == null || first.isBlank() ? "fallback" : first
       org.apache.commons.lang3.StringUtils # StringUtils.defaultIfBlank(field, "fallback") # field == null || field.isBlank() ? "fallback" : field
+      org.apache.commons.lang3.StringUtils # StringUtils.defaultIfBlank(first, null) # first == null || first.isBlank() ? null : first
       """)
     @ParameterizedTest
     void replaceDirectUse(String classname, String beforeLine, String afterLine) {
@@ -88,6 +89,51 @@ class DefaultIfBlankToJdkTest implements RewriteTest {
                   }
               }
               """.formatted(afterLine)));
+    }
+
+    @Test
+    void replaceNestedInsideOtherCall() {
+        rewriteRun(
+          // language=java
+          java(
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  void test(String first) {
+                      System.out.println(StringUtils.defaultIfBlank(first, "fallback"));
+                  }
+              }
+              """,
+            """
+              class A {
+                  void test(String first) {
+                      System.out.println(first == null || first.isBlank() ? "fallback" : first);
+                  }
+              }
+              """
+          ));
+    }
+
+    @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
+      StringUtils.defaultIfBlank(builder, "fallback")
+      StringUtils.defaultIfBlank(sequence, "fallback")
+      StringUtils.defaultIfBlank(first, builder)
+      """)
+    @ParameterizedTest
+    void retainNonStringCharSequence(String beforeLine) {
+        // language=java
+        rewriteRun(
+          java(
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  CharSequence test(String first, StringBuilder builder, CharSequence sequence) {
+                      return %s;
+                  }
+              }
+              """.formatted(beforeLine)));
     }
 
     @CsvSource(delimiter = '#', commentCharacter = '\0', textBlock = """
