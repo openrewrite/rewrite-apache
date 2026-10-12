@@ -1020,7 +1020,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     """,
                   spec -> spec.after(pom -> assertThat(pom)
                     .contains("<artifactId>httpclient5</artifactId>")
-                    .containsPattern("<version>5\\.4\\.\\d+</version>")
+                    .containsPattern("<version>5\\.6\\.\\d+</version>")
                     .actual())
                 )
               )
