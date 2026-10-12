@@ -825,8 +825,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       </project>
                       """,
                     spec -> spec.after(pom -> {
-                        Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                        assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                        Matcher version = Pattern.compile("5\\.6\\.\\d+").matcher(pom);
+                        assertThat(version.find()).describedAs("Expected 5.6.x in %s", pom).isTrue();
                         String httpClientVersion = version.group();
                         //language=xml
                         return """
@@ -894,8 +894,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     </project>
                     """,
                   spec -> spec.after(pom -> {
-                      Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                      assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                      Matcher version = Pattern.compile("5\\.6\\.\\d+").matcher(pom);
+                      assertThat(version.find()).describedAs("Expected 5.6.x in %s", pom).isTrue();
                       String httpClientVersion = version.group();
                       //language=xml
                       return """
@@ -1168,8 +1168,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     </project>
                     """,
                   spec -> spec.after(pom -> {
-                      Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                      assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                      Matcher version = Pattern.compile("5\\.6\\.\\d+").matcher(pom);
+                      assertThat(version.find()).describedAs("Expected 5.6.x in %s", pom).isTrue();
                       String httpClientVersion = version.group();
                       //language=xml
                       return """
