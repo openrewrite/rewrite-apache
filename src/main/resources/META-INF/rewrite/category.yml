@@ -28,7 +28,7 @@ description: Recipes for migrating from [Apache HttpClient 4.x](https://hc.apach
 type: specs.openrewrite.org/v1beta/category
 name: HttpClient 5
 packageName: org.openrewrite.apache.httpclient5
-description: Recipes for migrating to [Apache HttpClient 5.x](https://hc.apache.org/httpcomponents-client-5.4.x/).
+description: Recipes for migrating to [Apache HttpClient 5.x](https://hc.apache.org/httpcomponents-client-5.6.x/).
 ---
 type: specs.openrewrite.org/v1beta/category
 name: Apache Commons

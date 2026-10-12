@@ -120,8 +120,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               </project>
               """,
             spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.3\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.3.x in %s", pom).isTrue();
+                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
+                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
                 //language=xml
                 return """
                   <project>
