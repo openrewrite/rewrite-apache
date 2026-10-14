@@ -236,13 +236,13 @@ class IsNotEmptyToJdkTest implements RewriteTest {
           ));
     }
 
+    @ParameterizedTest
     @ValueSource(strings = {
       "StringUtils.isEmpty(builder)",
       "StringUtils.isNotEmpty(builder)",
       "StringUtils.isEmpty(sequence)",
       "StringUtils.isNotEmpty(sequence)"
     })
-    @ParameterizedTest
     void retainNonStringCharSequence(String beforeLine) {
         // language=java
         rewriteRun(

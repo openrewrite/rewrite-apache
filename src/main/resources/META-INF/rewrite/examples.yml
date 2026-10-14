@@ -163,7 +163,7 @@ examples:
               CollectionUtils.reverseArray(input);
               IdentityHashMap identityMap = new IdentityHashMap();
               Map emptyMap = Collections.emptyMap();
-              CopyOnWriteArrayList fastList = new CopyOnWriteArrayList(100);
+              CopyOnWriteArrayList fastList = new CopyOnWriteArrayList();
               List emptyList = Collections.emptyList();
           }
       }
@@ -734,6 +734,55 @@ examples:
       class A {
           boolean test(String first) {
               return first == null || first.isEmpty();
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.ParameterizeRawStrLookupSubclasses
+examples:
+- description: '`ParameterizeRawStrLookupSubclassesTest#addStringTypeArgument`'
+  sources:
+  - before: |
+      import org.apache.commons.text.StrLookup;
+
+      class EnvironmentLookup extends StrLookup {
+          @Override
+          public String lookup(String key) {
+              return System.getenv(key);
+          }
+      }
+    after: |
+      import org.apache.commons.text.StrLookup;
+
+      class EnvironmentLookup extends StrLookup<String> {
+          @Override
+          public String lookup(String key) {
+              return System.getenv(key);
+          }
+      }
+    language: java
+---
+type: specs.openrewrite.org/v1beta/example
+recipeName: org.openrewrite.apache.commons.lang.SystemUtilsIsJavaVersionAtLeastToJavaVersion
+examples:
+- description: '`SystemUtilsIsJavaVersionAtLeastToJavaVersionTest#replaceFloatArgument`'
+  sources:
+  - before: |
+      import org.apache.commons.lang.SystemUtils;
+
+      class A {
+          boolean atLeast14() {
+              return SystemUtils.isJavaVersionAtLeast(1.4f);
+          }
+      }
+    after: |
+      import org.apache.commons.lang.SystemUtils;
+      import org.apache.commons.lang3.JavaVersion;
+
+      class A {
+          boolean atLeast14() {
+              return SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_4);
           }
       }
     language: java

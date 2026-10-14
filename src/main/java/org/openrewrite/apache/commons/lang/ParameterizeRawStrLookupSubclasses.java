@@ -74,7 +74,7 @@ public class ParameterizeRawStrLookupSubclasses extends Recipe {
             }
 
             private J.ParameterizedType parameterize(TypeTree typeTree) {
-                Expression typeArgument = ((Expression) TypeTree.build("String"))
+                Expression typeArgument = TypeTree.build("String")
                         .withType(JavaType.ShallowClass.build("java.lang.String"));
                 return new J.ParameterizedType(
                         Tree.randomId(),

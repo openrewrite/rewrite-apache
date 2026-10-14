@@ -97,8 +97,8 @@ class SystemUtilsIsJavaVersionAtLeastToJavaVersionTest implements RewriteTest {
               """.formatted(constant)));
     }
 
-    @ValueSource(strings = {"131", "1.35f", "required", "200"})
     @ParameterizedTest
+    @ValueSource(strings = {"131", "1.35f", "required", "200"})
     void retainUnmappableArgument(String before) {
         // language=java
         rewriteRun(
