@@ -700,6 +700,29 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
+    void proxyAuthenticationStrategyToDefaultAuthenticationStrategy() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+
+              class A {
+                  ProxyAuthenticationStrategy strategy = new ProxyAuthenticationStrategy();
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.impl.DefaultAuthenticationStrategy;
+
+              class A {
+                  DefaultAuthenticationStrategy strategy = new DefaultAuthenticationStrategy();
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void httpConstantsAndTypes() {
         rewriteRun(
           //language=java
