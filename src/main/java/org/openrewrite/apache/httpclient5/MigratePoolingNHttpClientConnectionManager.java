@@ -130,6 +130,11 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                                 null
                         ));
                     }
+                    JavaType.Method mt = md.getMethodType();
+                    if (mt != null) {
+                        mt = mt.withReturnType(newType);
+                        md = md.withMethodType(mt).withName(md.getName().withType(mt));
+                    }
                 }
                 return md;
             }
