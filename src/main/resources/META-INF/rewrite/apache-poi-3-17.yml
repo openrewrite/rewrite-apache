@@ -87,9 +87,6 @@ recipeList:
       existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_CENTER_SELECTION
       fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER_SELECTION
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
-      existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.ALIGN_CENTER_SELECTION
-      fullyQualifiedConstantName: org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER_SELECTION
-  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
       existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellStyle.BORDER_NONE
       fullyQualifiedConstantName: org.apache.poi.ss.usermodel.BorderStyle.NONE
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:

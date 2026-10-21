@@ -381,10 +381,6 @@ recipeList:
       newPackageName: org.apache.hc.client5.http.cookie
 
   - org.openrewrite.java.ChangePackage:
-      oldPackageName: org.apache.http.cookie
-      newPackageName: org.apache.hc.client5.http.cookie
-
-  - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.annotation
       newPackageName: org.apache.hc.core5.annotation
 
@@ -717,9 +713,6 @@ recipeList:
       comment: "No generic migration for classes in the `org.apache.http.params` package exists, please migrate manually"
       typePattern: org.apache.http.params..*
   # Fixing specific mappings
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.apache.hc.core5.http.RequestLine
-      newFullyQualifiedTypeName: org.apache.hc.core5.http.message.RequestLine
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.core5.http.RequestLine
       newFullyQualifiedTypeName: org.apache.hc.core5.http.message.RequestLine
