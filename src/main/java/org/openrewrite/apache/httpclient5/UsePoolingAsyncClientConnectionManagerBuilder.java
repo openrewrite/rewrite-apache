@@ -106,8 +106,8 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                 }
 
                 // Remove statements that will be folded into the builder
-                b = b.withStatements(ListUtils.map(b.getStatements(), stmt ->
-                        statementsToRemove.contains(stmt) ? null : stmt));
+                b = b.withStatements(ListUtils.filter(b.getStatements(), stmt ->
+                        !statementsToRemove.contains(stmt)));
 
                 // Update variable declarations to include builder method calls
                 return maybeAutoFormat(b, b.withStatements(ListUtils.map(b.getStatements(), stmt -> {
