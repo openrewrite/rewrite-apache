@@ -105,8 +105,7 @@ public class MigrateRequestConfig extends Recipe {
             }
 
             private J.@Nullable VariableDeclarations findExistingConnectionPool(J.MethodDeclaration method) {
-                AtomicReference<J.VariableDeclarations> existingConnManager = new AtomicReference<>();
-                new JavaIsoVisitor<AtomicReference<J.VariableDeclarations>>() {
+                return new JavaIsoVisitor<AtomicReference<J.VariableDeclarations>>() {
                     @Override
                     public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, AtomicReference<J.VariableDeclarations> ref) {
                         J.VariableDeclarations vd = super.visitVariableDeclarations(multiVariable, ref);
@@ -115,8 +114,7 @@ public class MigrateRequestConfig extends Recipe {
                         }
                         return vd;
                     }
-                }.visitNonNull(method, existingConnManager, getCursor().getParentOrThrow());
-                return existingConnManager.get();
+                }.reduce(method, new AtomicReference<>(), getCursor().getParentOrThrow()).get();
             }
 
             @Override

@@ -96,8 +96,7 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                             // Add a logger field
                             cd = (J.ClassDeclaration) AddLogger.addSlf4jLogger(cd, LOGGER_VARIABLE_NAME, ctx)
                                     .visitNonNull(cd, ctx, getCursor().getParentTreeCursor());
-                            AtomicReference<J.Identifier> loggerFieldReference = new AtomicReference<>();
-                            new JavaIsoVisitor<AtomicReference<J.Identifier>>() {
+                            AtomicReference<J.Identifier> loggerFieldReference = new JavaIsoVisitor<AtomicReference<J.Identifier>>() {
                                 @Override
                                 public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, AtomicReference<J.Identifier> ref) {
                                     for (J.VariableDeclarations.NamedVariable var : multiVariable.getVariables()) {
@@ -107,7 +106,7 @@ public class AbstractLogEnabledToSlf4j extends Recipe {
                                     }
                                     return super.visitVariableDeclarations(multiVariable, ref);
                                 }
-                            }.visit(cd, loggerFieldReference, getCursor().getParentTreeCursor());
+                            }.reduce(cd, new AtomicReference<>(), getCursor().getParentTreeCursor());
 
                             // Replace calls to getLogger() with the logger field
                             cd = (J.ClassDeclaration) new JavaVisitor<ExecutionContext>() {
