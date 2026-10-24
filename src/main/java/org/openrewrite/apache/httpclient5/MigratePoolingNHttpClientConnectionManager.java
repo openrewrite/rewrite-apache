@@ -22,6 +22,7 @@ import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.internal.ListUtils;
+import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
@@ -29,6 +30,9 @@ import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = false)
 @Value
@@ -54,6 +58,17 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                 if (TypeUtils.isOfClassType(type, FQN_OLD)) {
                     maybeRemoveImport(FQN_OLD);
                     maybeAddImport(FQN_BUILDER);
+                    // Dropping the constructor's arguments may remove the last use of the types they name
+                    new JavaIsoVisitor<Set<String>>() {
+                        @Override
+                        public J.Identifier visitIdentifier(J.Identifier ident, Set<String> argumentTypes) {
+                            JavaType.FullyQualified fq = TypeUtils.asFullyQualified(ident.getType());
+                            if (fq != null && ident.getFieldType() == null) {
+                                argumentTypes.add(fq.getFullyQualifiedName());
+                            }
+                            return ident;
+                        }
+                    }.reduce(nc.getArguments(), new HashSet<>()).forEach(this::maybeRemoveImport);
                     return JavaTemplate.builder("PoolingAsyncClientConnectionManagerBuilder.create().build()")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                             .imports(FQN_BUILDER)

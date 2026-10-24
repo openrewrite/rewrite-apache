@@ -152,7 +152,6 @@ class MigratePoolingNHttpClientConnectionManagerTest implements RewriteTest {
             """
               import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
               import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
-              import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 
               class A {
                   PoolingAsyncClientConnectionManager createConnectionManager() throws Exception {
