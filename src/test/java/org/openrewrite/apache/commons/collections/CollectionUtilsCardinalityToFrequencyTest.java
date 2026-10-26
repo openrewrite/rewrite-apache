@@ -17,6 +17,7 @@ package org.openrewrite.apache.commons.collections;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
@@ -312,6 +313,54 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
             }
             """)
         );
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "nested, Objects", "nested, IterableUtils",
+      "parameter, Objects", "parameter, IterableUtils",
+      "local, Objects", "local, IterableUtils",
+      "imported, Objects", "imported, IterableUtils"
+    })
+    void targetNamesRemainBoundToTheUtilityClasses(String scope, String name) {
+        String importConflict = "imported".equals(scope) ? "import binding.Owner." + name + ";\n\n" : "";
+        String nested = "nested".equals(scope) ? "    static class " + name + " {}\n\n" : "";
+        String parameter = "parameter".equals(scope) ? ", Object " + name : "";
+        String argument = "parameter".equals(scope) ? ", null" : "";
+        String local = "local".equals(scope) ? "        Object " + name + " = null;\n" : "";
+        String owner = "imported".equals(scope) ? "\nclass Owner {\n    static class " + name + " {}\n}\n" : "";
+        String before = """
+          package binding;
+
+          %simport org.apache.commons.collections4.CollectionUtils;
+
+          public class RuntimeExample {
+          %s    public static String exercise() {
+                  Iterable<Object> values = java.util.Arrays.<Object>asList("x", "x", null);
+                  return Integer.toString(count("x", values%s));
+              }
+
+              static int count(Object value, Iterable<Object> values%s) {
+          %s        return CollectionUtils.cardinality(value, values);
+              }
+          }
+          %s""".formatted(importConflict, nested, argument, parameter, local, owner);
+        String iterableUtils = "IterableUtils".equals(name) ? "org.apache.commons.collections4.IterableUtils" : "IterableUtils";
+        String objects = "Objects".equals(name) ? "java.util.Objects" : "Objects";
+        String imports = "IterableUtils".equals(name) ? "import java.util.Objects;\n" :
+          "import org.apache.commons.collections4.IterableUtils;\n";
+        String expected = before.replace("import org.apache.commons.collections4.CollectionUtils;\n", imports)
+          .replace("CollectionUtils.cardinality(value, values)",
+            iterableUtils + ".frequency(" + objects + ".requireNonNull(values), value)")
+          .replace("import binding.Owner.Objects;\n\nimport org.", "import binding.Owner.Objects;\nimport org.");
+        // Compile the actual printed result before asserting its text, including Java name resolution.
+        rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before,
+          source -> source.after(actual -> {
+              CardinalityRuntimeSupport.assertEquivalent(
+                "binding-" + scope + "-" + name, "binding.RuntimeExample", before, actual, "2");
+              return expected;
+          })));
+
     }
 
     @Test

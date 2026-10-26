@@ -38,21 +38,26 @@ final class CardinalityRuntimeSupport {
     }
 
     static void assertEquivalent(String before, String after) {
+        assertEquivalent("runtime", "RuntimeExample", before, after,
+                "2|1|NullPointerException|NH|ArrayIndexOutOfBoundsException|qualifier");
+    }
+
+    static void assertEquivalent(String caseName, String className, String before, String after, String expected) {
         try {
             Path commons41 = Paths.get(System.getProperty("commonsCollections41Jar"));
             Path commons44 = Paths.get(CollectionUtils.class.getProtectionDomain().getCodeSource().getLocation().toURI());
             for (Path jar : Arrays.asList(commons41, commons44)) {
-                Path root = Paths.get("build", "cardinality-runtime-proof", jar.getFileName().toString());
-                String baseline = compileAndRun(root.resolve("baseline"), before, jar);
-                String candidate = compileAndRun(root.resolve("candidate"), after, jar);
-                assertThat(baseline).isEqualTo("2|1|NullPointerException|NH|ArrayIndexOutOfBoundsException|qualifier");
+                Path root = Paths.get("build", "cardinality-runtime-proof", caseName, jar.getFileName().toString());
+                String baseline = compileAndRun(root.resolve("baseline"), className, before, jar);
+                String candidate = compileAndRun(root.resolve("candidate"), className, after, jar);
+                assertThat(baseline).isEqualTo(expected);
                 assertThat(candidate).isEqualTo(baseline);
                 String receipt = "jar=" + jar + "\njarSHA256=" + sha256(Files.readAllBytes(jar)) +
                         "\njavaVersion=" + System.getProperty("java.version") + "\nrelease=8\nbaseline=" + baseline +
                         "\ncandidate=" + candidate + "\nbeforeSHA256=" + sha256(before.getBytes(StandardCharsets.UTF_8)) +
                         "\nafterSHA256=" + sha256(after.getBytes(StandardCharsets.UTF_8)) +
-                        "\nbaselineClassSHA256=" + sha256(Files.readAllBytes(root.resolve("baseline/RuntimeExample.class"))) +
-                        "\ncandidateClassSHA256=" + sha256(Files.readAllBytes(root.resolve("candidate/RuntimeExample.class"))) + "\n";
+                        "\nbaselineClassSHA256=" + sha256(Files.readAllBytes(root.resolve("baseline/" + className.replace('.', '/') + ".class"))) +
+                        "\ncandidateClassSHA256=" + sha256(Files.readAllBytes(root.resolve("candidate/" + className.replace('.', '/') + ".class"))) + "\n";
                 Files.write(root.resolve("result.txt"), receipt.getBytes(StandardCharsets.UTF_8));
                 System.out.println(receipt);
             }
@@ -61,7 +66,7 @@ final class CardinalityRuntimeSupport {
         }
     }
 
-    private static String compileAndRun(Path directory, String source, Path jar) throws Exception {
+    private static String compileAndRun(Path directory, String className, String source, Path jar) throws Exception {
         Files.createDirectories(directory);
         Path sourceFile = directory.resolve("RuntimeExample.java");
         Files.write(sourceFile, source.getBytes(StandardCharsets.UTF_8));
@@ -76,7 +81,7 @@ final class CardinalityRuntimeSupport {
         }
         try (URLClassLoader loader = new URLClassLoader(new URL[]{directory.toUri().toURL(), jar.toUri().toURL()},
                 ClassLoader.getPlatformClassLoader())) {
-            return (String) loader.loadClass("RuntimeExample").getMethod("exercise").invoke(null);
+            return (String) loader.loadClass(className).getMethod("exercise").invoke(null);
         }
     }
 
