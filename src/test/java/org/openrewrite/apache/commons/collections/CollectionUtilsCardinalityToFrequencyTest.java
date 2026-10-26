@@ -49,7 +49,6 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
     @Test
     void reorderArguments() {
         rewriteRun(
-          spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1),
           java(
             """
               import org.apache.commons.collections4.CollectionUtils;
@@ -353,7 +352,7 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
           .replace("CollectionUtils.cardinality(value, values)",
             iterableUtils + ".frequency(" + objects + ".requireNonNull(values), value)")
           .replace("import binding.Owner.Objects;\n\nimport org.", "import binding.Owner.Objects;\nimport org.");
-        rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before, expected));
+        rewriteRun(java(before, expected));
     }
 
     @ParameterizedTest

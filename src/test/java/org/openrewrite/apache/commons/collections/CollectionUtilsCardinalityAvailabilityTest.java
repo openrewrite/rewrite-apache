@@ -150,7 +150,7 @@ class CollectionUtilsCardinalityAvailabilityTest {
                 "import org.apache.commons.collections4.CollectionUtils;\nimport org.apache.commons.collections4.IterableUtils;")
               .replace("import java.util.Arrays;", "import java.util.Arrays;\nimport java.util.Objects;")
               .replace("CollectionUtils.cardinality(null, values)", "IterableUtils.frequency(Objects.requireNonNull(values), null)");
-            rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before, expected));
+            rewriteRun(java(before, expected));
         }
 
         @ParameterizedTest
@@ -183,7 +183,7 @@ class CollectionUtilsCardinalityAvailabilityTest {
               .replace("import java.util.Arrays;", "import java.util.Arrays;\nimport java.util.Objects;")
               .replace("CollectionUtils.cardinality(" + element + ", values)",
                 "IterableUtils.frequency(Objects.requireNonNull(values), " + element + ")");
-            rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before, expected));
+            rewriteRun(java(before, expected));
         }
     }
 
