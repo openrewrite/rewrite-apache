@@ -404,7 +404,7 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
               private static String trace = "";
 
               public static String exercise() {
-                  Iterable<Object> values = Arrays.asList("x", null, "x");
+                  Iterable<Object> values = Arrays.<Object>asList("x", null, "x");
                   int duplicates = CollectionUtils.cardinality("x", values);
                   int nulls = CollectionUtils.cardinality(null, values);
                   Iterable<Object> missing = null;
@@ -444,7 +444,7 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
 
               private static Iterable<Object> haystack() {
                   trace += "H";
-                  return Collections.singletonList("x");
+                  return Collections.<Object>singletonList("x");
               }
 
               private static CollectionUtils qualifier() {

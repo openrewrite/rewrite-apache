@@ -105,7 +105,7 @@ public class CollectionUtilsCardinalityToFrequency extends Recipe {
                             !TypeUtils.isOfClassType(m.getMethodType().getParameterTypes().get(1), "java.lang.Iterable") ||
                             m.getTypeParameters() != null && !m.getTypeParameters().isEmpty() ||
                             !isClassQualifier(m.getSelect()) ||
-                            !isStable(m.getArguments().get(0)) || !isStable(m.getArguments().get(1))) {
+                            !isStable(m.getArguments().get(0), true) || !isStable(m.getArguments().get(1), false)) {
                             return m;
                         }
                         Set<String> namesInScope = VariableNameUtils.findNamesInScope(getCursor());
@@ -141,12 +141,14 @@ public class CollectionUtilsCardinalityToFrequency extends Recipe {
                         return select instanceof J.FieldAccess && ((J.FieldAccess) select).getName().getFieldType() == null;
                     }
 
-                    private boolean isStable(Expression expression) {
+                    private boolean isStable(Expression expression, boolean allowLiteral) {
                         if (expression instanceof J.Parentheses) {
-                            return isStable((Expression) ((J.Parentheses<?>) expression).getTree());
+                            return isStable((Expression) ((J.Parentheses<?>) expression).getTree(), allowLiteral);
                         }
                         if (expression instanceof J.Literal) {
-                            return true;
+                            // A literal iterable is null. Retain it: Java 7 infers Object for
+                            // requireNonNull(null), which cannot be passed to frequency(Iterable, ...).
+                            return allowLiteral;
                         }
                         if (expression instanceof J.Identifier) {
                             JavaType.Variable variable = ((J.Identifier) expression).getFieldType();
