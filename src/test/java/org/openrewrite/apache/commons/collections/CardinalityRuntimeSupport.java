@@ -46,38 +46,53 @@ final class CardinalityRuntimeSupport {
         try {
             Path commons41 = Paths.get(System.getProperty("commonsCollections41Jar"));
             Path commons44 = Paths.get(CollectionUtils.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-            for (Path jar : Arrays.asList(commons41, commons44)) {
-                Path root = Paths.get("build", "cardinality-runtime-proof", caseName, jar.getFileName().toString());
-                String baseline = compileAndRun(root.resolve("baseline"), className, before, jar);
-                String candidate = compileAndRun(root.resolve("candidate"), className, after, jar);
-                assertThat(baseline).isEqualTo(expected);
-                assertThat(candidate).isEqualTo(baseline);
-                String receipt = "jar=" + jar + "\njarSHA256=" + sha256(Files.readAllBytes(jar)) +
-                        "\njavaVersion=" + System.getProperty("java.version") + "\nrelease=8\nbaseline=" + baseline +
-                        "\ncandidate=" + candidate + "\nbeforeSHA256=" + sha256(before.getBytes(StandardCharsets.UTF_8)) +
-                        "\nafterSHA256=" + sha256(after.getBytes(StandardCharsets.UTF_8)) +
-                        "\nbaselineClassSHA256=" + sha256(Files.readAllBytes(root.resolve("baseline/" + className.replace('.', '/') + ".class"))) +
-                        "\ncandidateClassSHA256=" + sha256(Files.readAllBytes(root.resolve("candidate/" + className.replace('.', '/') + ".class"))) + "\n";
-                Files.write(root.resolve("result.txt"), receipt.getBytes(StandardCharsets.UTF_8));
-                System.out.println(receipt);
+            for (int release : Arrays.asList(7, 8)) {
+                for (Path jar : Arrays.asList(commons41, commons44)) {
+                    Path root = Paths.get("build", "cardinality-minimum-runtime-proof", "release-" + release,
+                            caseName, jar.getFileName().toString());
+                    String baseline = compileAndRun(root.resolve("baseline"), className, before, jar, release);
+                    String candidate = compileAndRun(root.resolve("candidate"), className, after, jar, release);
+                    assertThat(baseline).isEqualTo(expected);
+                    assertThat(candidate).isEqualTo(baseline);
+                    String receipt = "jar=" + jar + "\njarSHA256=" + sha256(Files.readAllBytes(jar)) +
+                            "\njavaVersion=" + System.getProperty("java.version") + "\nrelease=" + release +
+                            "\ncompiler=" + (release == 7 ? System.getProperty("cardinalityJava7Compiler") : "native JSR199") +
+                            "\ncompilerVersion=" + (release == 7 ? System.getProperty("cardinalityJava7CompilerVersion") : System.getProperty("java.version")) +
+                            "\nbaseline=" + baseline +
+                            "\ncandidate=" + candidate + "\nbeforeSHA256=" + sha256(before.getBytes(StandardCharsets.UTF_8)) +
+                            "\nafterSHA256=" + sha256(after.getBytes(StandardCharsets.UTF_8)) +
+                            "\nbaselineClassSHA256=" + sha256(Files.readAllBytes(root.resolve("baseline/" + className.replace('.', '/') + ".class"))) +
+                            "\ncandidateClassSHA256=" + sha256(Files.readAllBytes(root.resolve("candidate/" + className.replace('.', '/') + ".class"))) + "\n";
+                    Files.write(root.resolve("result.txt"), receipt.getBytes(StandardCharsets.UTF_8));
+                    System.out.println(receipt);
+                }
             }
         } catch (Exception e) {
             throw new AssertionError("Actual recipe output must compile and preserve behavior against the real Commons jars", e);
         }
     }
 
-    private static String compileAndRun(Path directory, String className, String source, Path jar) throws Exception {
+    private static String compileAndRun(Path directory, String className, String source, Path jar, int release) throws Exception {
         Files.createDirectories(directory);
         Path sourceFile = directory.resolve("RuntimeExample.java");
         Files.write(sourceFile, source.getBytes(StandardCharsets.UTF_8));
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        assertThat(compiler).isNotNull();
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        try (StandardJavaFileManager files = compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8)) {
-            boolean compiled = compiler.getTask(null, files, diagnostics,
-                    Arrays.asList("--release", "8", "-classpath", jar.toString(), "-d", directory.toString()), null,
-                    files.getJavaFileObjects(sourceFile.toFile())).call();
-            assertThat(compiled).as("Actual output compiler diagnostics: %s", diagnostics.getDiagnostics()).isTrue();
+        if (release == 7) {
+            Process compiler = new ProcessBuilder(System.getProperty("cardinalityJava7Compiler"), "-J-Xmx512m",
+                    "--release", "7", "-classpath", jar.toString(), "-d", directory.toString(), sourceFile.toString())
+                    .redirectErrorStream(true).start();
+            String diagnostics = new String(compiler.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            Files.write(directory.resolve("compiler.log"), diagnostics.getBytes(StandardCharsets.UTF_8));
+            assertThat(compiler.waitFor()).as("Actual Java 7 output compiler diagnostics: %s", diagnostics).isZero();
+        } else {
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            assertThat(compiler).isNotNull();
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            try (StandardJavaFileManager files = compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8)) {
+                boolean compiled = compiler.getTask(null, files, diagnostics,
+                        Arrays.asList("--release", "8", "-classpath", jar.toString(), "-d", directory.toString()), null,
+                        files.getJavaFileObjects(sourceFile.toFile())).call();
+                assertThat(compiled).as("Actual output compiler diagnostics: %s", diagnostics.getDiagnostics()).isTrue();
+            }
         }
         try (URLClassLoader loader = new URLClassLoader(new URL[]{directory.toUri().toURL(), jar.toUri().toURL()},
                 ClassLoader.getPlatformClassLoader())) {

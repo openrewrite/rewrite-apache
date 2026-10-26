@@ -17,6 +17,8 @@ package org.openrewrite.apache.commons.collections;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.marker.JavaSourceSet;
@@ -114,6 +116,89 @@ class CollectionUtilsCardinalityAvailabilityTest {
         @Test
         void missingAvailabilityEvidenceIsNotSuccess() {
             rewriteRun(java(BEFORE));
+        }
+    }
+
+    @Nested
+    class Java7 implements RewriteTest {
+        @Override
+        public void defaults(RecipeSpec spec) {
+            List<Path> classpath = classpath("4.1");
+            spec.recipe(new CollectionUtilsCardinalityToFrequency())
+              .parser(JavaParser.fromJavaVersion().classpath(classpath))
+              .allSources(source -> source.markers(javaVersion(7), JavaSourceSet.build("main", classpath)));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"null", "(null)", "((null))"})
+        void retainAlwaysNullIterableWhileMigratingNullNeedle(String iterable) {
+            String before = """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              import java.util.Arrays;
+
+              public class RuntimeExample {
+                  public static String exercise() {
+                      Iterable<Object> values = Arrays.<Object>asList("x", null, "x");
+                      int nulls = CollectionUtils.cardinality(null, values);
+                      try {
+                          CollectionUtils.cardinality("x", %s);
+                          return "missing";
+                      } catch (NullPointerException e) {
+                          return nulls + "|" + e.getClass().getSimpleName();
+                      }
+                  }
+              }
+              """.formatted(iterable);
+            String expected = before
+              .replace("import org.apache.commons.collections4.CollectionUtils;",
+                "import org.apache.commons.collections4.CollectionUtils;\nimport org.apache.commons.collections4.IterableUtils;")
+              .replace("import java.util.Arrays;", "import java.util.Arrays;\nimport java.util.Objects;")
+              .replace("CollectionUtils.cardinality(null, values)", "IterableUtils.frequency(Objects.requireNonNull(values), null)");
+            rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before,
+              source -> source.after(actual -> {
+                  CardinalityRuntimeSupport.assertEquivalent("java7-null-iterable-" + iterable.length(),
+                    "RuntimeExample", before, actual, "1|NullPointerException");
+                  return expected;
+              })));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"value", "null"})
+        void migrateTypedNullableIterableAtMinimumJavaVersion(String element) {
+            String before = """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              import java.util.Arrays;
+
+              public class RuntimeExample {
+                  public static String exercise() {
+                      Iterable<Object> values = Arrays.<Object>asList("x", null, "x");
+                      int matches = count("x", values);
+                      try {
+                          count("x", null);
+                          return "missing";
+                      } catch (NullPointerException e) {
+                          return matches + "|" + e.getClass().getSimpleName();
+                      }
+                  }
+
+                  static int count(Object value, Iterable<Object> values) {
+                      return CollectionUtils.cardinality(%s, values);
+                  }
+              }
+              """.formatted(element);
+            String expected = before.replace("import org.apache.commons.collections4.CollectionUtils;",
+                "import org.apache.commons.collections4.IterableUtils;")
+              .replace("import java.util.Arrays;", "import java.util.Arrays;\nimport java.util.Objects;")
+              .replace("CollectionUtils.cardinality(" + element + ", values)",
+                "IterableUtils.frequency(Objects.requireNonNull(values), " + element + ")");
+            rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before,
+              source -> source.after(actual -> {
+                  CardinalityRuntimeSupport.assertEquivalent("java7-typed-iterable-" + element,
+                    "RuntimeExample", before, actual, ("null".equals(element) ? "1" : "2") + "|NullPointerException");
+                  return expected;
+              })));
         }
     }
 

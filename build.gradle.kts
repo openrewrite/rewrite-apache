@@ -77,7 +77,14 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Arewrite.javaParserClasspathFrom=resources")
 }
 
+// JDK 17 javac still supports --release 7; the normal test JVM remains unchanged.
+val java7Compiler = javaToolchains.compilerFor {
+    languageVersion.set(JavaLanguageVersion.of(17))
+}
+
 tasks.withType<Test> {
+    systemProperty("cardinalityJava7Compiler", java7Compiler.get().executablePath.asFile.absolutePath)
+    systemProperty("cardinalityJava7CompilerVersion", java7Compiler.get().metadata.javaRuntimeVersion)
     systemProperty("commonsCollections40Jar", commonsCollections40.singleFile.absolutePath)
     systemProperty("commonsCollections41Jar", commonsCollections41.singleFile.absolutePath)
 }
