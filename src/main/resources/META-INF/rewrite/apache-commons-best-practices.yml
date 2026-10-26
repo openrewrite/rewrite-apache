@@ -28,6 +28,7 @@ tags:
   - commons
 recipeList:
   - org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4
+  - org.openrewrite.apache.commons.collections.CollectionUtilsCardinalityToFrequency
   - org.openrewrite.apache.commons.lang.UpgradeApacheCommonsLang_2_3
   - org.openrewrite.apache.commons.math.UpgradeApacheCommonsMath_2_3
   - org.openrewrite.apache.commons.io.RelocateApacheCommonsIo

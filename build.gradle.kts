@@ -6,6 +6,9 @@ plugins {
 group = "org.openrewrite.recipe"
 description = "Apache Migration"
 
+val commonsCollections40 by configurations.creating
+val commonsCollections41 by configurations.creating
+
 recipeDependencies {
     parserClasspath("commons-io:commons-io:2.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
@@ -28,6 +31,8 @@ recipeDependencies {
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 dependencies {
+    commonsCollections40("org.apache.commons:commons-collections4:4.0")
+    commonsCollections41("org.apache.commons:commons-collections4:4.1")
     implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
     implementation("org.openrewrite:rewrite-java")
     implementation("org.openrewrite.recipe:rewrite-java-dependencies:$rewriteVersion")
@@ -70,4 +75,9 @@ dependencies {
 
 tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Arewrite.javaParserClasspathFrom=resources")
+}
+
+tasks.withType<Test> {
+    systemProperty("commonsCollections40Jar", commonsCollections40.singleFile.absolutePath)
+    systemProperty("commonsCollections41Jar", commonsCollections41.singleFile.absolutePath)
 }
