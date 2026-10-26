@@ -8,6 +8,7 @@ description = "Apache Migration"
 
 val commonsCollections40 by configurations.creating
 val commonsCollections41 by configurations.creating
+val commonsCollections44 by configurations.creating
 
 recipeDependencies {
     parserClasspath("commons-io:commons-io:2.+")
@@ -33,6 +34,7 @@ val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 dependencies {
     commonsCollections40("org.apache.commons:commons-collections4:4.0")
     commonsCollections41("org.apache.commons:commons-collections4:4.1")
+    commonsCollections44("org.apache.commons:commons-collections4:4.4")
     implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
     implementation("org.openrewrite:rewrite-java")
     implementation("org.openrewrite.recipe:rewrite-java-dependencies:$rewriteVersion")
@@ -61,7 +63,6 @@ dependencies {
     testImplementation("commons-codec:commons-codec:1.+")
 
     testImplementation("commons-collections:commons-collections:3.2.2")
-    testImplementation("org.apache.commons:commons-collections4:4.4")
 
     testImplementation("org.apache.commons:commons-math:2.2")
     testImplementation("org.apache.commons:commons-math3:3.+")
@@ -87,4 +88,5 @@ tasks.withType<Test> {
     systemProperty("cardinalityJava7CompilerVersion", java7Compiler.get().metadata.javaRuntimeVersion)
     systemProperty("commonsCollections40Jar", commonsCollections40.singleFile.absolutePath)
     systemProperty("commonsCollections41Jar", commonsCollections41.singleFile.absolutePath)
+    systemProperty("commonsCollections44Jar", commonsCollections44.singleFile.absolutePath)
 }

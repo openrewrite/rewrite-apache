@@ -198,7 +198,7 @@ class ApacheCommonsBestPracticesTest implements RewriteTest {
     @Test
     void upgradeApacheCommonsCollections() {
         rewriteRun(
-          spec -> spec.parser(JavaParser.fromJavaVersion().classpath("commons-collections", "commons-collections4")),
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpath("commons-collections")),
           //language=java
           java(
             """

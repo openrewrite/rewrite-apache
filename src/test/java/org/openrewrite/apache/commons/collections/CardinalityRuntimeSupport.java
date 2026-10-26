@@ -15,8 +15,6 @@
  */
 package org.openrewrite.apache.commons.collections;
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -45,7 +43,7 @@ final class CardinalityRuntimeSupport {
     static void assertEquivalent(String caseName, String className, String before, String after, String expected) {
         try {
             Path commons41 = Paths.get(System.getProperty("commonsCollections41Jar"));
-            Path commons44 = Paths.get(CollectionUtils.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            Path commons44 = Paths.get(System.getProperty("commonsCollections44Jar"));
             for (int release : Arrays.asList(7, 8)) {
                 for (Path jar : Arrays.asList(commons41, commons44)) {
                     Path root = Paths.get("build", "cardinality-minimum-runtime-proof", "release-" + release,

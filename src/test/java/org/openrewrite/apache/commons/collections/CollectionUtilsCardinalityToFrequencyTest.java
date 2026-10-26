@@ -35,7 +35,7 @@ import static org.openrewrite.java.Assertions.javaVersion;
 
 class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
     private static final JavaSourceSet SOURCE_SET = JavaSourceSet.build("main",
-      JavaParser.dependenciesFromClasspath("commons-collections4"));
+      JavaParser.dependenciesFromResources(new InMemoryExecutionContext(), "commons-collections4-4.4"));
 
     @Override
     public void defaults(RecipeSpec spec) {
