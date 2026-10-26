@@ -26,6 +26,8 @@ import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.ShortenFullyQualifiedTypeReferences;
+import org.openrewrite.java.VariableNameUtils;
 import org.openrewrite.java.marker.JavaSourceSet;
 import org.openrewrite.java.search.UsesJavaVersion;
 import org.openrewrite.java.search.UsesMethod;
@@ -34,6 +36,8 @@ import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
+
+import java.util.Set;
 
 public class CollectionUtilsCardinalityToFrequency extends Recipe {
     private static final String COLLECTION_UTILS = "org.apache.commons.collections4.CollectionUtils";
@@ -71,6 +75,24 @@ public class CollectionUtilsCardinalityToFrequency extends Recipe {
                                 .noneMatch(type -> ITERABLE_UTILS.equals(type.getFullyQualifiedName()))) {
                             return cu;
                         }
+                        // Qualification also requires an unshadowed package root. Treat declared/imported
+                        // types named java or org conservatively rather than emitting an ambiguous expression.
+                        boolean[] shadowedRoot = {false};
+                        new JavaIsoVisitor<boolean[]>() {
+                            @Override
+                            public J.Identifier visitIdentifier(J.Identifier identifier, boolean[] shadowed) {
+                                if (("java".equals(identifier.getSimpleName()) || "org".equals(identifier.getSimpleName())) &&
+                                    identifier.getFieldType() == null &&
+                                    (TypeUtils.asFullyQualified(identifier.getType()) != null ||
+                                     identifier.getType() instanceof JavaType.GenericTypeVariable)) {
+                                    shadowed[0] = true;
+                                }
+                                return identifier;
+                            }
+                        }.visit(cu, shadowedRoot);
+                        if (shadowedRoot[0]) {
+                            return cu;
+                        }
                         return super.visitCompilationUnit(cu, ctx);
                     }
 
@@ -86,17 +108,24 @@ public class CollectionUtilsCardinalityToFrequency extends Recipe {
                             !isStable(m.getArguments().get(0)) || !isStable(m.getArguments().get(1))) {
                             return m;
                         }
+                        Set<String> namesInScope = VariableNameUtils.findNamesInScope(getCursor());
+                        // A qualified expression can itself bind to a variable instead of a package.
+                        if (namesInScope.contains("org") || namesInScope.contains("java")) {
+                            return m;
+                        }
                         if (template == null) {
-                            template = JavaTemplate.builder("IterableUtils.frequency(Objects.requireNonNull(#{any(java.lang.Iterable)}), #{any(java.lang.Object)})")
-                                    .imports(ITERABLE_UTILS, "java.util.Objects")
+                            template = JavaTemplate.builder("org.apache.commons.collections4.IterableUtils.frequency(java.util.Objects.requireNonNull(#{any(java.lang.Iterable)}), #{any(java.lang.Object)})")
                                     .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-collections4-4.4"))
                                     .build();
                         }
                         maybeRemoveImport(COLLECTION_UTILS);
-                        maybeAddImport(ITERABLE_UTILS);
-                        maybeAddImport("java.util.Objects");
-                        return template.apply(updateCursor(m), m.getCoordinates().replace(),
+                        J.MethodInvocation replacement = template.apply(updateCursor(m), m.getCoordinates().replace(),
                                 m.getArguments().get(1), m.getArguments().get(0));
+                        // Standard shortening handles type/import conflicts; variables share the expression
+                        // namespace, so retain qualification when a local, parameter or field has that name.
+                        doAfterVisit(ShortenFullyQualifiedTypeReferences.modifyOnly(replacement,
+                                fqn -> namesInScope.contains(fqn.substring(fqn.lastIndexOf('.') + 1))));
+                        return replacement;
                     }
 
                     private boolean isClassQualifier(@Nullable Expression select) {

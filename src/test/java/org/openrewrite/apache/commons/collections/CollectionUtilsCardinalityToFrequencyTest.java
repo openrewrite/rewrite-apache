@@ -363,6 +363,35 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
 
     }
 
+    @ParameterizedTest
+    @CsvSource({"parameter, java", "parameter, org", "nested, java", "nested, org"})
+    void retainShadowedPackageRoot(String scope, String name) {
+        String nested = "nested".equals(scope) ? "    static class " + name + " {}\n\n" : "";
+        String parameter = "parameter".equals(scope) ? ", Object " + name : "";
+        String argument = "parameter".equals(scope) ? ", null" : "";
+        String before = """
+          import org.apache.commons.collections4.CollectionUtils;
+
+          public class RuntimeExample {
+          %s    public static String exercise() {
+                  Iterable<Object> values = java.util.Arrays.<Object>asList("x", "x");
+                  return Integer.toString(count("x", values%s));
+              }
+
+              static int count(Object value, Iterable<Object> values%s) {
+                  return CollectionUtils.cardinality(value, values);
+              }
+          }
+          """.formatted(nested, argument, parameter);
+        // The nested java type would shadow java.util in exercise too, so import the input's Arrays type.
+        before = before.replace("import org.apache.commons.collections4.CollectionUtils;",
+          "import org.apache.commons.collections4.CollectionUtils;\n\nimport java.util.Arrays;")
+          .replace("java.util.Arrays.<Object>", "Arrays.<Object>");
+        String input = before;
+        rewriteRun(java(input, source -> source.afterRecipe(cu -> CardinalityRuntimeSupport.assertEquivalent(
+          "package-root-" + scope + "-" + name, "RuntimeExample", input, cu.printAll(), "2"))));
+    }
+
     @Test
     void actualOutputCompilesAndPreservesRuntimeBehavior() {
         String before = """
