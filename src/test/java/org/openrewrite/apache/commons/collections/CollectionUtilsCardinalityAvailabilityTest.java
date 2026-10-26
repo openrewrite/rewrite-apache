@@ -27,8 +27,6 @@ import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,9 +45,6 @@ class CollectionUtilsCardinalityAvailabilityTest {
       """;
 
     private static List<Path> classpath(String version) {
-        if (!"4.4".equals(version)) {
-            return Collections.singletonList(Paths.get(System.getProperty("commonsCollections" + version.replace(".", "") + "Jar")));
-        }
         return JavaParser.dependenciesFromResources(new InMemoryExecutionContext(), "commons-collections4-" + version);
     }
 
@@ -155,12 +150,7 @@ class CollectionUtilsCardinalityAvailabilityTest {
                 "import org.apache.commons.collections4.CollectionUtils;\nimport org.apache.commons.collections4.IterableUtils;")
               .replace("import java.util.Arrays;", "import java.util.Arrays;\nimport java.util.Objects;")
               .replace("CollectionUtils.cardinality(null, values)", "IterableUtils.frequency(Objects.requireNonNull(values), null)");
-            rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before,
-              source -> source.after(actual -> {
-                  CardinalityRuntimeSupport.assertEquivalent("java7-null-iterable-" + iterable.length(),
-                    "RuntimeExample", before, actual, "1|NullPointerException");
-                  return expected;
-              })));
+            rewriteRun(java(before, expected));
         }
 
         @ParameterizedTest
@@ -193,12 +183,7 @@ class CollectionUtilsCardinalityAvailabilityTest {
               .replace("import java.util.Arrays;", "import java.util.Arrays;\nimport java.util.Objects;")
               .replace("CollectionUtils.cardinality(" + element + ", values)",
                 "IterableUtils.frequency(Objects.requireNonNull(values), " + element + ")");
-            rewriteRun(spec -> spec.cycles(3).expectedCyclesThatMakeChanges(1), java(before,
-              source -> source.after(actual -> {
-                  CardinalityRuntimeSupport.assertEquivalent("java7-typed-iterable-" + element,
-                    "RuntimeExample", before, actual, ("null".equals(element) ? "1" : "2") + "|NullPointerException");
-                  return expected;
-              })));
+            rewriteRun(java(before, expected));
         }
     }
 

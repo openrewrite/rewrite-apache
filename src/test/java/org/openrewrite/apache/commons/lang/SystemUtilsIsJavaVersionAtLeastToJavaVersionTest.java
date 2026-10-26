@@ -20,6 +20,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -30,7 +31,7 @@ class SystemUtilsIsJavaVersionAtLeastToJavaVersionTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang", "commons-lang3"))
+        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang-2", "commons-lang3"))
           .recipe(new SystemUtilsIsJavaVersionAtLeastToJavaVersion());
     }
 

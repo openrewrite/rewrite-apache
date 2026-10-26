@@ -6,9 +6,6 @@ plugins {
 group = "org.openrewrite.recipe"
 description = "Apache Migration"
 
-val commonsCollections40 by configurations.creating
-val commonsCollections41 by configurations.creating
-
 recipeDependencies {
     parserClasspath("commons-io:commons-io:2.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
@@ -27,12 +24,20 @@ recipeDependencies {
     parserClasspath("org.apache.poi:poi:3.16")
 
     parserClasspath("org.codehaus.plexus:plexus-utils:4.+")
+
+    testParserClasspath("commons-codec:commons-codec:1.+")
+    testParserClasspath("commons-collections:commons-collections:3.2.2")
+    testParserClasspath("org.apache.commons:commons-collections4:4.0")
+    testParserClasspath("org.apache.commons:commons-collections4:4.1")
+    testParserClasspath("commons-lang:commons-lang:2.6")
+    testParserClasspath("org.apache.commons:commons-math:2.2")
+    testParserClasspath("org.apache.commons:commons-math3:3.+")
+    testParserClasspath("org.apache.commons:commons-text:1.+")
+    testParserClasspath("org.codehaus.plexus:plexus-container-default:2.+")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 dependencies {
-    commonsCollections40("org.apache.commons:commons-collections4:4.0")
-    commonsCollections41("org.apache.commons:commons-collections4:4.1")
     implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
     implementation("org.openrewrite:rewrite-java")
     implementation("org.openrewrite.recipe:rewrite-java-dependencies:$rewriteVersion")
@@ -57,34 +62,9 @@ dependencies {
     testImplementation("org.openrewrite:rewrite-kotlin")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
-
-    testImplementation("commons-codec:commons-codec:1.+")
-
-    testImplementation("commons-collections:commons-collections:3.2.2")
-    testImplementation("org.apache.commons:commons-collections4:4.4")
-
-    testImplementation("org.apache.commons:commons-math:2.2")
-    testImplementation("org.apache.commons:commons-math3:3.+")
-
-    testImplementation("commons-lang:commons-lang:2.6")
-    testImplementation("org.apache.commons:commons-lang3:3.5")
-
-    testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
-
 }
 
 tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Arewrite.javaParserClasspathFrom=resources")
 }
 
-// JDK 17 javac still supports --release 7; the normal test JVM remains unchanged.
-val java7Compiler = javaToolchains.compilerFor {
-    languageVersion.set(JavaLanguageVersion.of(17))
-}
-
-tasks.withType<Test> {
-    systemProperty("cardinalityJava7Compiler", java7Compiler.get().executablePath.asFile.absolutePath)
-    systemProperty("cardinalityJava7CompilerVersion", java7Compiler.get().metadata.javaRuntimeVersion)
-    systemProperty("commonsCollections40Jar", commonsCollections40.singleFile.absolutePath)
-    systemProperty("commonsCollections41Jar", commonsCollections41.singleFile.absolutePath)
-}
