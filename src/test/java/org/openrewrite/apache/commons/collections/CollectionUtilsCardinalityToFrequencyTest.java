@@ -302,7 +302,7 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
     @Test
     void retainCommonsCollections3() {
         rewriteRun(
-          spec -> spec.parser(JavaParser.fromJavaVersion().classpath("commons-collections")),
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-collections-3")),
           java("""
             import org.apache.commons.collections.CollectionUtils;
 

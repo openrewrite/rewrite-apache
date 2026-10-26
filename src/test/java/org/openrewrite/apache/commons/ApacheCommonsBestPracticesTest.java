@@ -138,7 +138,7 @@ class ApacheCommonsBestPracticesTest implements RewriteTest {
     @Test
     void upgradeApacheCommonsLang() {
         rewriteRun(
-          spec -> spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang", "commons-lang3")),
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang-2", "commons-lang3")),
           //language=java
           java(
             """
@@ -171,7 +171,7 @@ class ApacheCommonsBestPracticesTest implements RewriteTest {
     void upgradeApacheCommonsLangAndThenInlineToJdk() {
         rewriteRun(
           spec -> spec
-            .parser(JavaParser.fromJavaVersion().classpath("commons-lang", "commons-lang3"))
+            .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang-2", "commons-lang3"))
             .allSources(s -> s.markers(javaVersion(21))),
           //language=java
           java(
@@ -198,7 +198,7 @@ class ApacheCommonsBestPracticesTest implements RewriteTest {
     @Test
     void upgradeApacheCommonsCollections() {
         rewriteRun(
-          spec -> spec.parser(JavaParser.fromJavaVersion().classpath("commons-collections")),
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-collections-3")),
           //language=java
           java(
             """
@@ -226,7 +226,7 @@ class ApacheCommonsBestPracticesTest implements RewriteTest {
     @Test
     void upgradeApacheCommonsMath() {
         rewriteRun(
-          spec -> spec.parser(JavaParser.fromJavaVersion().classpath("commons-math", "commons-math3")),
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-math-2", "commons-math3")),
           //language=java
           java(
             """

@@ -28,6 +28,14 @@ recipeDependencies {
     parserClasspath("org.apache.poi:poi:3.16")
 
     parserClasspath("org.codehaus.plexus:plexus-utils:4.+")
+
+    testParserClasspath("commons-codec:commons-codec:1.+")
+    testParserClasspath("commons-collections:commons-collections:3.2.2")
+    testParserClasspath("commons-lang:commons-lang:2.6")
+    testParserClasspath("org.apache.commons:commons-math:2.2")
+    testParserClasspath("org.apache.commons:commons-math3:3.+")
+    testParserClasspath("org.apache.commons:commons-text:1.+")
+    testParserClasspath("org.codehaus.plexus:plexus-container-default:2.+")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
@@ -59,19 +67,6 @@ dependencies {
     testImplementation("org.openrewrite:rewrite-kotlin")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
-
-    testImplementation("commons-codec:commons-codec:1.+")
-
-    testImplementation("commons-collections:commons-collections:3.2.2")
-
-    testImplementation("org.apache.commons:commons-math:2.2")
-    testImplementation("org.apache.commons:commons-math3:3.+")
-
-    testImplementation("commons-lang:commons-lang:2.6")
-    testImplementation("org.apache.commons:commons-lang3:3.5")
-
-    testRuntimeOnly("org.codehaus.plexus:plexus-container-default:2.+")
-
 }
 
 tasks.withType<JavaCompile> {

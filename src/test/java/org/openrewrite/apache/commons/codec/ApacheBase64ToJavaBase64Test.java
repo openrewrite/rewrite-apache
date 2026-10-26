@@ -17,6 +17,7 @@ package org.openrewrite.apache.commons.codec;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -29,7 +30,7 @@ class ApacheBase64ToJavaBase64Test implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .recipe(new ApacheBase64ToJavaBase64())
-          .parser(JavaParser.fromJavaVersion().classpath("commons-codec"));
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-codec"));
     }
 
     @DocumentExample

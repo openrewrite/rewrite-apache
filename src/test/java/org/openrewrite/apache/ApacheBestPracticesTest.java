@@ -97,7 +97,7 @@ class ApacheBestPracticesTest implements RewriteTest {
     @Test
     void includesApacheCommonsBestPractices() {
         rewriteRun(
-          spec -> spec.parser(JavaParser.fromJavaVersion().classpath("commons-lang", "commons-lang3")),
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang-2", "commons-lang3")),
           //language=java
           java(
             """
