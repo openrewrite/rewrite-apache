@@ -44,6 +44,7 @@ recipeList:
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
   - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
+  - org.openrewrite.apache.httpclient5.MigrateStringEntityContentEncoding
   - org.openrewrite.apache.httpclient5.MigrateAuthState
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_DeprecatedMethods
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_TimeUnit
