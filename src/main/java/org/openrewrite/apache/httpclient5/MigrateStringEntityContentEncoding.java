@@ -87,7 +87,7 @@ public class MigrateStringEntityContentEncoding extends Recipe {
                             !TypeUtils.isOfClassType(variable.getType(), STRING_ENTITY) ||
                             !(variable.getInitializer() instanceof J.NewClass) ||
                             !(setter.getSelect() instanceof J.Identifier) ||
-                            !symbol.equals(((J.Identifier) setter.getSelect()).getFieldType()) ||
+                            !TypeUtils.isOfType(symbol, ((J.Identifier) setter.getSelect()).getFieldType()) ||
                             !SET_CONTENT_ENCODING.matches(setter) || setter.getArguments().size() != 1) {
                         updated.add(statement);
                         continue;
