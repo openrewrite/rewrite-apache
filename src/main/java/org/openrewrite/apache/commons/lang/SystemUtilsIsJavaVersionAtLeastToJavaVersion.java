@@ -106,7 +106,7 @@ public class SystemUtilsIsJavaVersionAtLeastToJavaVersion extends Recipe {
                 maybeAddImport("org.apache.commons.lang3.JavaVersion");
                 return JavaTemplate.builder("JavaVersion." + constant)
                         .imports("org.apache.commons.lang3.JavaVersion")
-                        .javaParser(JavaParser.fromJavaVersion().classpath("commons-lang3"))
+                        .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-lang3"))
                         .build()
                         .apply(updateCursor(mi), mi.getCoordinates().replaceArguments());
             }
