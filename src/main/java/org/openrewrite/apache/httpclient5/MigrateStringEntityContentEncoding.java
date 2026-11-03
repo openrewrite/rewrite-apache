@@ -22,6 +22,7 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
@@ -51,9 +52,10 @@ public class MigrateStringEntityContentEncoding extends Recipe {
 
     String displayName = "Move `StringEntity` content encoding into its constructor";
 
-    String description = "After migrating HttpClient 4 namespaces to HttpClient 5, move an adjacent literal " +
-            "content-encoding setter on a new local `StringEntity` into its four-argument constructor. " +
-            "Retain unsupported or commented pairs for manual migration.";
+    String description = "After migrating HttpClient 4 namespaces to HttpClient 5, move an adjacent " +
+            "content-encoding setter with a literal or variable argument on a new local `StringEntity` into its " +
+            "four-argument constructor. Comments on the line before the setter move above the declaration. " +
+            "Retain unsupported or otherwise commented pairs for manual migration.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -97,7 +99,8 @@ public class MigrateStringEntityContentEncoding extends Recipe {
                     if (construction.getBody() != null || construction.getEnclosing() != null ||
                             !TypeUtils.isOfClassType(construction.getType(), STRING_ENTITY) ||
                             !CONSTRUCTOR.matches(construction) || construction.getArguments().size() != 2 ||
-                            !isLiteralEncoding(encoding) || hasComments(declarations) || hasComments(setter) ||
+                            !isSupportedEncoding(encoding) || hasComments(declarations.withPrefix(Space.EMPTY)) ||
+                            hasComments(setter.withPrefix(Space.EMPTY)) ||
                             !b.getPadding().getStatements().get(i).getAfter().getComments().isEmpty() ||
                             !b.getPadding().getStatements().get(i + 1).getAfter().getComments().isEmpty()) {
                         updated.add(statement);
@@ -116,14 +119,25 @@ public class MigrateStringEntityContentEncoding extends Recipe {
                             .apply(constructionCursor, construction.getCoordinates().replace(),
                                     construction.getArguments().get(0), construction.getArguments().get(1), encoding);
                     replacement = replacement.withPrefix(construction.getPrefix()).withClazz(construction.getClazz());
-                    updated.add(declarations.withVariables(Collections.singletonList(variable.withInitializer(replacement))));
+                    J.VariableDeclarations migrated = declarations.withVariables(Collections.singletonList(variable.withInitializer(replacement)));
+                    if (!setter.getPrefix().getComments().isEmpty()) {
+                        // Keep the comments that introduced the setter, now above the declaration that absorbed it
+                        migrated = migrated.withPrefix(migrated.getPrefix().withComments(ListUtils.concatAll(
+                                migrated.getPrefix().getComments(), setter.getPrefix().getComments())));
+                    }
+                    updated.add(migrated);
                     i++;
                     changed = true;
                 }
                 return changed ? b.withStatements(updated) : b;
             }
 
-            private boolean isLiteralEncoding(Expression expression) {
+            private boolean isSupportedEncoding(Expression expression) {
+                // Reading a variable has no side effects, and the setter read it right after construction
+                if (expression instanceof J.Identifier) {
+                    return ((J.Identifier) expression).getFieldType() != null &&
+                            TypeUtils.isOfClassType(expression.getType(), "java.lang.String");
+                }
                 if (expression instanceof J.Literal) {
                     Object value = ((J.Literal) expression).getValue();
                     return value == null || value instanceof String;

@@ -259,4 +259,90 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void movesVariableEncodingAndKeepsLeadingComments() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.methods.HttpPost;
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.entity.StringEntity;
+
+              class A {
+                  private static final String UTF8 = "UTF-8";
+
+                  void post(HttpPost httpPost, String json, String encoding) {
+                      encoding = encoding == null ? UTF8 : encoding;
+                      // set the body
+                      StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
+                      //  Constant.UTF8
+                      stringEntity.setContentEncoding(encoding);
+                      httpPost.setEntity(stringEntity);
+                  }
+
+                  void postConstant(HttpPost httpPost, String json) {
+                      StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
+                      stringEntity.setContentEncoding(UTF8);
+                      httpPost.setEntity(stringEntity);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.classic.methods.HttpPost;
+              import org.apache.hc.core5.http.ContentType;
+              import org.apache.hc.core5.http.io.entity.StringEntity;
+
+              class A {
+                  private static final String UTF8 = "UTF-8";
+
+                  void post(HttpPost httpPost, String json, String encoding) {
+                      encoding = encoding == null ? UTF8 : encoding;
+                      // set the body
+                      //  Constant.UTF8
+                      StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON, encoding, false);
+                      httpPost.setEntity(stringEntity);
+                  }
+
+                  void postConstant(HttpPost httpPost, String json) {
+                      StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON, UTF8, false);
+                      httpPost.setEntity(stringEntity);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void retainsPairWithNonStringVariable() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.entity.StringEntity;
+
+              class A {
+                  void foo(org.apache.http.Header encoding) {
+                      StringEntity entity = new StringEntity("body", ContentType.APPLICATION_JSON);
+                      entity.setContentEncoding(encoding);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.ContentType;
+              import org.apache.hc.core5.http.io.entity.StringEntity;
+
+              class A {
+                  void foo(org.apache.hc.core5.http.Header encoding) {
+                      StringEntity entity = new StringEntity("body", ContentType.APPLICATION_JSON);
+                      entity.setContentEncoding(encoding);
+                  }
+              }
+              """
+          )
+        );
+    }
 }
