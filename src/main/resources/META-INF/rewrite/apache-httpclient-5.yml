@@ -274,6 +274,8 @@ name: org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
 displayName: Migrate to ApacheHttpClient 5.x Classes Namespace from 4.x
 description: Mapping of all the compatible classes of ApacheHttpClient 5.x from 4.x.
 recipeList:
+  # HttpClient 5's HttpStatus is a final class, so stop implementing the 4.x constants interface first
+  - org.openrewrite.apache.httpclient5.MigrateHttpStatusConstantsInterface
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.client.methods
       newPackageName: org.apache.hc.client5.http.classic.methods
