@@ -30,7 +30,9 @@ class MigrateHttpStatusConstantsInterfaceTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),
-            "httpcore-4", "httpclient5", "httpcore5"))
+            "httpcore-4",
+            "httpclient5",
+            "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
