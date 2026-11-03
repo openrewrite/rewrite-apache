@@ -91,11 +91,7 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             }
 
             private boolean setsConnectionManager(J.MethodInvocation m) {
-                if (!SET_CONNECTION_MANAGER.matches(m)) {
-                    return false;
-                }
-                Expression manager = m.getArguments().get(0);
-                return !(manager instanceof J.Literal && ((J.Literal) manager).getValue() == null);
+                return SET_CONNECTION_MANAGER.matches(m) && !J.Literal.isLiteralValue(m.getArguments().get(0), null);
             }
         });
     }
