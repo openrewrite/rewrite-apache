@@ -33,6 +33,8 @@ import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeTree;
 import org.openrewrite.java.tree.TypeUtils;
 
+import java.util.List;
+
 @EqualsAndHashCode(callSuper = false)
 @Value
 public class MigrateHttpStatusConstantsInterface extends Recipe {
@@ -52,24 +54,13 @@ public class MigrateHttpStatusConstantsInterface extends Recipe {
             @Override
             public J visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
                 J.ClassDeclaration c = (J.ClassDeclaration) super.visitClassDeclaration(classDecl, ctx);
-                if (c.getImplements() == null ||
-                        c.getImplements().stream().noneMatch(i -> TypeUtils.isOfClassType(i.getType(), HTTP_STATUS))) {
+                List<TypeTree> implementing = c.getImplements();
+                List<TypeTree> remaining = ListUtils.filter(implementing, i -> !TypeUtils.isOfClassType(i.getType(), HTTP_STATUS));
+                if (remaining == implementing) {
                     return c;
                 }
-                J.ClassDeclaration.Padding padding = c.getPadding();
-                if (c.getImplements().size() == 1) {
-                    c = padding.withImplements(null);
-                } else {
-                    boolean firstRemoved = TypeUtils.isOfClassType(c.getImplements().get(0).getType(), HTTP_STATUS);
-                    c = c.withImplements(ListUtils.filter(c.getImplements(),
-                            i -> !TypeUtils.isOfClassType(i.getType(), HTTP_STATUS)));
-                    if (firstRemoved) {
-                        c = c.withImplements(ListUtils.mapFirst(c.getImplements(),
-                                i -> i.withPrefix(classDecl.getImplements().get(0).getPrefix())));
-                    }
-                }
                 maybeRemoveImport(HTTP_STATUS);
-                return c;
+                return c.withImplements(ListUtils.mapFirst(remaining, first -> first.withPrefix(implementing.get(0).getPrefix())));
             }
 
             @Override
@@ -79,18 +70,10 @@ public class MigrateHttpStatusConstantsInterface extends Recipe {
                     return id;
                 }
                 // Only constants inherited by an enclosing class; a static import keeps resolving after migration
-                for (Object value : (Iterable<Object>) () -> getCursor().getPath()) {
-                    if (value instanceof J.ClassDeclaration) {
-                        JavaType.FullyQualified type = ((J.ClassDeclaration) value).getType();
-                        if (TypeUtils.isOfClassType(type, HTTP_STATUS)) {
-                            return id;
-                        }
-                        if (TypeUtils.isAssignableTo(HTTP_STATUS, type)) {
-                            return qualify(id, ctx);
-                        }
-                    }
-                }
-                return id;
+                boolean inherited = getCursor().getPathAsStream()
+                        .filter(J.ClassDeclaration.class::isInstance)
+                        .anyMatch(cd -> TypeUtils.isAssignableTo(HTTP_STATUS, ((J.ClassDeclaration) cd).getType()));
+                return inherited ? qualify(id, ctx) : id;
             }
 
             @Override
