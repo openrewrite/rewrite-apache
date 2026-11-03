@@ -125,6 +125,33 @@ class MigrateHttpStatusConstantsInterfaceTest implements RewriteTest {
     }
 
     @Test
+    void qualifyAccessThroughInstance() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpStatus;
+
+              class Codes implements HttpStatus {
+                  boolean ok(int code) {
+                      return code == this.SC_OK;
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.HttpStatus;
+
+              class Codes {
+                  boolean ok(int code) {
+                      return code == HttpStatus.SC_OK;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void interfaceExtendingHttpStatus() {
         rewriteRun(
           //language=java

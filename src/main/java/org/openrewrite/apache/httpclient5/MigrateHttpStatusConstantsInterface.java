@@ -79,11 +79,11 @@ public class MigrateHttpStatusConstantsInterface extends Recipe {
             @Override
             public J visitFieldAccess(J.FieldAccess fieldAccess, ExecutionContext ctx) {
                 J.FieldAccess f = (J.FieldAccess) super.visitFieldAccess(fieldAccess, ctx);
-                if (!isHttpStatusConstant(f.getName().getFieldType()) || !isTypeReference(f.getTarget()) ||
+                if (!isHttpStatusConstant(f.getName().getFieldType()) || !isFreeOfSideEffects(f.getTarget()) ||
                         TypeUtils.isOfClassType(f.getTarget().getType(), HTTP_STATUS)) {
                     return f;
                 }
-                // `MyConstants.SC_OK`, where `MyConstants implements HttpStatus`
+                // `MyConstants.SC_OK` or `this.SC_OK`, where `MyConstants implements HttpStatus`
                 return qualify(f, ctx);
             }
 
@@ -91,13 +91,9 @@ public class MigrateHttpStatusConstantsInterface extends Recipe {
                 return variable != null && TypeUtils.isOfClassType(variable.getOwner(), HTTP_STATUS);
             }
 
-            private boolean isTypeReference(J target) {
-                if (target instanceof J.Identifier) {
-                    return ((J.Identifier) target).getFieldType() == null && target instanceof TypeTree &&
-                            ((J.Identifier) target).getType() instanceof JavaType.FullyQualified;
-                }
-                return target instanceof J.FieldAccess && ((J.FieldAccess) target).getName().getFieldType() == null &&
-                        ((J.FieldAccess) target).getType() instanceof JavaType.FullyQualified;
+            private boolean isFreeOfSideEffects(Expression target) {
+                return target instanceof J.Identifier ||
+                        target instanceof J.FieldAccess && isFreeOfSideEffects(((J.FieldAccess) target).getTarget());
             }
 
             private J qualify(Expression tree, ExecutionContext ctx) {
