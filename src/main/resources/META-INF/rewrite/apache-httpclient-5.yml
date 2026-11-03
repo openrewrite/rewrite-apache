@@ -36,6 +36,7 @@ preconditions:
       invertMarking: true
 recipeList:
   - org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
+  - org.openrewrite.apache.httpclient5.RemoveSettingsIgnoredWithConnectionManager
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClientDependencies
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_AsyncClientClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
