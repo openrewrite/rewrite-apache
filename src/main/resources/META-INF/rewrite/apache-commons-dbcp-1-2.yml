@@ -1,0 +1,186 @@
+#
+# Copyright 2026 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+########################################################################################################################
+# Apache Commons DBCP
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.commons.dbcp.UpgradeApacheCommonsDbcp_1_2
+displayName: Migrates to Apache Commons DBCP 2.x
+description: >-
+  Migrate applications from Apache Commons DBCP 1.x to the latest 2.x release. This recipe changes the dependency, moves
+  the `org.apache.commons.dbcp` package to `org.apache.commons.dbcp2`, renames the data source properties that changed
+  in Java, in Spring bean definitions and in the properties files `BasicDataSourceFactory` is given, and replaces the
+  classes that were removed. Code that wires `PoolableConnectionFactory` to a commons-pool `ObjectPool` by hand has to be
+  ported to commons-pool2 by hand, and no longer compiles until it is. `BasicDataSourceFactory` silently ignores the old
+  names `maxActive`, `maxWait` and `removeAbandoned` wherever they remain, such as in a properties file named outside of
+  the class that calls `createDataSource`, or in a `Properties` filled in code.
+tags:
+  - apache
+  - commons
+  - dbcp
+preconditions:
+  # Not ModuleHasDependency: it leaves out what belongs to no module with the dependency, and the migration needs those
+  # too, such as a parent's dependencyManagement, gradle.properties and bean definitions under WEB-INF.
+  - org.openrewrite.java.dependencies.search.RepositoryHasDependency:
+      groupIdPattern: commons-dbcp
+      artifactIdPattern: commons-dbcp
+recipeList:
+  # Methods first, while the types their patterns name still resolve.
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.BasicDataSource setMaxActive(int)
+      newMethodName: setMaxTotal
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.BasicDataSource getMaxActive()
+      newMethodName: getMaxTotal
+      matchOverrides: true
+  # setMaxWaitMillis over setMaxWait(Duration): it is in every 2.x release, not only those from 2.10 on.
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.BasicDataSource setMaxWait(long)
+      newMethodName: setMaxWaitMillis
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.BasicDataSource getMaxWait()
+      newMethodName: getMaxWaitMillis
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.BasicDataSource setRemoveAbandoned(boolean)
+      newMethodName: setRemoveAbandonedOnBorrow
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.BasicDataSource getRemoveAbandoned()
+      newMethodName: getRemoveAbandonedOnBorrow
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.datasources.SharedPoolDataSource setMaxActive(int)
+      newMethodName: setMaxTotal
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.datasources.SharedPoolDataSource getMaxActive()
+      newMethodName: getMaxTotal
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.datasources.SharedPoolDataSource setMaxIdle(int)
+      newMethodName: setDefaultMaxIdle
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.datasources.SharedPoolDataSource getMaxIdle()
+      newMethodName: getDefaultMaxIdle
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.datasources.SharedPoolDataSource setMaxWait(int)
+      newMethodName: setDefaultMaxWaitMillis
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.datasources.SharedPoolDataSource getMaxWait()
+      newMethodName: getDefaultMaxWaitMillis
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.AbandonedConfig setRemoveAbandoned(boolean)
+      newMethodName: setRemoveAbandonedOnBorrow
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.dbcp.AbandonedConfig getRemoveAbandoned()
+      newMethodName: getRemoveAbandonedOnBorrow
+
+  # Bean definitions, while the class they are matched by is still the old one. DBCP 2 has no `maxActive` or
+  # `removeAbandoned` property to set, and its `maxWait` property is a Duration. These are anchored because `oldValue`
+  # otherwise matches within a value, and `removeAbandoned` would change `removeAbandonedTimeout`.
+  - org.openrewrite.xml.ChangeTagAttribute:
+      elementName: //*[@class='org.apache.commons.dbcp.BasicDataSource']/*[local-name()='property']
+      attributeName: name
+      oldValue: ^maxActive$
+      regex: true
+      newValue: maxTotal
+  - org.openrewrite.xml.ChangeTagAttribute:
+      elementName: //*[@class='org.apache.commons.dbcp.BasicDataSource']/*[local-name()='property']
+      attributeName: name
+      oldValue: ^maxWait$
+      regex: true
+      newValue: maxWaitMillis
+  - org.openrewrite.xml.ChangeTagAttribute:
+      elementName: //*[@class='org.apache.commons.dbcp.BasicDataSource']/*[local-name()='property']
+      attributeName: name
+      oldValue: ^removeAbandoned$
+      regex: true
+      newValue: removeAbandonedOnBorrow
+  - org.openrewrite.xml.ChangeTagAttributeKey:
+      xPath: //*[@class='org.apache.commons.dbcp.BasicDataSource']/@p:maxActive
+      newAttributeName: p:maxTotal
+  - org.openrewrite.xml.ChangeTagAttributeKey:
+      xPath: //*[@class='org.apache.commons.dbcp.BasicDataSource']/@p:maxWait
+      newAttributeName: p:maxWaitMillis
+  - org.openrewrite.xml.ChangeTagAttributeKey:
+      xPath: //*[@class='org.apache.commons.dbcp.BasicDataSource']/@p:removeAbandoned
+      newAttributeName: p:removeAbandonedOnBorrow
+  # ChangePackage reaches only `class` in documents with a beans schema location, and a class that is left behind fails
+  # at runtime. Other formats name it the same way, such as a `dataSource` in logback.xml.
+  - org.openrewrite.xml.ChangeTagAttribute:
+      elementName: //*
+      attributeName: class
+      oldValue: ^org\.apache\.commons\.dbcp\.(.+)$
+      newValue: org.apache.commons.dbcp2.$1
+      regex: true
+
+  - org.openrewrite.apache.commons.dbcp.MigrateBasicDataSourceFactoryProperties
+
+  # Classes DBCP 2 no longer has.
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.dbcp.SQLNestedException
+      newFullyQualifiedTypeName: java.sql.SQLException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.dbcp.DbcpException
+      newFullyQualifiedTypeName: java.lang.RuntimeException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.dbcp.AbandonedConfig
+      newFullyQualifiedTypeName: org.apache.commons.pool2.impl.AbandonedConfig
+
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.dbcp
+      newPackageName: org.apache.commons.dbcp2
+      recursive: true
+
+  # ChangePackage leaves class names in strings, where they would only fail at runtime.
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: org.apache.commons.dbcp.BasicDataSource
+      newLiteralValue: org.apache.commons.dbcp2.BasicDataSource
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: org.apache.commons.dbcp.BasicDataSourceFactory
+      newLiteralValue: org.apache.commons.dbcp2.BasicDataSourceFactory
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: org.apache.commons.dbcp.PoolingDriver
+      newLiteralValue: org.apache.commons.dbcp2.PoolingDriver
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: org.apache.commons.dbcp.DelegatingConnection
+      newLiteralValue: org.apache.commons.dbcp2.DelegatingConnection
+
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: commons-dbcp
+      oldArtifactId: commons-dbcp
+      newGroupId: org.apache.commons
+      newArtifactId: commons-dbcp2
+      newVersion: 2.x
+  # A repository can get commons-dbcp through another dependency, with nothing to change, and commons-pool from it.
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.commons
+      artifactId: commons-dbcp2
+      version: 2.x
+      onlyIfUsing: org.apache.commons.dbcp..*
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-pool
+      artifactId: commons-pool
+      version: 1.x
+      onlyIfUsing: org.apache.commons.pool..*
