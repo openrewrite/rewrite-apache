@@ -64,6 +64,7 @@ recipeList:
   - org.openrewrite.java.DeleteMethodArgument:
       methodPattern: org.apache.hc.client5.http.impl.auth.DigestSchemeFactory <constructor>(java.nio.charset.Charset)
       argumentIndex: 0
+  - org.openrewrite.apache.httpclient5.HandleEntityUtilsParseException
 
 ---
 type: specs.openrewrite.org/v1beta/recipe
