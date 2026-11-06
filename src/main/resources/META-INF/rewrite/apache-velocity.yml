@@ -1,0 +1,46 @@
+#
+# Copyright 2026 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.velocity.RelocateApacheVelocity
+displayName: Relocate `velocity:velocity` to `org.apache.velocity:velocity`
+description: >-
+  Apache Velocity moved from `velocity:velocity` to `org.apache.velocity:velocity`, where version 1.5 is the same
+  artifact under new coordinates. Older versions are left alone, as `org.apache.velocity:velocity` does not publish them.
+  A `dependencyManagement` entry is left alone too, as it also holds the version of any transitive `velocity:velocity`,
+  which keeps its coordinates.
+tags:
+  - apache
+  - velocity
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: velocity
+      artifactIdPattern: velocity
+      version: "1.5"
+      onlyDirect: true
+  # With a new version to set, ChangeDependency would pull an existing org.apache.velocity:velocity down to 1.5
+  - org.openrewrite.java.dependencies.search.DoesNotIncludeDependency:
+      groupId: org.apache.velocity
+      artifactId: velocity
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: velocity
+      oldArtifactId: velocity
+      newGroupId: org.apache.velocity
+      newArtifactId: velocity
+      newVersion: "1.5"
+      changeManagedDependency: false
