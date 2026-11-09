@@ -57,6 +57,12 @@ public class MigrateThinClientConfiguration extends Recipe {
         return Preconditions.check(new UsesMethod<>(START_CLIENT), new JavaVisitor<ExecutionContext>() {
 
             @Override
+            public boolean isAcceptable(SourceFile sourceFile, ExecutionContext ctx) {
+                // The builder is printed in Java syntax
+                return sourceFile instanceof J.CompilationUnit;
+            }
+
+            @Override
             public J visitBlock(J.Block block, ExecutionContext ctx) {
                 J.Block b = (J.Block) super.visitBlock(block, ctx);
                 Set<UUID> consumed = getCursor().pollMessage(CONSUMED_STATEMENTS);

@@ -54,9 +54,8 @@ public class MigrateTransactions extends Recipe {
             "Pass tx as the first argument of each table and SQL operation that should run in it, " +
             "including those in methods called from here.";
 
-    static final String NAME_CLASH_TODO = "TODO Ignite 3: Transaction is not AutoCloseable. " +
-            "Begin it before a try block and roll it back in its finally block; " +
-            "another variable in this block has the same name.";
+    static final String NOT_AUTOCLOSEABLE_TODO = "TODO Ignite 3: Transaction is not AutoCloseable. " +
+            "Begin it before the try block and roll it back in its finally block.";
 
     String displayName = "Migrate Ignite 2 transactions to Ignite 3";
 
@@ -76,6 +75,12 @@ public class MigrateTransactions extends Recipe {
                         new UsesType<>(TRANSACTION, true),
                         new UsesType<>(CLIENT_TRANSACTION, true)),
                 new JavaVisitor<ExecutionContext>() {
+
+                    @Override
+                    public boolean isAcceptable(SourceFile sourceFile, ExecutionContext ctx) {
+                        // The rewrites print Java syntax, such as class literals and try/finally
+                        return sourceFile instanceof J.CompilationUnit;
+                    }
 
                     @Override
                     public J visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
@@ -128,7 +133,8 @@ public class MigrateTransactions extends Recipe {
                             boolean clash = declaresElsewhere(b, tryWithResources, tx.getSimpleName());
                             boolean keepsHandlers = !tryWithResources.getCatches().isEmpty() || tryWithResources.getFinally() != null;
                             if (clash && !keepsHandlers) {
-                                return TodoComments.withTodos(statement, singletonList(NAME_CLASH_TODO));
+                                // Declared in the block, the transaction would clash with the other variable
+                                return TodoComments.withTodos(statement, singletonList(NOT_AUTOCLOSEABLE_TODO));
                             }
 
                             boolean passesTransaction = passesTransaction(tryWithResources.getBody(), tx);
@@ -161,6 +167,17 @@ public class MigrateTransactions extends Recipe {
                                     Space.format("\n" + indent));
                             return tryWithResources.getPadding().withResources(null).withBody(outerBody);
                         }));
+                    }
+
+                    @Override
+                    public J visitTry(J.Try tryable, ExecutionContext ctx) {
+                        J j = super.visitTry(tryable, ctx);
+                        if (j instanceof J.Try && transactionResource((J.Try) j) != null &&
+                            !(getCursor().getParentTreeCursor().getValue() instanceof J.Block)) {
+                            // Not a statement of a block, as in a case of a switch, which visitBlock cannot rewrite
+                            return TodoComments.withTodos(j, singletonList(NOT_AUTOCLOSEABLE_TODO));
+                        }
+                        return j;
                     }
 
                     private J.VariableDeclarations threadBoundComment(J.VariableDeclarations txDeclaration, boolean passesTransaction) {

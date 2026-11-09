@@ -19,10 +19,12 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.kotlin.KotlinParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.kotlin.Assertions.kotlin;
 
 class MigrateTransactionsTest implements RewriteTest {
 
@@ -247,16 +249,86 @@ class MigrateTransactionsTest implements RewriteTest {
 
               class Transfer {
                   void transfer(Ignite ignite, Ledger ledger) {
-                      // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before a try block and roll it back in its finally block; another variable in this block has the same name.
+                      // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before the try block and roll it back in its finally block.
                       try (Transaction tx = ignite.transactions().begin()) {
                           ledger.record(tx, "first");
                           tx.commit();
                       }
-                      // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before a try block and roll it back in its finally block; another variable in this block has the same name.
+                      // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before the try block and roll it back in its finally block.
                       try (Transaction tx = ignite.transactions().begin()) {
                           ledger.record(tx, "second");
                           tx.commit();
                       }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void tryWithResourcesOutsideBlockGetsComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger, int kind) {
+                      switch (kind) {
+                          case 1:
+                              try (Transaction tx = ignite.transactions().txStart()) {
+                                  ledger.record(tx, "one");
+                                  tx.commit();
+                              }
+                              break;
+                          default:
+                              break;
+                      }
+                  }
+              }
+              """,
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.tx.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger, int kind) {
+                      switch (kind) {
+                          case 1:
+                              // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before the try block and roll it back in its finally block.
+                              try (Transaction tx = ignite.transactions().begin()) {
+                                  ledger.record(tx, "one");
+                                  tx.commit();
+                              }
+                              break;
+                          default:
+                              break;
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void kotlinIsLeftAlone() {
+        rewriteRun(
+          spec -> spec.parser(KotlinParser.builder()
+            .classpathFromResources(new InMemoryExecutionContext(), "cache-api", "ignite-core-2")),
+          //language=kotlin
+          kotlin(
+            """
+              import org.apache.ignite.Ignite
+
+              fun transfer(ignite: Ignite) {
+                  ignite.transactions().txStart().use { tx ->
+                      tx.commit()
                   }
               }
               """

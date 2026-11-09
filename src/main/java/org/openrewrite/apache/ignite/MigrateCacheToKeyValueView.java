@@ -89,6 +89,12 @@ public class MigrateCacheToKeyValueView extends Recipe {
                 new JavaVisitor<ExecutionContext>() {
 
                     @Override
+                    public boolean isAcceptable(SourceFile sourceFile, ExecutionContext ctx) {
+                        // The rewrites print Java syntax, such as class literals and try/finally
+                        return sourceFile instanceof J.CompilationUnit;
+                    }
+
+                    @Override
                     public J visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
                         // Every file changes the cache types, so that signatures still agree across files
                         doAfterVisit(new ChangeType(IGNITE_CACHE, KEY_VALUE_VIEW, true).getVisitor());

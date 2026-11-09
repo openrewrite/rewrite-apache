@@ -20,6 +20,7 @@ import lombok.Value;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
+import org.openrewrite.SourceFile;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
@@ -125,6 +126,11 @@ public class CommentOnIgnite2ApisWithoutEquivalent extends Recipe {
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(new UsesType<>("org.apache.ignite..*", false), new JavaIsoVisitor<ExecutionContext>() {
+            @Override
+            public boolean isAcceptable(SourceFile sourceFile, ExecutionContext ctx) {
+                return sourceFile instanceof J.CompilationUnit;
+            }
+
             @Override
             public J.Block visitBlock(J.Block block, ExecutionContext ctx) {
                 return TodoComments.addNoted(super.visitBlock(block, ctx), getCursor());
