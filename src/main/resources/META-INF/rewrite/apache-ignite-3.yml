@@ -24,7 +24,8 @@ description: >-
   `IgniteClient.builder()`, and the build moves from `ignite-core` to `ignite-client`. Ignite 3 removes much of the
   Ignite 2 API, among it cache and node configuration in Java, compute closures, data streamers, services and the
   embedded node started with `Ignition`; each statement using these is left in place with a `// TODO Ignite 3` comment
-  that says what replaces it.
+  that says what replaces it. A statement that passes a cache to a library built for Ignite 2, such as a rate limiter,
+  gets such a comment too.
 tags:
   - apache
   - ignite
@@ -102,6 +103,24 @@ recipeList:
   - org.openrewrite.java.dependencies.RemoveDependency:
       groupId: org.apache.ignite
       artifactId: ignite-jcl
+  - org.openrewrite.apache.ignite.AddIgniteClientToIgnite2Modules
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.ignite.AddIgniteClientToIgnite2Modules
+displayName: Add the Ignite 3 thin client to modules that used Ignite 2
+description: >-
+  Adds `ignite-client` to a module that depends on Ignite 2 and uses Ignite types, such as one that had Ignite only
+  through `ignite-spring`. Modules already on Ignite 3, Ignite 3 itself among them, are left alone, although their
+  types are in `org.apache.ignite` too.
+tags:
+  - apache
+  - ignite
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: org.apache.ignite
+      artifactIdPattern: "*"
+      version: 2.x
+recipeList:
   - org.openrewrite.java.dependencies.AddDependency:
       groupId: org.apache.ignite
       artifactId: ignite-client

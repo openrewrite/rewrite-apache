@@ -243,4 +243,44 @@ class UpgradeApacheIgnite_3Test implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void ignite3ModuleGetsNoThinClient() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion()
+            .classpathFromResources(new InMemoryExecutionContext(), "ignite-api-3")),
+          mavenProject("accounts",
+            //language=java
+            srcMainJava(
+              java(
+                """
+                  import org.apache.ignite.table.Table;
+
+                  class Accounts {
+                      Table table;
+                  }
+                  """
+              )
+            ),
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.acme</groupId>
+                    <artifactId>accounts</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.ignite</groupId>
+                            <artifactId>ignite-api</artifactId>
+                            <version>3.1.0</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """
+            )
+          )
+        );
+    }
 }

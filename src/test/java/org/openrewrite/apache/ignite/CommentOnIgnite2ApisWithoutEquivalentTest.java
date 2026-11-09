@@ -276,4 +276,129 @@ class CommentOnIgnite2ApisWithoutEquivalentTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void cachePassedToLibraryMethod() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion()
+            .classpathFromResources(new InMemoryExecutionContext(), "cache-api", "ignite-core-2")
+            //language=java
+            .dependsOn(
+              """
+                package com.ratelimit;
+
+                import org.apache.ignite.IgniteCache;
+
+                public class Buckets {
+                    public Buckets(javax.cache.Cache<String, byte[]> cache) {
+                    }
+
+                    public static Object proxyManagerForCache(IgniteCache<String, byte[]> cache) {
+                        return null;
+                    }
+                }
+                """
+            )),
+          //language=java
+          java(
+            """
+              import com.ratelimit.Buckets;
+              import org.apache.ignite.IgniteCache;
+
+              class Limiter {
+                  private final IgniteCache<String, byte[]> cache;
+
+                  Limiter(IgniteCache<String, byte[]> cache) {
+                      this.cache = cache;
+                  }
+
+                  Object proxyManager() {
+                      return Buckets.proxyManagerForCache(cache);
+                  }
+
+                  Buckets buckets() {
+                      return new Buckets(cache);
+                  }
+              }
+              """,
+            """
+              import com.ratelimit.Buckets;
+              import org.apache.ignite.IgniteCache;
+
+              class Limiter {
+                  private final IgniteCache<String, byte[]> cache;
+
+                  Limiter(IgniteCache<String, byte[]> cache) {
+                      this.cache = cache;
+                  }
+
+                  Object proxyManager() {
+                      // TODO Ignite 3: com.ratelimit.Buckets.proxyManagerForCache takes this cache as org.apache.ignite.IgniteCache, which the KeyValueView it becomes does not implement; move to a version of that library which supports Ignite 3, or replace it.
+                      return Buckets.proxyManagerForCache(cache);
+                  }
+
+                  Buckets buckets() {
+                      // TODO Ignite 3: the constructor of com.ratelimit.Buckets takes this cache as javax.cache.Cache, which the KeyValueView it becomes does not implement; move to a version of that library which supports Ignite 3, or replace it.
+                      return new Buckets(cache);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void cachePassedToMethodOfTheseSourcesIsNotCommented() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.IgniteCache;
+
+              class Proxies {
+                  static Object forCache(IgniteCache<String, byte[]> cache) {
+                      return cache;
+                  }
+              }
+              """
+          ),
+          //language=java
+          java(
+            """
+              import org.apache.ignite.IgniteCache;
+
+              class Limiter {
+                  Object proxyManager(IgniteCache<String, byte[]> cache) {
+                      return Proxies.forCache(cache);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void cachePassedAsObjectIsNotCommented() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.util.Collections;
+              import java.util.List;
+              import java.util.Objects;
+              import org.apache.ignite.IgniteCache;
+
+              class Limiter {
+                  String describe(IgniteCache<String, byte[]> cache) {
+                      return String.valueOf(Objects.requireNonNull(cache));
+                  }
+
+                  List<IgniteCache<String, byte[]>> twice(IgniteCache<String, byte[]> cache) {
+                      return Collections.nCopies(2, cache);
+                  }
+              }
+              """
+          )
+        );
+    }
 }
