@@ -41,7 +41,7 @@ name: org.openrewrite.apache.ignite.ChangeIgnite2ExceptionTypes
 displayName: Change Ignite 2 exception types to their Ignite 3 equivalents
 description: >-
   Ignite 3 moved its exceptions to `org.apache.ignite.lang`, and throws `IgniteException` from the thin client where
-  Ignite 2 threw `ClientException`.
+  Ignite 2 threw `ClientException`. A multi-catch that then names one type twice keeps it once.
 tags:
   - apache
   - ignite
@@ -61,6 +61,7 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.ignite.client.ClientAddressFinder
       newFullyQualifiedTypeName: org.apache.ignite.client.IgniteClientAddressFinder
+  - org.openrewrite.apache.ignite.RemoveRedundantCatchAlternatives
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: org.openrewrite.apache.ignite.UpgradeApacheIgniteDependencies_3

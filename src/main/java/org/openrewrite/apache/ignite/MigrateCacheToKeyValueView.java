@@ -20,6 +20,7 @@ import lombok.Value;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
 import org.openrewrite.java.ChangeType;
+import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
@@ -29,6 +30,7 @@ import org.openrewrite.java.tree.*;
 import org.openrewrite.marker.Markers;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyList;
@@ -44,9 +46,14 @@ public class MigrateCacheToKeyValueView extends Recipe {
     static final String KEY_VALUE_VIEW = "org.apache.ignite.table.KeyValueView";
     static final String TRANSACTION = "org.apache.ignite.tx.Transaction";
 
-    private static final List<String> IGNITE2_TRANSACTIONS = Arrays.asList(
+    private static final List<String> TRANSACTION_TYPES = Arrays.asList(
             "org.apache.ignite.transactions.Transaction",
-            "org.apache.ignite.client.ClientTransaction");
+            "org.apache.ignite.client.ClientTransaction",
+            // Transactions that MigrateTransactions has already migrated
+            TRANSACTION);
+
+    private static final Set<String> ENDING_METHODS = new HashSet<>(Arrays.asList(
+            "commit", "rollback", "close", "commitAsync", "rollbackAsync"));
 
     private static final MethodMatcher IGNITE_CACHE_LOOKUP = new MethodMatcher("org.apache.ignite.Ignite cache(java.lang.String)");
     private static final MethodMatcher IGNITE_GET_OR_CREATE = new MethodMatcher("org.apache.ignite.Ignite getOrCreateCache(java.lang.String)");
@@ -67,6 +74,14 @@ public class MigrateCacheToKeyValueView extends Recipe {
             "so it cannot hold java.lang.Object; use table.keyValueView() for a KeyValueView<Tuple, Tuple>, " +
             "or classes whose fields match the columns.";
 
+    static final String CALLBACK_TODO = "TODO Ignite 3: Ignite 2 ran this operation in the enclosing transaction only if " +
+            "this lambda or anonymous class ran on the thread that began it. Pass null instead of the transaction if it " +
+            "runs on another thread.";
+
+    static final String CALLBACK_NOT_FINAL_TODO = "TODO Ignite 3: Ignite 2 ran this operation in the enclosing transaction " +
+            "if this lambda or anonymous class ran on the thread that began it. It now runs in a transaction of its own, " +
+            "as the variable holding that transaction is not effectively final and cannot be used here.";
+
     String displayName = "Migrate Ignite 2 caches to Ignite 3 `KeyValueView` tables";
 
     String description = "Ignite 3 replaces caches with tables. A cache obtained with `cache(name)` or " +
@@ -74,9 +89,12 @@ public class MigrateCacheToKeyValueView extends Recipe {
             "which reads the table that the Ignite 3 migration tools create for that cache. " +
             "The key-value operations of `IgniteCache` and `ClientCache` move to `KeyValueView`, " +
             "taking the transaction as their first argument: the enclosing Ignite 2 transaction where there is one, " +
-            "and `null` otherwise, which runs the operation in an implicit transaction of its own. " +
+            "and `null` otherwise, which runs the operation in an implicit transaction of its own. A lambda or " +
+            "anonymous class inside a transaction gets a comment unless it is passed to a `java.util` method that " +
+            "runs it on the same thread. `getAllOutTx` becomes `getAll` outside any transaction. " +
             "`containsKey` becomes `contains`, `containsKeys` becomes `containsAll`, and `clear` becomes `removeAll`. " +
-            "Operations without an Ignite 3 equivalent, such as `size`, `query` and `invoke`, are left as they are.";
+            "Operations without an Ignite 3 equivalent, such as `size`, `query` and `invoke`, are left as they are. " +
+            "A lookup with `getOrCreateCache` gets a comment, since the table has to be created before it can be read.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -138,7 +156,15 @@ public class MigrateCacheToKeyValueView extends Recipe {
                         if (onIgnite2Cache) {
                             String newName = keyValueViewMethodName(mi);
                             if (newName != null) {
-                                return withTransactionArgument(mi, newName, transactionFor(getCursor()));
+                                if ("getAllOutTx".equals(mi.getSimpleName())) {
+                                    // Read outside of any transaction, as Ignite 2 did
+                                    return withTransactionArgument(mi, newName, null);
+                                }
+                                InTransaction inTransaction = transactionFor(getCursor());
+                                if (inTransaction.todo != null) {
+                                    TodoComments.noteOnEnclosingStatement(getCursor(), inTransaction.todo);
+                                }
+                                return withTransactionArgument(mi, newName, inTransaction.tx);
                             }
                         }
                         return mi;
@@ -161,6 +187,11 @@ public class MigrateCacheToKeyValueView extends Recipe {
                         } else {
                             tableName = "IgniteNameUtils.quoteIfNeeded(#{any(java.lang.String)})";
                             maybeAddImport("org.apache.ignite.lang.util.IgniteNameUtils");
+                        }
+
+                        if (IGNITE_GET_OR_CREATE.matches(mi) || CLIENT_GET_OR_CREATE.matches(mi)) {
+                            // table() returns null for a table that does not exist
+                            TodoComments.noteOnEnclosingStatement(getCursor(), CommentOnIgnite2ApisWithoutEquivalent.CREATE_TABLE);
                         }
 
                         for (JavaType.FullyQualified type : keyValue) {
@@ -267,13 +298,14 @@ public class MigrateCacheToKeyValueView extends Recipe {
     /**
      * The {@code KeyValueView} method that does what this Ignite 2 cache method does, or {@code null} when there is none.
      */
-    private static @Nullable String keyValueViewMethodName(J.MethodInvocation mi) {
+    static @Nullable String keyValueViewMethodName(J.MethodInvocation mi) {
         int args = (int) mi.getArguments().stream().filter(a -> !(a instanceof J.Empty)).count();
         switch (mi.getSimpleName()) {
             case "get":
             case "getAndRemove":
                 return args == 1 ? mi.getSimpleName() : null;
             case "getAll":
+            case "getAllOutTx":
                 return args == 1 ? "getAll" : null;
             case "containsKey":
                 return args == 1 ? "contains" : null;
@@ -299,85 +331,271 @@ public class MigrateCacheToKeyValueView extends Recipe {
         }
     }
 
+    private static final class InTransaction {
+        static final InTransaction NONE = new InTransaction(null, null);
+
+        final J.@Nullable Identifier tx;
+        final @Nullable String todo;
+
+        InTransaction(J.@Nullable Identifier tx, @Nullable String todo) {
+            this.tx = tx;
+            this.todo = todo;
+        }
+    }
+
     /**
-     * The Ignite 2 transaction that the operation at this cursor runs in: the resource of an enclosing
-     * try-with-resources, or a variable declared earlier in an enclosing block. Ignite 2 binds transactions
-     * to the thread, so these are the operations it enlisted implicitly.
+     * The Ignite 2 transaction that the operation at this cursor runs in. Ignite 2 binds transactions to the thread,
+     * so this is the transaction begun most recently before the operation, in an enclosing block or as the resource
+     * of an enclosing try-with-resources, or the transaction that the enclosing method or lambda is given, as long as
+     * it has not been committed, rolled back or closed since.
      */
-    private static J.@Nullable Identifier transactionFor(Cursor cursor) {
+    private static InTransaction transactionFor(Cursor cursor) {
+        // Transactions ended between where they were begun and the operation
         Set<String> ended = new HashSet<>();
+        // Whether the operation is in a lambda or anonymous class, which can only use effectively final variables
+        boolean inLambda = false;
+        // Whether that lambda or anonymous class may run on another thread
+        boolean inCallback = false;
         Object child = cursor.getValue();
         for (Cursor c = cursor.getParent(); c != null; c = c.getParent()) {
             Object tree = c.getValue();
-            if (tree instanceof J.MethodDeclaration || tree instanceof J.ClassDeclaration ||
-                tree instanceof J.NewClass && child == ((J.NewClass) tree).getBody()) {
-                return null;
+            if (!(tree instanceof J)) {
+                continue;
             }
-            if (tree instanceof J.Try && ((J.Try) tree).getResources() != null && child == ((J.Try) tree).getBody()) {
-                for (J.Try.Resource resource : ((J.Try) tree).getResources()) {
-                    J.Identifier tx = transactionVariable(resource.getVariableDeclarations());
-                    if (tx != null) {
-                        return ended.contains(tx.getSimpleName()) ? null : tx;
+            J.Identifier tx = null;
+            J scope = null;
+            boolean assignedOnce = false;
+            if (tree instanceof J.ClassDeclaration) {
+                return InTransaction.NONE;
+            } else if (tree instanceof J.MethodDeclaration) {
+                J.MethodDeclaration method = (J.MethodDeclaration) tree;
+                tx = transactionParameter(method.getParameters());
+                scope = method.getBody();
+                if (tx == null) {
+                    if (!isMethodOfAnonymousClass(c)) {
+                        return InTransaction.NONE;
                     }
+                    inLambda = true;
+                    inCallback = true;
                 }
-            }
-            if (tree instanceof J.Block) {
-                J.Identifier tx = null;
-                for (Statement statement : ((J.Block) tree).getStatements()) {
-                    if (statement == child) {
-                        break;
-                    }
-                    J.Identifier declared = transactionVariable(statement);
-                    if (declared != null) {
-                        tx = declared;
-                        ended.remove(declared.getSimpleName());
-                    } else {
-                        String endedName = endedTransaction(statement);
-                        if (endedName != null) {
-                            ended.add(endedName);
+            } else if (tree instanceof J.Lambda) {
+                J.Lambda lambda = (J.Lambda) tree;
+                tx = transactionParameter(lambda.getParameters().getParameters());
+                scope = lambda.getBody();
+                if (tx == null) {
+                    inLambda = true;
+                    inCallback |= !runsOnSameThread(c, lambda);
+                }
+            } else if (tree instanceof J.Try) {
+                J.Try t = (J.Try) tree;
+                if (child == t.getBody() && t.getResources() != null) {
+                    for (J.Try.Resource resource : t.getResources()) {
+                        tx = startedTransaction(resource.getVariableDeclarations());
+                        if (tx != null) {
+                            assignedOnce = true;
+                            break;
                         }
                     }
+                } else if (child == t.getFinally()) {
+                    // A finally block runs once the try block has committed or rolled back
+                    ended.addAll(endedTransactions(t.getBody()));
                 }
-                if (tx != null) {
-                    return ended.contains(tx.getSimpleName()) ? null : tx;
+            } else if (tree instanceof J.Block) {
+                List<Statement> statements = ((J.Block) tree).getStatements();
+                int index = indexOf(statements, child);
+                for (int i = index - 1; i >= 0 && tx == null; i--) {
+                    Statement statement = statements.get(i);
+                    tx = startedTransaction(statement);
+                    if (tx == null) {
+                        ended.addAll(endedTransactions(statement));
+                    } else {
+                        scope = (J) tree;
+                        assignedOnce = statement instanceof J.VariableDeclarations && !isAssigned(scope, tx.getSimpleName());
+                    }
                 }
             }
-            if (tree instanceof J) {
-                child = tree;
+
+            if (tx != null) {
+                if (ended.contains(tx.getSimpleName())) {
+                    return InTransaction.NONE;
+                }
+                if (!inLambda) {
+                    return new InTransaction(tx, null);
+                }
+                boolean effectivelyFinal = assignedOnce ||
+                                           !(tree instanceof J.Block) && !isAssigned(scope, tx.getSimpleName());
+                if (!effectivelyFinal) {
+                    return new InTransaction(null, CALLBACK_NOT_FINAL_TODO);
+                }
+                return new InTransaction(tx, inCallback ? CALLBACK_TODO : null);
+            }
+            child = tree;
+        }
+        return InTransaction.NONE;
+    }
+
+    private static int indexOf(List<Statement> statements, Object statement) {
+        for (int i = 0; i < statements.size(); i++) {
+            if (statements.get(i) == statement) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isTransaction(@Nullable JavaType type) {
+        for (String transactionType : TRANSACTION_TYPES) {
+            if (TypeUtils.isOfClassType(type, transactionType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isNullLiteral(@Nullable Expression e) {
+        return e instanceof J.Literal && ((J.Literal) e).getValue() == null;
+    }
+
+    /**
+     * The transaction variable that this declaration or assignment gives a transaction to.
+     */
+    private static J.@Nullable Identifier startedTransaction(@Nullable J j) {
+        if (j instanceof J.VariableDeclarations) {
+            J.VariableDeclarations vd = (J.VariableDeclarations) j;
+            if (vd.getVariables().size() == 1 && isTransaction(vd.getType())) {
+                Expression initializer = vd.getVariables().get(0).getInitializer();
+                if (initializer != null && !isNullLiteral(initializer)) {
+                    return vd.getVariables().get(0).getName();
+                }
+            }
+        } else if (j instanceof J.Assignment) {
+            J.Assignment assignment = (J.Assignment) j;
+            if (assignment.getVariable() instanceof J.Identifier && isTransaction(assignment.getVariable().getType()) &&
+                !isNullLiteral(assignment.getAssignment())) {
+                return (J.Identifier) assignment.getVariable();
+            }
+        }
+        return null;
+    }
+
+    private static J.@Nullable Identifier transactionParameter(List<? extends J> parameters) {
+        for (J parameter : parameters) {
+            if (parameter instanceof J.VariableDeclarations) {
+                J.VariableDeclarations vd = (J.VariableDeclarations) parameter;
+                if (vd.getVariables().size() == 1 && isTransaction(vd.getType())) {
+                    return vd.getVariables().get(0).getName();
+                }
             }
         }
         return null;
     }
 
     /**
-     * The name of the variable this statement commits, rolls back or closes, after which later
-     * operations no longer run in that Ignite 2 transaction.
+     * The transaction variables this tree commits, rolls back or closes, outside of lambdas and classes.
      */
-    private static @Nullable String endedTransaction(Statement statement) {
-        if (statement instanceof J.MethodInvocation) {
-            J.MethodInvocation mi = (J.MethodInvocation) statement;
-            if (mi.getSelect() instanceof J.Identifier &&
-                ("commit".equals(mi.getSimpleName()) || "rollback".equals(mi.getSimpleName()) ||
-                 "close".equals(mi.getSimpleName())) &&
-                IGNITE2_TRANSACTIONS.stream().anyMatch(t -> TypeUtils.isOfClassType(mi.getSelect().getType(), t))) {
-                return ((J.Identifier) mi.getSelect()).getSimpleName();
+    private static Set<String> endedTransactions(J tree) {
+        Set<String> names = new HashSet<>();
+        new JavaIsoVisitor<Set<String>>() {
+            @Override
+            public J.Lambda visitLambda(J.Lambda lambda, Set<String> n) {
+                return lambda;
             }
-        }
-        return null;
-    }
 
-    private static J.@Nullable Identifier transactionVariable(J j) {
-        if (j instanceof J.VariableDeclarations) {
-            J.VariableDeclarations vd = (J.VariableDeclarations) j;
-            if (vd.getVariables().size() == 1) {
-                for (String transactionType : IGNITE2_TRANSACTIONS) {
-                    if (TypeUtils.isOfClassType(vd.getType(), transactionType)) {
-                        return vd.getVariables().get(0).getName();
+            @Override
+            public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, Set<String> n) {
+                return classDecl;
+            }
+
+            @Override
+            public J.NewClass visitNewClass(J.NewClass newClass, Set<String> n) {
+                return newClass.getBody() == null ? super.visitNewClass(newClass, n) : newClass;
+            }
+
+            @Override
+            public J.Try visitTry(J.Try tryable, Set<String> n) {
+                if (tryable.getResources() != null) {
+                    for (J.Try.Resource resource : tryable.getResources()) {
+                        if (resource.getVariableDeclarations() instanceof J.Identifier &&
+                            isTransaction(resource.getVariableDeclarations().getType())) {
+                            n.add(((J.Identifier) resource.getVariableDeclarations()).getSimpleName());
+                        }
                     }
                 }
+                return super.visitTry(tryable, n);
             }
+
+            @Override
+            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, Set<String> n) {
+                if (method.getSelect() instanceof J.Identifier && ENDING_METHODS.contains(method.getSimpleName()) &&
+                    isTransaction(method.getSelect().getType())) {
+                    n.add(((J.Identifier) method.getSelect()).getSimpleName());
+                }
+                return super.visitMethodInvocation(method, n);
+            }
+        }.visit(tree, names);
+        return names;
+    }
+
+    /**
+     * Whether a variable of this name is assigned anywhere in this tree, which keeps it from being effectively final.
+     */
+    private static boolean isAssigned(@Nullable J tree, String name) {
+        if (tree == null) {
+            return false;
         }
-        return null;
+        AtomicBoolean assigned = new AtomicBoolean();
+        new JavaIsoVisitor<AtomicBoolean>() {
+            @Override
+            public J.Assignment visitAssignment(J.Assignment assignment, AtomicBoolean a) {
+                check(assignment.getVariable(), a);
+                return super.visitAssignment(assignment, a);
+            }
+
+            @Override
+            public J.AssignmentOperation visitAssignmentOperation(J.AssignmentOperation assignOp, AtomicBoolean a) {
+                check(assignOp.getVariable(), a);
+                return super.visitAssignmentOperation(assignOp, a);
+            }
+
+            @Override
+            public J.Unary visitUnary(J.Unary unary, AtomicBoolean a) {
+                if (unary.getOperator().isModifying()) {
+                    check(unary.getExpression(), a);
+                }
+                return super.visitUnary(unary, a);
+            }
+
+            private void check(Expression variable, AtomicBoolean a) {
+                if (variable instanceof J.Identifier && ((J.Identifier) variable).getSimpleName().equals(name)) {
+                    a.set(true);
+                }
+            }
+        }.visit(tree, assigned);
+        return assigned.get();
+    }
+
+    private static boolean isMethodOfAnonymousClass(Cursor methodCursor) {
+        Cursor body = methodCursor.getParentTreeCursor();
+        return body.getValue() instanceof J.Block && body.getParentTreeCursor().getValue() instanceof J.NewClass;
+    }
+
+    /**
+     * Whether this lambda is passed to a method of {@code java.util} or {@code java.lang.Iterable}, such as
+     * {@code forEach} or {@code computeIfAbsent}, which runs it on the calling thread.
+     */
+    private static boolean runsOnSameThread(Cursor lambdaCursor, J.Lambda lambda) {
+        Object parent = lambdaCursor.getParentTreeCursor().getValue();
+        if (!(parent instanceof J.MethodInvocation)) {
+            return false;
+        }
+        J.MethodInvocation call = (J.MethodInvocation) parent;
+        if (call.getMethodType() == null || call.getArguments().stream().noneMatch(a -> a == lambda)) {
+            return false;
+        }
+        JavaType.FullyQualified declaringType = call.getMethodType().getDeclaringType();
+        String packageName = declaringType.getPackageName();
+        return "java.util".equals(packageName) || "java.util.stream".equals(packageName) ||
+               TypeUtils.isOfClassType(declaringType, "java.lang.Iterable");
     }
 
     private static J.MethodInvocation withTransactionArgument(J.MethodInvocation mi, String newName, J.@Nullable Identifier tx) {

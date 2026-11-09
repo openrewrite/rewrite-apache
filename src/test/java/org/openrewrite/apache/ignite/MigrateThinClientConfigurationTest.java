@@ -300,4 +300,137 @@ class MigrateThinClientConfigurationTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void configurationBuiltOutsideRetryLoopGetsComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignition;
+              import org.apache.ignite.client.ClientConnectionException;
+              import org.apache.ignite.client.IgniteClient;
+              import org.apache.ignite.configuration.ClientConfiguration;
+
+              import java.util.concurrent.Executors;
+
+              class Clients {
+                  IgniteClient connect() {
+                      ClientConfiguration cfg = new ClientConfiguration()
+                              .setAddresses("127.0.0.1:10800")
+                              .setAsyncContinuationExecutor(Executors.newFixedThreadPool(4));
+                      while (true) {
+                          try {
+                              return Ignition.startClient(cfg);
+                          } catch (ClientConnectionException e) {
+                              System.out.println("retrying");
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignition;
+              import org.apache.ignite.client.ClientConnectionException;
+              import org.apache.ignite.client.IgniteClient;
+              import org.apache.ignite.configuration.ClientConfiguration;
+
+              import java.util.concurrent.Executors;
+
+              class Clients {
+                  IgniteClient connect() {
+                      ClientConfiguration cfg = new ClientConfiguration()
+                              .setAddresses("127.0.0.1:10800")
+                              .setAsyncContinuationExecutor(Executors.newFixedThreadPool(4));
+                      while (true) {
+                          try {
+                              // TODO Ignite 3: build the client with IgniteClient.builder()...build(). Some of the ClientConfiguration settings used here have no Ignite 3 equivalent, or are set where this recipe cannot follow them.
+                              return Ignition.startClient(cfg);
+                          } catch (ClientConnectionException e) {
+                              System.out.println("retrying");
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void argumentReassignedBeforeStartGetsComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignition;
+              import org.apache.ignite.client.IgniteClient;
+              import org.apache.ignite.configuration.ClientConfiguration;
+
+              class Clients {
+                  IgniteClient connect(String address) {
+                      ClientConfiguration cfg = new ClientConfiguration().setAddresses(address);
+                      address = "unused";
+                      return Ignition.startClient(cfg);
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignition;
+              import org.apache.ignite.client.IgniteClient;
+              import org.apache.ignite.configuration.ClientConfiguration;
+
+              class Clients {
+                  IgniteClient connect(String address) {
+                      ClientConfiguration cfg = new ClientConfiguration().setAddresses(address);
+                      address = "unused";
+                      // TODO Ignite 3: build the client with IgniteClient.builder()...build(). Some of the ClientConfiguration settings used here have no Ignite 3 equivalent, or are set where this recipe cannot follow them.
+                      return Ignition.startClient(cfg);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void commentsOfRemovedStatementsAreKept() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignition;
+              import org.apache.ignite.client.IgniteClient;
+              import org.apache.ignite.configuration.ClientConfiguration;
+
+              class Clients {
+                  IgniteClient connect() {
+                      // the cluster of this region
+                      ClientConfiguration cfg = new ClientConfiguration().setAddresses("127.0.0.1:10800");
+                      // keep in sync with the operations runbook
+                      cfg.setTimeout(3000);
+                      // connect once at startup
+                      return Ignition.startClient(cfg);
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.client.IgniteClient;
+
+              class Clients {
+                  IgniteClient connect() {
+                      // the cluster of this region
+                      // keep in sync with the operations runbook
+                      // connect once at startup
+                      return IgniteClient.builder()
+                              .addresses("127.0.0.1:10800")
+                              .connectTimeout(3000)
+                              .operationTimeout(3000)
+                              .build();
+                  }
+              }
+              """
+          )
+        );
+    }
 }

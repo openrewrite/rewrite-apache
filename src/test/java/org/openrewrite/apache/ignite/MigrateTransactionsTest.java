@@ -220,7 +220,7 @@ class MigrateTransactionsTest implements RewriteTest {
     }
 
     @Test
-    void sameNameInBlockGetsComment() {
+    void sameNameInBlockGetsBlocksOfTheirOwn() {
         rewriteRun(
           //language=java
           java(
@@ -249,14 +249,277 @@ class MigrateTransactionsTest implements RewriteTest {
 
               class Transfer {
                   void transfer(Ignite ignite, Ledger ledger) {
-                      // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before the try block and roll it back in its finally block.
-                      try (Transaction tx = ignite.transactions().begin()) {
-                          ledger.record(tx, "first");
+                      {
+                          Transaction tx = ignite.transactions().begin();
+                          try {
+                              ledger.record(tx, "first");
+                              tx.commit();
+                          } finally {
+                              tx.rollback();
+                          }
+                      }
+                      {
+                          Transaction tx = ignite.transactions().begin();
+                          try {
+                              ledger.record(tx, "second");
+                              tx.commit();
+                          } finally {
+                              tx.rollback();
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void sameNameInLaterLoopGetsBlockOfItsOwn() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.List;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger, List<String> items) {
+                      try (Transaction tx = ignite.transactions().txStart()) {
+                          ledger.record(tx, "all");
                           tx.commit();
                       }
+                      for (String item : items) {
+                          try (Transaction tx = ignite.transactions().txStart()) {
+                              ledger.record(tx, item);
+                              tx.commit();
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.tx.Transaction;
+
+              import java.util.List;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger, List<String> items) {
+                      {
+                          Transaction tx = ignite.transactions().begin();
+                          try {
+                              ledger.record(tx, "all");
+                              tx.commit();
+                          } finally {
+                              tx.rollback();
+                          }
+                      }
+                      for (String item : items) {
+                          Transaction tx = ignite.transactions().begin();
+                          try {
+                              ledger.record(tx, item);
+                              tx.commit();
+                          } finally {
+                              tx.rollback();
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void methodCalledInTransactionGetsComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger) {
+                      try (Transaction tx = ignite.transactions().txStart()) {
+                          ledger.record(tx, "debit");
+                          credit(ledger);
+                          tx.commit();
+                      }
+                  }
+
+                  void credit(Ledger ledger) {
+                  }
+              }
+              """,
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.tx.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger) {
+                      // TODO Ignite 3: transactions are no longer bound to the thread. Pass tx as the first argument of each table and SQL operation that should run in it, including those in methods called from here.
+                      Transaction tx = ignite.transactions().begin();
+                      try {
+                          ledger.record(tx, "debit");
+                          credit(ledger);
+                          tx.commit();
+                      } finally {
+                          tx.rollback();
+                      }
+                  }
+
+                  void credit(Ledger ledger) {
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void jdkAndLoggingCallsNeedNoComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.List;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger, List<String> entries) {
+                      try (Transaction tx = ignite.transactions().txStart()) {
+                          entries.forEach(entry -> ledger.record(tx, entry.trim()));
+                          System.out.println("recorded " + entries.size());
+                          tx.commit();
+                      }
+                  }
+              }
+              """,
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.tx.Transaction;
+
+              import java.util.List;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger, List<String> entries) {
+                      Transaction tx = ignite.transactions().begin();
+                      try {
+                          entries.forEach(entry -> ledger.record(tx, entry.trim()));
+                          System.out.println("recorded " + entries.size());
+                          tx.commit();
+                      } finally {
+                          tx.rollback();
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void transactionInLocalVariableGetsComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Runnable work) {
+                      Transaction tx = ignite.transactions().txStart();
+                      try {
+                          work.run();
+                          tx.commit();
+                      } finally {
+                          tx.close();
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.tx.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Runnable work) {
+                      // TODO Ignite 3: transactions are no longer bound to the thread. Pass tx as the first argument of each table and SQL operation that should run in it, including those in methods called from here.
+                      Transaction tx = ignite.transactions().begin();
+                      try {
+                          work.run();
+                          tx.commit();
+                      } finally {
+                          tx.rollback();
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void transactionAmongSeveralResourcesGetsComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.io.StringReader;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger) {
+                      try (Transaction tx = ignite.transactions().txStart(); StringReader reader = new StringReader("x")) {
+                          ledger.record(tx, "read");
+                          tx.commit();
+                      }
+                  }
+
+                  void again(Transaction tx, Ledger ledger) {
+                      try (tx) {
+                          ledger.record(tx, "again");
+                          tx.commit();
+                      }
+                  }
+              }
+              """,
+            """
+              import com.acme.Ledger;
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.tx.Transaction;
+
+              import java.io.StringReader;
+
+              class Transfer {
+                  void transfer(Ignite ignite, Ledger ledger) {
                       // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before the try block and roll it back in its finally block.
-                      try (Transaction tx = ignite.transactions().begin()) {
-                          ledger.record(tx, "second");
+                      try (Transaction tx = ignite.transactions().begin(); StringReader reader = new StringReader("x")) {
+                          ledger.record(tx, "read");
+                          tx.commit();
+                      }
+                  }
+
+                  void again(Transaction tx, Ledger ledger) {
+                      // TODO Ignite 3: Transaction is not AutoCloseable. Begin it before the try block and roll it back in its finally block.
+                      try (tx) {
+                          ledger.record(tx, "again");
                           tx.commit();
                       }
                   }

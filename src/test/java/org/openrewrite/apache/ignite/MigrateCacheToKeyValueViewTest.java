@@ -163,6 +163,7 @@ class MigrateCacheToKeyValueViewTest implements RewriteTest {
                   private final KeyValueView<Long, Person> cache;
 
                   PersonStore(Ignite ignite) {
+                      // TODO Ignite 3: tables are not created on demand. Create the table with CREATE TABLE through ignite.sql() or with ignite.catalog().createTable(...), for example from the DDL that the migration-tools sql-ddl-generator writes for the cache configuration, and read it with ignite.tables().table(name).
                       this.cache = ignite.tables().table("PERSON").keyValueView(Long.class, Person.class);
                   }
 
@@ -293,6 +294,231 @@ class MigrateCacheToKeyValueViewTest implements RewriteTest {
                           tx.commit();
                       } finally {
                           tx.close();
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void transactionParameterIsPassedOn() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.IgniteCache;
+              import org.apache.ignite.transactions.Transaction;
+
+              class Steps {
+                  void step(Transaction tx, IgniteCache<String, String> cache, String key) {
+                      cache.put(key, "v");
+                      tx.commit();
+                      cache.put("after", "v");
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.table.KeyValueView;
+              import org.apache.ignite.transactions.Transaction;
+
+              class Steps {
+                  void step(Transaction tx, KeyValueView<String, String> cache, String key) {
+                      cache.put(tx, key, "v");
+                      tx.commit();
+                      cache.put(null, "after", "v");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void operationsInFinallyAndAfterTryRunOutsideTransaction() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.IgniteCache;
+              import org.apache.ignite.transactions.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, IgniteCache<String, Double> cache) {
+                      Transaction tx = ignite.transactions().txStart();
+                      try {
+                          cache.put("a", 1.0);
+                          tx.commit();
+                      } finally {
+                          cache.put("audit", 3.0);
+                          tx.close();
+                      }
+                      cache.put("after", 2.0);
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.table.KeyValueView;
+              import org.apache.ignite.transactions.Transaction;
+
+              class Transfer {
+                  void transfer(Ignite ignite, KeyValueView<String, Double> cache) {
+                      Transaction tx = ignite.transactions().txStart();
+                      try {
+                          cache.put(tx, "a", 1.0);
+                          tx.commit();
+                      } finally {
+                          cache.put(null, "audit", 3.0);
+                          tx.close();
+                      }
+                      cache.put(null, "after", 2.0);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void lambdaThatMayRunOnAnotherThreadGetsComment() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.IgniteCache;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.Map;
+              import java.util.concurrent.ExecutorService;
+
+              class Loader {
+                  void load(Ignite ignite, IgniteCache<String, String> cache, Map<String, String> rows, ExecutorService pool) {
+                      try (Transaction tx = ignite.transactions().txStart()) {
+                          rows.forEach((k, v) -> cache.put(k, v));
+                          pool.submit(() -> cache.put("log", "loaded"));
+                          tx.commit();
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.table.KeyValueView;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.Map;
+              import java.util.concurrent.ExecutorService;
+
+              class Loader {
+                  void load(Ignite ignite, KeyValueView<String, String> cache, Map<String, String> rows, ExecutorService pool) {
+                      try (Transaction tx = ignite.transactions().txStart()) {
+                          rows.forEach((k, v) -> cache.put(tx, k, v));
+                          // TODO Ignite 3: Ignite 2 ran this operation in the enclosing transaction only if this lambda or anonymous class ran on the thread that began it. Pass null instead of the transaction if it runs on another thread.
+                          pool.submit(() -> cache.put(tx, "log", "loaded"));
+                          tx.commit();
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void transactionAssignedInTryIsNotUsedBeforeOrInLambdas() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.IgniteCache;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.Map;
+
+              class Loader {
+                  void load(Ignite ignite, IgniteCache<String, String> cache, Map<String, String> rows) {
+                      Transaction tx = null;
+                      try {
+                          cache.put("before", "v");
+                          tx = ignite.transactions().txStart();
+                          cache.put("in", "v");
+                          rows.forEach((k, v) -> cache.put(k, v));
+                          tx.commit();
+                      } finally {
+                          if (tx != null) {
+                              tx.close();
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.table.KeyValueView;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.Map;
+
+              class Loader {
+                  void load(Ignite ignite, KeyValueView<String, String> cache, Map<String, String> rows) {
+                      Transaction tx = null;
+                      try {
+                          cache.put(null, "before", "v");
+                          tx = ignite.transactions().txStart();
+                          cache.put(tx, "in", "v");
+                          // TODO Ignite 3: Ignite 2 ran this operation in the enclosing transaction if this lambda or anonymous class ran on the thread that began it. It now runs in a transaction of its own, as the variable holding that transaction is not effectively final and cannot be used here.
+                          rows.forEach((k, v) -> cache.put(null, k, v));
+                          tx.commit();
+                      } finally {
+                          if (tx != null) {
+                              tx.close();
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void getAllOutTxReadsOutsideTransaction() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.IgniteCache;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.Map;
+              import java.util.Set;
+
+              class Reader {
+                  Map<String, String> read(Ignite ignite, IgniteCache<String, String> cache, Set<String> keys) {
+                      try (Transaction tx = ignite.transactions().txStart()) {
+                          return cache.getAllOutTx(keys);
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.table.KeyValueView;
+              import org.apache.ignite.transactions.Transaction;
+
+              import java.util.Map;
+              import java.util.Set;
+
+              class Reader {
+                  Map<String, String> read(Ignite ignite, KeyValueView<String, String> cache, Set<String> keys) {
+                      try (Transaction tx = ignite.transactions().txStart()) {
+                          return cache.getAll(null, keys);
                       }
                   }
               }

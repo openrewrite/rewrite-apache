@@ -157,4 +157,123 @@ class CommentOnIgnite2ApisWithoutEquivalentTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void cacheMethodsWithoutEquivalentGetComments() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.IgniteCache;
+              import org.apache.ignite.client.ClientCache;
+
+              import javax.cache.Cache;
+              import javax.cache.expiry.ExpiryPolicy;
+              import java.util.Map;
+              import java.util.Set;
+
+              class Store {
+                  void scan(IgniteCache<Long, String> cache) {
+                      for (Cache.Entry<Long, String> e : cache) {
+                          System.out.println(e.getValue());
+                      }
+                      System.out.println(cache.getName());
+                  }
+
+                  void expire(ClientCache<Long, String> cache, ExpiryPolicy policy) {
+                      cache.withExpirePolicy(policy).put(1L, "a");
+                  }
+
+                  Map<Long, String> read(IgniteCache<Long, String> cache, Set<Long> keys) {
+                      return cache.getAllOutTx(keys);
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.IgniteCache;
+              import org.apache.ignite.client.ClientCache;
+
+              import javax.cache.Cache;
+              import javax.cache.expiry.ExpiryPolicy;
+              import java.util.Map;
+              import java.util.Set;
+
+              class Store {
+                  void scan(IgniteCache<Long, String> cache) {
+                      // TODO Ignite 3: a KeyValueView cannot be iterated; read its entries with query(tx, criteria), which returns a Cursor of Map.Entry, or with SELECT through ignite.sql().
+                      for (Cache.Entry<Long, String> e : cache) {
+                          System.out.println(e.getValue());
+                      }
+                      // TODO Ignite 3: KeyValueView has no equivalent of this cache operation.
+                      System.out.println(cache.getName());
+                  }
+
+                  void expire(ClientCache<Long, String> cache, ExpiryPolicy policy) {
+                      // TODO Ignite 3: KeyValueView has no equivalent of this cache operation.
+                      cache.withExpirePolicy(policy).put(1L, "a");
+                  }
+
+                  Map<Long, String> read(IgniteCache<Long, String> cache, Set<Long> keys) {
+                      return cache.getAllOutTx(keys);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void transactionApisGetComments() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+              import org.apache.ignite.transactions.TransactionIsolation;
+              import org.apache.ignite.transactions.TransactionOptimisticException;
+
+              import static org.apache.ignite.transactions.TransactionConcurrency.OPTIMISTIC;
+
+              class Transfer {
+                  static final TransactionIsolation ISOLATION = TransactionIsolation.SERIALIZABLE;
+
+                  void transfer(Ignite ignite) {
+                      try (Transaction tx = ignite.transactions().txStart(OPTIMISTIC, ISOLATION)) {
+                          tx.setRollbackOnly();
+                          tx.commit();
+                      } catch (TransactionOptimisticException e) {
+                          System.out.println(ignite.transactions().tx());
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.ignite.Ignite;
+              import org.apache.ignite.transactions.Transaction;
+              import org.apache.ignite.transactions.TransactionIsolation;
+              import org.apache.ignite.transactions.TransactionOptimisticException;
+
+              import static org.apache.ignite.transactions.TransactionConcurrency.OPTIMISTIC;
+
+              class Transfer {
+                  // TODO Ignite 3: transactions have no concurrency or isolation modes; TransactionOptions sets only a timeout and whether the transaction is read-only.
+                  static final TransactionIsolation ISOLATION = TransactionIsolation.SERIALIZABLE;
+
+                  void transfer(Ignite ignite) {
+                      // TODO Ignite 3: transactions throw org.apache.ignite.tx.TransactionException, with no subclasses for optimistic conflicts, timeouts, rollbacks, heuristic outcomes or deadlocks.
+                      try (Transaction tx = ignite.transactions().txStart(OPTIMISTIC, ISOLATION)) {
+                          // TODO Ignite 3: a Transaction only commits or rolls back, with commit(), rollback(), and commitAsync() and rollbackAsync(), which return a CompletableFuture; it has no state, label, timeout or rollback-only flag, and cannot be suspended.
+                          tx.setRollbackOnly();
+                          tx.commit();
+                      } catch (TransactionOptimisticException e) {
+                          // TODO Ignite 3: IgniteTransactions only begins transactions, with begin(TransactionOptions), and runs code in one with runInTransaction(...); there is no current transaction of the thread, and no labels, tracing or metrics.
+                          System.out.println(ignite.transactions().tx());
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
 }

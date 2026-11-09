@@ -19,12 +19,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
-import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.*;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.*;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @EqualsAndHashCode(callSuper = false)
@@ -69,13 +69,28 @@ public class MigrateThinClientConfiguration extends Recipe {
                 if (consumed == null) {
                     return TodoComments.addNoted(b, getCursor());
                 }
-                // The configuration variable and its setters are now part of the builder
-                Space firstPrefix = b.getStatements().isEmpty() ? null : b.getStatements().get(0).getPrefix();
-                J.Block without = b.withStatements(ListUtils.map(b.getStatements(), s -> consumed.contains(s.getId()) ? null : s));
-                if (firstPrefix != null && !without.getStatements().isEmpty() && consumed.contains(b.getStatements().get(0).getId())) {
-                    without = without.withStatements(ListUtils.mapFirst(without.getStatements(), s -> s.withPrefix(firstPrefix)));
+                // The configuration variable and its setters are now part of the builder. Their comments move to
+                // the statement after them.
+                List<Statement> kept = new ArrayList<>();
+                List<Space> removed = new ArrayList<>();
+                boolean removedFromStart = false;
+                List<Statement> statements = b.getStatements();
+                for (int i = 0; i < statements.size(); i++) {
+                    Statement s = statements.get(i);
+                    if (consumed.contains(s.getId())) {
+                        if (removed.isEmpty()) {
+                            removedFromStart = i == 0;
+                        }
+                        removed.add(s.getPrefix());
+                        continue;
+                    }
+                    if (!removed.isEmpty()) {
+                        s = s.withPrefix(mergePrefixes(removed, s.getPrefix(), removedFromStart));
+                        removed.clear();
+                    }
+                    kept.add(s);
                 }
-                return TodoComments.addNoted(without, getCursor());
+                return TodoComments.addNoted(b.withStatements(kept), getCursor());
             }
 
             @Override
@@ -118,11 +133,14 @@ public class MigrateThinClientConfiguration extends Recipe {
             private @Nullable Cursor localSetters(J.Identifier cfg, List<J.MethodInvocation> setters) {
                 lastConsumed.clear();
                 Object child = getCursor().getValue();
+                boolean inLoop = false;
                 for (Cursor c = getCursor().getParentOrThrow(); c.getParent() != null; c = c.getParent()) {
                     Object tree = c.getValue();
                     if (tree instanceof J.MethodDeclaration || tree instanceof J.ClassDeclaration || tree instanceof J.Lambda) {
                         return null;
                     }
+                    // The builder would run each time round the loop, where the configuration was built once
+                    inLoop |= tree instanceof Loop;
                     if (tree instanceof J.Block) {
                         J.Block block = (J.Block) tree;
                         int declaration = -1;
@@ -136,10 +154,11 @@ public class MigrateThinClientConfiguration extends Recipe {
                         }
                         if (declaration >= 0) {
                             J.VariableDeclarations.NamedVariable variable = localClientConfiguration(statements.get(declaration));
-                            if (variable == null || !collectSetters(variable.getInitializer(), setters, false)) {
+                            if (inLoop || variable == null || !collectSetters(variable.getInitializer(), setters, false)) {
                                 return null;
                             }
                             lastConsumed.add(statements.get(declaration).getId());
+                            List<Statement> between = new ArrayList<>();
                             boolean beforeStart = true;
                             for (int i = declaration + 1; i < statements.size(); i++) {
                                 Statement s = statements.get(i);
@@ -155,9 +174,11 @@ public class MigrateThinClientConfiguration extends Recipe {
                                     lastConsumed.add(s.getId());
                                 } else if (countReferences(s, cfg.getSimpleName()) > 0) {
                                     return null;
+                                } else if (beforeStart) {
+                                    between.add(s);
                                 }
                             }
-                            return beforeStart ? null : c;
+                            return beforeStart || !canMoveAfter(setters, between) ? null : c;
                         }
                     }
                     if (tree instanceof J) {
@@ -331,6 +352,108 @@ public class MigrateThinClientConfiguration extends Recipe {
         }
         setters.addAll(chain);
         return true;
+    }
+
+    /**
+     * Whether the arguments of these setters evaluate to the same values, with the same side effects, once they move
+     * past these other statements into the builder: they call nothing, and use no variable these statements assign.
+     */
+    private static boolean canMoveAfter(List<J.MethodInvocation> setters, List<Statement> between) {
+        if (between.isEmpty()) {
+            return true;
+        }
+        Set<String> assigned = new HashSet<>();
+        for (Statement statement : between) {
+            new JavaIsoVisitor<Set<String>>() {
+                @Override
+                public J.Assignment visitAssignment(J.Assignment assignment, Set<String> a) {
+                    add(assignment.getVariable(), a);
+                    return super.visitAssignment(assignment, a);
+                }
+
+                @Override
+                public J.AssignmentOperation visitAssignmentOperation(J.AssignmentOperation assignOp, Set<String> a) {
+                    add(assignOp.getVariable(), a);
+                    return super.visitAssignmentOperation(assignOp, a);
+                }
+
+                @Override
+                public J.Unary visitUnary(J.Unary unary, Set<String> a) {
+                    if (unary.getOperator().isModifying()) {
+                        add(unary.getExpression(), a);
+                    }
+                    return super.visitUnary(unary, a);
+                }
+
+                private void add(Expression variable, Set<String> a) {
+                    if (variable instanceof J.Identifier) {
+                        a.add(((J.Identifier) variable).getSimpleName());
+                    } else if (variable instanceof J.FieldAccess) {
+                        a.add(((J.FieldAccess) variable).getSimpleName());
+                    }
+                }
+            }.visit(statement, assigned);
+        }
+        for (J.MethodInvocation setter : setters) {
+            if ("setRetryPolicy".equals(setter.getSimpleName())) {
+                // Replaced by a policy of Ignite 3 rather than moved
+                continue;
+            }
+            for (Expression argument : setter.getArguments()) {
+                AtomicBoolean movable = new AtomicBoolean(true);
+                new JavaIsoVisitor<AtomicBoolean>() {
+                    @Override
+                    public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, AtomicBoolean m) {
+                        m.set(false);
+                        return method;
+                    }
+
+                    @Override
+                    public J.NewClass visitNewClass(J.NewClass newClass, AtomicBoolean m) {
+                        m.set(false);
+                        return newClass;
+                    }
+
+                    @Override
+                    public J.Identifier visitIdentifier(J.Identifier identifier, AtomicBoolean m) {
+                        if (assigned.contains(identifier.getSimpleName())) {
+                            m.set(false);
+                        }
+                        return identifier;
+                    }
+                }.visit(argument, movable);
+                if (!movable.get()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * The prefix of the statement after removed ones, holding their comments before its own. When they were the
+     * first statements of the block, it takes their whitespace, so that the block does not start with a blank line.
+     */
+    private static Space mergePrefixes(List<Space> removed, Space kept, boolean removedFromStart) {
+        String whitespace = removedFromStart ? removed.get(0).getWhitespace() : null;
+        List<Comment> comments = new ArrayList<>();
+        for (Space prefix : removed) {
+            if (prefix.getComments().isEmpty()) {
+                continue;
+            }
+            if (whitespace == null) {
+                whitespace = prefix.getWhitespace();
+            } else if (!comments.isEmpty()) {
+                comments.set(comments.size() - 1, comments.get(comments.size() - 1).withSuffix(prefix.getWhitespace()));
+            }
+            comments.addAll(prefix.getComments());
+        }
+        if (comments.isEmpty()) {
+            return whitespace == null ? kept : kept.withWhitespace(whitespace);
+        }
+        comments.set(comments.size() - 1, comments.get(comments.size() - 1).withSuffix(kept.getWhitespace()));
+        comments.addAll(kept.getComments());
+        return Space.build(whitespace, comments);
     }
 
     private static int countReferences(J j, String name) {

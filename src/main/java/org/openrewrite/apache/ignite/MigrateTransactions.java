@@ -63,8 +63,9 @@ public class MigrateTransactions extends Recipe {
             "and are not bound to the thread. A try-with-resources over `txStart()` becomes a transaction begun before " +
             "a try block that rolls it back in its `finally` block, which does nothing once the transaction has committed, " +
             "as `close()` did in Ignite 2. Ignite 3 has no concurrency or isolation modes, so those arguments are dropped; " +
-            "a timeout becomes `TransactionOptions.timeoutMillis`. Where the transaction is not passed to any operation " +
-            "inside the block, a comment says that the operations meant to run in it now need it as an argument.";
+            "a timeout becomes `TransactionOptions.timeoutMillis`. Where the transaction is in scope of a call that may " +
+            "have run in it implicitly, such as a method of the application, a comment says that the operations meant " +
+            "to run in it now need it as an argument.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -123,66 +124,89 @@ public class MigrateTransactions extends Recipe {
                     @Override
                     public J visitBlock(J.Block block, ExecutionContext ctx) {
                         J.Block b = (J.Block) super.visitBlock(block, ctx);
-                        return b.withStatements(ListUtils.flatMap(b.getStatements(), statement -> {
+                        List<Statement> statements = b.getStatements();
+                        List<Statement> migrated = new ArrayList<>(statements.size() + 1);
+                        for (int i = 0; i < statements.size(); i++) {
+                            Statement statement = statements.get(i);
                             J.VariableDeclarations txDeclaration = transactionResource(statement);
-                            if (txDeclaration == null) {
-                                return statement;
+                            String started = startedTransaction(statement);
+                            if (txDeclaration != null) {
+                                migrated.addAll(withoutResource(b, (J.Try) statement, txDeclaration));
+                            } else if (started != null && mayNeedTransaction(statements.subList(i + 1, statements.size()), started)) {
+                                migrated.add(TodoComments.withTodos(statement, singletonList(THREAD_BOUND_TODO)));
+                            } else {
+                                migrated.add(statement);
                             }
-                            J.Try tryWithResources = (J.Try) statement;
-                            J.Identifier tx = txDeclaration.getVariables().get(0).getName();
-                            boolean clash = declaresElsewhere(b, tryWithResources, tx.getSimpleName());
-                            boolean keepsHandlers = !tryWithResources.getCatches().isEmpty() || tryWithResources.getFinally() != null;
-                            if (clash && !keepsHandlers) {
-                                // Declared in the block, the transaction would clash with the other variable
-                                return TodoComments.withTodos(statement, singletonList(NOT_AUTOCLOSEABLE_TODO));
-                            }
+                        }
+                        return b.withStatements(migrated);
+                    }
 
-                            boolean passesTransaction = passesTransaction(tryWithResources.getBody(), tx);
-                            String indent = statement.getPrefix().getIndent();
-                            if (!keepsHandlers) {
-                                // Transaction tx = ...begin();
-                                // try { ... } finally { tx.rollback(); }
-                                J.Try tryFinally = tryWithResources.getPadding().withResources(null)
-                                        .withPrefix(Space.format("\n" + indent));
-                                tryFinally = withRollbackInFinally(tryFinally, tx, indent, innerIndent(tryWithResources, indent));
-                                return Arrays.asList(
-                                        threadBoundComment(txDeclaration.withPrefix(statement.getPrefix()), passesTransaction),
-                                        tryFinally);
-                            }
+                    private List<Statement> withoutResource(J.Block block, J.Try tryWithResources, J.VariableDeclarations txDeclaration) {
+                        J.Identifier tx = txDeclaration.getVariables().get(0).getName();
+                        boolean keepsHandlers = !tryWithResources.getCatches().isEmpty() || tryWithResources.getFinally() != null;
+                        boolean clash = declaresElsewhere(block, tryWithResources, tx.getSimpleName());
+                        boolean needsTransaction = mayNeedTransaction(tryWithResources.getBody().getStatements(), tx.getSimpleName());
+                        String indent = tryWithResources.getPrefix().getIndent();
+                        String inner = innerIndent(tryWithResources, indent);
 
-                            // try { Transaction tx = ...begin(); try { ... } finally { tx.rollback(); } } catch (...) { ... }
-                            String inner = innerIndent(tryWithResources, indent);
-                            J.Block shiftedBody = ShiftFormat.indent(tryWithResources.getBody(), getCursor(), 1);
-                            J.Try innerTry = new J.Try(randomId(), Space.format("\n" + inner), Markers.EMPTY, null,
-                                    shiftedBody, emptyList(), null);
-                            innerTry = withRollbackInFinally(innerTry, tx, inner,
-                                    shiftedBody.getStatements().isEmpty() ? inner + inner.substring(indent.length()) :
-                                            shiftedBody.getStatements().get(0).getPrefix().getIndent());
-                            J.Block outerBody = new J.Block(randomId(), tryWithResources.getBody().getPrefix(), Markers.EMPTY,
-                                    JRightPadded.build(false),
-                                    Arrays.asList(
-                                            JRightPadded.build(threadBoundComment(
-                                                    txDeclaration.withPrefix(Space.format("\n" + inner)), passesTransaction)),
-                                            JRightPadded.build(innerTry)),
-                                    Space.format("\n" + indent));
-                            return tryWithResources.getPadding().withResources(null).withBody(outerBody);
-                        }));
+                        if (!keepsHandlers && !clash) {
+                            // Transaction tx = ...begin();
+                            // try { ... } finally { tx.rollback(); }
+                            J.Try tryFinally = tryWithResources.getPadding().withResources(null)
+                                    .withPrefix(Space.format("\n" + indent));
+                            tryFinally = withRollbackInFinally(tryFinally, tx, indent, inner);
+                            return Arrays.asList(
+                                    threadBoundComment(txDeclaration.withPrefix(tryWithResources.getPrefix()), needsTransaction),
+                                    tryFinally);
+                        }
+
+                        // { Transaction tx = ...begin(); try { ... } finally { tx.rollback(); } }
+                        J.Block shiftedBody = ShiftFormat.indent(tryWithResources.getBody(), getCursor(), 1);
+                        J.Try innerTry = new J.Try(randomId(), Space.format("\n" + inner), Markers.EMPTY, null,
+                                shiftedBody, emptyList(), null);
+                        innerTry = withRollbackInFinally(innerTry, tx, inner,
+                                shiftedBody.getStatements().isEmpty() ? inner + inner.substring(indent.length()) :
+                                        shiftedBody.getStatements().get(0).getPrefix().getIndent());
+                        J.Block wrapped = new J.Block(randomId(), tryWithResources.getBody().getPrefix(), Markers.EMPTY,
+                                JRightPadded.build(false),
+                                Arrays.asList(
+                                        JRightPadded.build(threadBoundComment(
+                                                txDeclaration.withPrefix(Space.format("\n" + inner)), needsTransaction)),
+                                        JRightPadded.build(innerTry)),
+                                Space.format("\n" + indent));
+                        if (keepsHandlers) {
+                            // try { ... } catch (...) { ... }
+                            return singletonList(tryWithResources.getPadding().withResources(null).withBody(wrapped));
+                        }
+                        // A block of its own keeps the transaction apart from another variable of the same name
+                        return singletonList(wrapped.withPrefix(tryWithResources.getPrefix()));
                     }
 
                     @Override
                     public J visitTry(J.Try tryable, ExecutionContext ctx) {
                         J j = super.visitTry(tryable, ctx);
-                        if (j instanceof J.Try && transactionResource((J.Try) j) != null &&
-                            !(getCursor().getParentTreeCursor().getValue() instanceof J.Block)) {
-                            // Not a statement of a block, as in a case of a switch, which visitBlock cannot rewrite
-                            return TodoComments.withTodos(j, singletonList(NOT_AUTOCLOSEABLE_TODO));
+                        if (!(j instanceof J.Try)) {
+                            return j;
                         }
-                        return j;
+                        J.Try t = (J.Try) j;
+                        String tx = transactionAmongResources(t);
+                        if (tx == null ||
+                            transactionResource(t) != null && getCursor().getParentTreeCursor().getValue() instanceof J.Block) {
+                            // visitBlock moves a transaction that is the only resource of a statement of a block
+                            return j;
+                        }
+                        // Among other resources, an existing variable, or not a statement of a block, as in a case of a switch
+                        List<String> todos = new ArrayList<>();
+                        todos.add(NOT_AUTOCLOSEABLE_TODO);
+                        if (mayNeedTransaction(t.getBody().getStatements(), tx)) {
+                            todos.add(THREAD_BOUND_TODO);
+                        }
+                        return TodoComments.withTodos(t, todos);
                     }
 
-                    private J.VariableDeclarations threadBoundComment(J.VariableDeclarations txDeclaration, boolean passesTransaction) {
-                        return passesTransaction ? txDeclaration :
-                                TodoComments.withTodos(txDeclaration, singletonList(THREAD_BOUND_TODO));
+                    private J.VariableDeclarations threadBoundComment(J.VariableDeclarations txDeclaration, boolean needsTransaction) {
+                        return needsTransaction ?
+                                TodoComments.withTodos(txDeclaration, singletonList(THREAD_BOUND_TODO)) : txDeclaration;
                     }
                 }
         );
@@ -219,27 +243,78 @@ public class MigrateTransactions extends Recipe {
         return declaration;
     }
 
+    private static boolean isIgnite2Transaction(@Nullable JavaType type) {
+        return TypeUtils.isOfClassType(type, TRANSACTION) || TypeUtils.isOfClassType(type, CLIENT_TRANSACTION);
+    }
+
+    private static boolean isNullLiteral(@Nullable Expression e) {
+        return e instanceof J.Literal && ((J.Literal) e).getValue() == null;
+    }
+
     /**
-     * Whether another statement of the block declares a variable of this name, which the transaction
-     * would clash with once it is declared in the block itself.
+     * The name of the Ignite 2 transaction variable that this statement declares or assigns a transaction to.
      */
-    private static boolean declaresElsewhere(J.Block block, Statement exclude, String name) {
-        for (Statement statement : block.getStatements()) {
-            if (statement == exclude) {
-                continue;
+    private static @Nullable String startedTransaction(Statement statement) {
+        if (statement instanceof J.VariableDeclarations) {
+            J.VariableDeclarations vd = (J.VariableDeclarations) statement;
+            if (vd.getVariables().size() == 1 && isIgnite2Transaction(vd.getType()) &&
+                vd.getVariables().get(0).getInitializer() != null && !isNullLiteral(vd.getVariables().get(0).getInitializer())) {
+                return vd.getVariables().get(0).getSimpleName();
             }
-            J.VariableDeclarations declaration = statement instanceof J.VariableDeclarations ?
-                    (J.VariableDeclarations) statement : null;
-            if (declaration == null && statement instanceof J.Try && ((J.Try) statement).getResources() != null) {
-                for (J.Try.Resource resource : ((J.Try) statement).getResources()) {
-                    if (resource.getVariableDeclarations() instanceof J.VariableDeclarations &&
-                        declares((J.VariableDeclarations) resource.getVariableDeclarations(), name)) {
-                        return true;
-                    }
+        } else if (statement instanceof J.Assignment) {
+            J.Assignment assignment = (J.Assignment) statement;
+            if (assignment.getVariable() instanceof J.Identifier && isIgnite2Transaction(assignment.getVariable().getType()) &&
+                !isNullLiteral(assignment.getAssignment())) {
+                return ((J.Identifier) assignment.getVariable()).getSimpleName();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The name of an Ignite 2 transaction among the resources of this try, declared there or not.
+     */
+    private static @Nullable String transactionAmongResources(J.Try t) {
+        if (t.getResources() != null) {
+            for (J.Try.Resource resource : t.getResources()) {
+                TypedTree r = resource.getVariableDeclarations();
+                if (r instanceof J.VariableDeclarations && isIgnite2Transaction(((J.VariableDeclarations) r).getType())) {
+                    return ((J.VariableDeclarations) r).getVariables().get(0).getSimpleName();
+                }
+                if (r instanceof J.Identifier && isIgnite2Transaction(r.getType())) {
+                    return ((J.Identifier) r).getSimpleName();
                 }
             }
-            if (declaration != null && declares(declaration, name)) {
+        }
+        return null;
+    }
+
+    /**
+     * Whether another statement of the block declares a variable of this name, which the transaction would clash
+     * with once it is declared in the block itself: a statement before it, or anything in a statement after it.
+     */
+    private static boolean declaresElsewhere(J.Block block, Statement tryWithResources, String name) {
+        boolean after = false;
+        for (Statement statement : block.getStatements()) {
+            if (statement == tryWithResources) {
+                after = true;
+            } else if (after ? declaresAnywhere(statement, name) : declaresDirectly(statement, name)) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean declaresDirectly(Statement statement, String name) {
+        if (statement instanceof J.VariableDeclarations) {
+            return declares((J.VariableDeclarations) statement, name);
+        }
+        if (statement instanceof J.Try && ((J.Try) statement).getResources() != null) {
+            for (J.Try.Resource resource : ((J.Try) statement).getResources()) {
+                if (resource.getVariableDeclarations() instanceof J.VariableDeclarations &&
+                    declares((J.VariableDeclarations) resource.getVariableDeclarations(), name)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -255,23 +330,104 @@ public class MigrateTransactions extends Recipe {
     }
 
     /**
-     * Whether the transaction is an argument of some call in the block, as it is once cache operations
-     * have been migrated to take it.
+     * Whether this tree declares a variable of this name anywhere: a local variable, a resource, a loop variable,
+     * or a parameter of a catch or a lambda.
      */
-    private static boolean passesTransaction(J.Block body, J.Identifier tx) {
-        AtomicBoolean passed = new AtomicBoolean();
+    private static boolean declaresAnywhere(J tree, String name) {
+        AtomicBoolean declared = new AtomicBoolean();
         new JavaIsoVisitor<AtomicBoolean>() {
             @Override
-            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, AtomicBoolean found) {
-                for (Expression argument : method.getArguments()) {
-                    if (argument instanceof J.Identifier && ((J.Identifier) argument).getSimpleName().equals(tx.getSimpleName())) {
-                        found.set(true);
-                    }
+            public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, AtomicBoolean d) {
+                if (variable.getSimpleName().equals(name)) {
+                    d.set(true);
                 }
-                return super.visitMethodInvocation(method, found);
+                return super.visitVariable(variable, d);
             }
-        }.visit(body, passed);
-        return passed.get();
+        }.visit(tree, declared);
+        return declared.get();
+    }
+
+    private static final Set<String> SAME_THREAD_PACKAGES = new HashSet<>(Arrays.asList(
+            "java.lang", "java.util", "java.util.stream", "java.util.regex", "java.util.concurrent",
+            "java.util.concurrent.atomic", "java.util.logging", "java.math", "java.time", "java.time.format",
+            "java.text", "java.io", "java.nio.charset", "org.slf4j", "org.apache.logging.log4j",
+            "org.apache.commons.logging"));
+
+    /**
+     * Whether any of these statements calls something that may have run in the Ignite 2 transaction of this thread
+     * without being given it: an Ignite 2 cache operation that was not migrated, a method of the application or of
+     * another library, or a callback. Operations passed the transaction, Ignite APIs, and the JDK and logging APIs
+     * that run no code of the application do not count.
+     */
+    private static boolean mayNeedTransaction(List<? extends J> trees, String tx) {
+        AtomicBoolean needed = new AtomicBoolean();
+        JavaIsoVisitor<AtomicBoolean> visitor = new JavaIsoVisitor<AtomicBoolean>() {
+            @Override
+            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, AtomicBoolean n) {
+                if (!passes(method.getArguments(), tx) && mayRunApplicationCode(method)) {
+                    n.set(true);
+                }
+                return super.visitMethodInvocation(method, n);
+            }
+
+            @Override
+            public J.MemberReference visitMemberReference(J.MemberReference memberRef, AtomicBoolean n) {
+                JavaType.Method type = memberRef.getMethodType();
+                if (type == null || !isSameThreadApi(type.getDeclaringType())) {
+                    n.set(true);
+                }
+                return super.visitMemberReference(memberRef, n);
+            }
+        };
+        for (J tree : trees) {
+            visitor.visit(tree, needed);
+        }
+        return needed.get();
+    }
+
+    private static boolean passes(List<Expression> arguments, String tx) {
+        for (Expression argument : arguments) {
+            if (argument instanceof J.Identifier && ((J.Identifier) argument).getSimpleName().equals(tx)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean mayRunApplicationCode(J.MethodInvocation method) {
+        JavaType.Method type = method.getMethodType();
+        if (type == null) {
+            return true;
+        }
+        JavaType.FullyQualified declaringType = type.getDeclaringType();
+        if (TypeUtils.isAssignableTo("org.apache.ignite.IgniteCache", declaringType) ||
+            TypeUtils.isAssignableTo("org.apache.ignite.client.ClientCache", declaringType) ||
+            "query".equals(method.getSimpleName()) && TypeUtils.isOfClassType(declaringType, "org.apache.ignite.client.IgniteClient")) {
+            // Cache operations that were not given the transaction
+            return true;
+        }
+        if (!isSameThreadApi(declaringType)) {
+            return true;
+        }
+        for (Expression argument : method.getArguments()) {
+            if (!(argument instanceof J.Lambda) && !(argument instanceof J.MemberReference) && isCallback(argument.getType())) {
+                // A callback held in a variable runs code that the visitor cannot see
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSameThreadApi(JavaType.FullyQualified type) {
+        return !isCallback(type) && (type.getFullyQualifiedName().startsWith("org.apache.ignite.") ||
+                                     SAME_THREAD_PACKAGES.contains(type.getPackageName()));
+    }
+
+    private static boolean isCallback(@Nullable JavaType type) {
+        JavaType.FullyQualified fq = TypeUtils.asFullyQualified(type);
+        return fq != null && ("java.util.function".equals(fq.getPackageName()) ||
+                              TypeUtils.isOfClassType(fq, "java.lang.Runnable") ||
+                              TypeUtils.isOfClassType(fq, "java.util.concurrent.Callable"));
     }
 
     private static String innerIndent(J.Try tryWithResources, String indent) {
