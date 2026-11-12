@@ -56,7 +56,6 @@ class MigrateAuthStateTest implements RewriteTest {
               }
               """,
             """
-              import org.apache.hc.client5.http.auth.AuthExchange.State;
               import org.apache.hc.client5.http.auth.AuthScheme;
               import org.apache.hc.client5.http.auth.AuthExchange;
 
