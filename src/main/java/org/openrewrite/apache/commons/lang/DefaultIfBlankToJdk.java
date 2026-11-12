@@ -74,12 +74,9 @@ public class DefaultIfBlankToJdk extends Recipe {
                     return super.visitMethodInvocation(mi, ctx);
                 }
                 maybeRemoveImport("org.apache.commons.lang3.StringUtils");
-                // A conditional takes the type of what it is assigned to, which the template's stub
-                // declares as the String that defaultIfBlank returns for String arguments
-                return JavaTemplate.builder(DEFAULT_IF_BLANK_REPLACEMENT)
-                        .bindType("String")
-                        .build()
-                        .apply(updateCursor(mi), mi.getCoordinates().replace(), arg0, arg0, arg1, arg0);
+                return JavaTemplate.apply(DEFAULT_IF_BLANK_REPLACEMENT,
+                        updateCursor(mi), mi.getCoordinates().replace(),
+                        arg0, arg0, arg1, arg0);
             }
         });
     }
