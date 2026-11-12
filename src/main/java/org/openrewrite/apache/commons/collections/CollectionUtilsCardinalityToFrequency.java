@@ -116,35 +116,31 @@ public class CollectionUtilsCardinalityToFrequency extends Recipe {
                             return m;
                         }
                         // The parameters take the arguments' own types, from which frequency's type arguments are
-                        // inferred. A null element is written as is, since it has no type to declare. Other iterables,
-                        // such as one of a wildcard, which the template leaves frequency untyped on, are declared raw.
+                        // inferred. A null element is written as is, since it has no type to declare.
                         Expression element = m.getArguments().get(0);
                         Expression values = m.getArguments().get(1);
                         boolean nullElement = J.Literal.isLiteralValue(element, null);
-                        String iterable = hasClassTypeArguments(values.getType()) ?
-                                "#{any()}" : "#{any(java.lang.Iterable)}";
                         JavaTemplate template = templates.computeIfAbsent(
                                 "org.apache.commons.collections4.IterableUtils.frequency(" +
-                                "java.util.Objects.requireNonNull(" + iterable + "), " +
+                                "java.util.Objects.requireNonNull(#{any()}), " +
                                 (nullElement ? "null" : "#{any()}") + ")",
                                 code -> JavaTemplate.builder(code)
                                         .javaParser(JavaParser.fromJavaVersion()
                                                 .classpathFromResources(ctx, "commons-collections4-4.4"))
                                         .build());
-                        maybeRemoveImport(COLLECTION_UTILS);
                         J.MethodInvocation replacement = template.apply(updateCursor(m), m.getCoordinates().replace(),
                                 nullElement ? new Object[]{values} : new Object[]{values, element});
+                        // javac can't infer frequency's type arguments from every iterable that cardinality takes,
+                        // such as a type variable bounded by an iterable of a wildcard
+                        if (replacement.getMethodType() == null) {
+                            return m;
+                        }
+                        maybeRemoveImport(COLLECTION_UTILS);
                         // Standard shortening handles type/import conflicts; variables share the expression
                         // namespace, so retain qualification when a local, parameter or field has that name.
                         doAfterVisit(ShortenFullyQualifiedTypeReferences.modifyOnly(replacement,
                                 fqn -> namesInScope.contains(fqn.substring(fqn.lastIndexOf('.') + 1))));
                         return replacement;
-                    }
-
-                    private boolean hasClassTypeArguments(@Nullable JavaType type) {
-                        return type instanceof JavaType.Parameterized &&
-                               ((JavaType.Parameterized) type).getTypeParameters().stream()
-                                       .allMatch(argument -> argument instanceof JavaType.FullyQualified);
                     }
 
                     private boolean isClassQualifier(@Nullable Expression select) {

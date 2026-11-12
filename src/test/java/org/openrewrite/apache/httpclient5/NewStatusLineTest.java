@@ -31,6 +31,8 @@ class NewStatusLineTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient-4", "httpcore-4"))
+          .afterParser(JavaParser.fromJavaVersion()
+            .classpathFromResources(new InMemoryExecutionContext(), "httpclient5", "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
@@ -38,7 +40,8 @@ class NewStatusLineTest implements RewriteTest {
     @Test
     void removeStatusLineHttpResponse() {
         rewriteRun(
-          // the parser has HttpCore 4 only, so it can't type the HttpCore 5 StatusLine printed here and takes println(char[])
+          // SimplifyMethodChain and ChangeType give response.getCode() the method of ClassicHttpResponse, an interface,
+          // where the parser finds the one that CloseableHttpResponse implements it with
           spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(

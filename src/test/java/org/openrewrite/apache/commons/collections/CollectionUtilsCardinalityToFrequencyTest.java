@@ -26,7 +26,6 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.marker.JavaSourceSet;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -144,13 +143,29 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
         );
     }
 
+    @Test
+    void iterableOfATypeVariableBoundedByAWildcardIsLeftAlone() {
+        rewriteRun(
+          // javac can't infer frequency's type arguments from W
+          java(
+            """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              class A {
+                  <W extends Iterable<? super String>> int count(String value, W values) {
+                      return CollectionUtils.cardinality(value, values);
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"java.util.List<Object>", "java.util.Set<Object>", "org.apache.commons.collections4.Bag<Object>",
       "Iterable<? super String>", "Iterable"})
     void iterableTypes(String iterableType) {
         rewriteRun(
-          // The recipe declares an iterable of a wildcard raw, since JavaTemplate leaves frequency untyped on it
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(!iterableType.contains("?")).build()),
           java(
           """
             import org.apache.commons.collections4.CollectionUtils;

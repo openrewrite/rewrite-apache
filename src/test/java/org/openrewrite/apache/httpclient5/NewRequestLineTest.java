@@ -31,6 +31,8 @@ class NewRequestLineTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient-4", "httpcore-4"))
+          .afterParser(JavaParser.fromJavaVersion()
+            .classpathFromResources(new InMemoryExecutionContext(), "httpclient5", "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
@@ -38,7 +40,7 @@ class NewRequestLineTest implements RewriteTest {
     @Test
     void removeRequestLineHttpResponse() {
         rewriteRun(
-          // the parser has HttpCore 4 only, so it can't type the HttpCore 5 RequestLine printed here and takes println(char[])
+          // HttpCore 5's RequestLine is a class, and ChangeType keeps getMethod() abstract as in HttpCore 4's interface
           spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
