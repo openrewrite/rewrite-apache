@@ -55,15 +55,14 @@ public class ApacheBase64ToJavaBase64 extends Recipe {
                 J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
                 String templatePrefix = null;
                 if (apacheEncodeToString.matches(mi)) {
-                    String argType = mi.getArguments().get(0).getType() instanceof JavaType.Array ? "#{anyArray()}" : "#{any(String)}";
-                    templatePrefix = "Base64.getEncoder().encodeToString(" + argType + ")";
+                    templatePrefix = "Base64.getEncoder().encodeToString(" + argType(mi) + ")";
                 } else if (apacheEncode64.matches(mi)) {
                     templatePrefix = "Base64.getEncoder().encode(#{anyArray()})";
                 } else if (apacheDecode.matches(mi)) {
                     // Apache's `decodeBase64` accepts both the standard (`+/`) and URL-safe (`-_`) alphabets.
                     // `getMimeDecoder()` is the closest `java.util.Base64` equivalent that decodes both variants,
                     // whereas `getDecoder()` throws `IllegalArgumentException` on URL-safe input.
-                    templatePrefix = "Base64.getMimeDecoder().decode(#{any(String)})";
+                    templatePrefix = "Base64.getMimeDecoder().decode(" + argType(mi) + ")";
                 } else if (apacheEncode64UrlSafe.matches(mi)) {
                     templatePrefix = "Base64.getUrlEncoder().withoutPadding().encode(#{anyArray()})";
                 } else if (apacheEncode64UrlSafeString.matches(mi)) {
@@ -76,6 +75,11 @@ public class ApacheBase64ToJavaBase64 extends Recipe {
                     mi = t.apply(updateCursor(mi), mi.getCoordinates().replace(), mi.getArguments().get(0));
                 }
                 return mi;
+            }
+
+            private String argType(J.MethodInvocation mi) {
+                return mi.getArguments().get(0).getType() instanceof JavaType.Array ?
+                        "#{anyArray()}" : "#{any(String)}";
             }
         });
     }

@@ -145,24 +145,34 @@ public class MigratePoolingNHttpClientConnectionManager extends Recipe {
                                 null
                         ));
                     }
-                    JavaType.Method mt = md.getMethodType();
-                    if (mt != null) {
-                        mt = mt.withReturnType(newType);
-                        md = md.withMethodType(mt).withName(md.getName().withType(mt));
-                    }
+                }
+                JavaType.Method mt = md.getMethodType();
+                JavaType.Method migrated = mt == null ? null : migrated(mt);
+                if (migrated != mt) {
+                    md = md.withMethodType(migrated).withName(md.getName().withType(migrated));
                 }
                 return md;
+            }
+
+            private JavaType.Method migrated(JavaType.Method method) {
+                return method.withDeclaringType((JavaType.FullyQualified) migrated(method.getDeclaringType()))
+                        .withReturnType(migrated(method.getReturnType()))
+                        .withParameterTypes(ListUtils.map(method.getParameterTypes(), this::migrated));
+            }
+
+            private JavaType migrated(JavaType type) {
+                return TypeUtils.isOfClassType(type, FQN_OLD) ? JavaType.ShallowClass.build(FQN_NEW) : type;
             }
 
             @Override
             public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation mi = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
-                if (mi.getMethodType() != null && TypeUtils.isOfClassType(mi.getMethodType().getDeclaringType(), FQN_OLD)) {
-                    JavaType.FullyQualified newType = JavaType.ShallowClass.build(FQN_NEW);
-                    JavaType.Method updatedMethodType = mi.getMethodType().withDeclaringType(newType);
-                    mi = mi.withMethodType(updatedMethodType);
+                JavaType.Method mt = mi.getMethodType();
+                JavaType.Method migrated = mt == null ? null : migrated(mt);
+                if (migrated != mt) {
+                    mi = mi.withMethodType(migrated);
                     if (mi.getName().getType() != null) {
-                        mi = mi.withName(mi.getName().withType(updatedMethodType));
+                        mi = mi.withName(mi.getName().withType(migrated));
                     }
                 }
                 return mi;

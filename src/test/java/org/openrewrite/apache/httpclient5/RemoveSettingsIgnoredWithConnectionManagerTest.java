@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -38,6 +39,8 @@ class RemoveSettingsIgnoredWithConnectionManagerTest implements RewriteTest {
     @Test
     void removeSocketConfigNextToConnectionManager() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """

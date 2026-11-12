@@ -21,6 +21,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
@@ -197,6 +198,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void addTimeUnitsToTimeoutAndDurationMethods() {
         rewriteRun(
+          // ChangeType keeps HttpClient 4's RequestConfig.Builder, which has no setConnectTimeout(long, TimeUnit) for AddTimeUnitArgument to find
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -246,6 +249,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void convertRequestBuilderToClassicRequestBuilder() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -360,6 +365,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void setStaleConnectionCheckEnabledFalseWithConnManager() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -487,6 +494,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void getAllHeadersToGetHeaders() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -518,6 +527,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void getURIToGetUri() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -585,6 +596,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void credentialsProviderToStore() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           java(
             """
               import org.apache.http.client.CredentialsProvider;

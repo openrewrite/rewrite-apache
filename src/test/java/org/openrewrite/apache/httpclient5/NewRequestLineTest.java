@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -37,6 +38,8 @@ class NewRequestLineTest implements RewriteTest {
     @Test
     void removeRequestLineHttpResponse() {
         rewriteRun(
+          // the parser has HttpCore 4 only, so it can't type the HttpCore 5 RequestLine printed here and takes println(char[])
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """

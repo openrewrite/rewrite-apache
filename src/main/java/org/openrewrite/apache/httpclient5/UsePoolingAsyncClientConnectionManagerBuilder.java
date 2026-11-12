@@ -17,6 +17,7 @@ package org.openrewrite.apache.httpclient5;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -160,9 +161,21 @@ public class UsePoolingAsyncClientConnectionManagerBuilder extends Recipe {
                 return null;
             }
 
+            private JavaType.@Nullable Method builderMethod(@Nullable JavaType builder, String name, int arity) {
+                JavaType.FullyQualified type = TypeUtils.asFullyQualified(builder);
+                if (type != null) {
+                    for (JavaType.Method method : type.getMethods()) {
+                        if (method.getName().equals(name) && method.getParameterTypes().size() == arity) {
+                            return method;
+                        }
+                    }
+                }
+                return null;
+            }
+
             private J.MethodInvocation createMethodInvocation(J.MethodInvocation builderChain, String methodName, List<Expression> arguments) {
-                JavaType.Method updatedMethodType = null;
-                if (builderChain.getMethodType() != null) {
+                JavaType.Method updatedMethodType = builderMethod(builderChain.getType(), methodName, arguments.size());
+                if (updatedMethodType == null && builderChain.getMethodType() != null) {
                     updatedMethodType = builderChain.getMethodType()
                             .withName(methodName);
                 }

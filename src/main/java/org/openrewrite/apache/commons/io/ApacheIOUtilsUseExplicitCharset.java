@@ -81,16 +81,13 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
                 if (STRING_GET_BYTES.matches(mi)) {
-                    mi = mi.withSelect(method.getArguments().get(0));
-                    //noinspection ConstantConditions
-                    mi = mi.withMethodType(mi.getMethodType().withName("getBytes"));
                     maybeAddImport("java.nio.charset.StandardCharsets");
                     return JavaTemplate.builder("#{any(String)}.getBytes(StandardCharsets.#{})")
                             .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-io"))
                             .imports("java.nio.charset.StandardCharsets")
                             .build()
                             .apply(updateCursor(mi),
-                                    mi.getCoordinates().replaceMethod(),
+                                    mi.getCoordinates().replace(),
                                     mi.getArguments().get(0), encoding == null ? "UTF_8" : encoding);
                 }
 

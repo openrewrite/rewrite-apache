@@ -16,6 +16,7 @@
 package org.openrewrite.apache.httpclient5;
 
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
 import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -23,6 +24,8 @@ import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.TypeUtils;
 
 import java.nio.charset.Charset;
 
@@ -43,7 +46,7 @@ public class MigrateStringEntityStringCharsetConstructor extends Recipe {
             public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
                 J.NewClass nc = super.visitNewClass(newClass, ctx);
                 if (MATCHER_FOR_4x.matches(nc) || MATCHER_FOR_5x.matches(nc)) {
-                    return nc.withArguments(ListUtils.mapLast(nc.getArguments(), arg -> {
+                    J.NewClass migrated = nc.withArguments(ListUtils.mapLast(nc.getArguments(), arg -> {
                         if (arg instanceof J.Literal && ((J.Literal) arg).getValue() instanceof String) {
                             String argValue = (String) ((J.Literal) arg).getValue();
                             if (Charset.isSupported(argValue)) {
@@ -57,9 +60,23 @@ public class MigrateStringEntityStringCharsetConstructor extends Recipe {
                         }
                         return arg;
                     }));
+                    return migrated == nc ? nc :
+                            migrated.withConstructorType(charsetConstructor(nc.getConstructorType()));
                 }
                 return nc;
             }
         });
+    }
+
+    private static JavaType.@Nullable Method charsetConstructor(JavaType.@Nullable Method stringConstructor) {
+        if (stringConstructor != null) {
+            for (JavaType.Method constructor : stringConstructor.getDeclaringType().getMethods()) {
+                if (constructor.isConstructor() && constructor.getParameterTypes().size() == 2 &&
+                    TypeUtils.isOfClassType(constructor.getParameterTypes().get(1), "java.nio.charset.Charset")) {
+                    return constructor;
+                }
+            }
+        }
+        return stringConstructor;
     }
 }

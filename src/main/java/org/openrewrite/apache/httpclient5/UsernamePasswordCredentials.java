@@ -20,12 +20,14 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
 
 public class UsernamePasswordCredentials extends Recipe {
     private static final String FQN = "org.apache.http.auth.UsernamePasswordCredentials";
@@ -46,8 +48,14 @@ public class UsernamePasswordCredentials extends Recipe {
                 J.NewClass nc = super.visitNewClass(newClass, ctx);
                 if (methodMatcher.matches(nc)) {
                     Expression passwordArgument = nc.getArguments().get(1);
+                    JavaType.Method constructor = nc.getConstructorType();
                     nc = JavaTemplate.apply("#{any(String)}.toCharArray()",
                             getCursor(), passwordArgument.getCoordinates().replace(), passwordArgument);
+                    if (constructor != null) {
+                        JavaType.Array chars = new JavaType.Array(null, JavaType.Primitive.Char, null);
+                        nc = nc.withConstructorType(constructor.withParameterTypes(
+                                ListUtils.mapLast(constructor.getParameterTypes(), password -> chars)));
+                    }
                 }
                 return nc;
             }

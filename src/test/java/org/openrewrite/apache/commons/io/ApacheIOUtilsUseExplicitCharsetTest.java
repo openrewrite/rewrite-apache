@@ -20,6 +20,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.kotlin.KotlinParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -41,6 +42,8 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
     void useCharset() {
         //language=java
         rewriteRun(
+          // JavaTemplate types a call whose name and arguments it replaces as the old method taking the new arguments, such as an undeclared write(StringBuffer, OutputStream, Charset)
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           srcMainJava(
             java(
               """
