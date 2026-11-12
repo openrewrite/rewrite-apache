@@ -117,8 +117,8 @@ public class CollectionUtilsCardinalityToFrequency extends Recipe {
                         }
                         // The parameters take the arguments' own types, from which frequency's type arguments are
                         // inferred. A null element is written as is, since it has no type to declare.
-                        Expression element = m.getArguments().get(0);
-                        Expression values = m.getArguments().get(1);
+                        Expression element = m.getArguments().get(0).unwrap();
+                        Expression values = m.getArguments().get(1).unwrap();
                         boolean nullElement = J.Literal.isLiteralValue(element, null);
                         JavaTemplate template = templates.computeIfAbsent(
                                 "org.apache.commons.collections4.IterableUtils.frequency(" +
