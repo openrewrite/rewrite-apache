@@ -20,6 +20,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeQualityValidation;
+import org.openrewrite.test.RecipeQualityValidation.ParserTypes;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -234,7 +235,8 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     void lang2TextPackageMigratesThroughToCommonsText() {
         rewriteRun(
           // ChangePackage keeps Commons Lang 2's StrLookup, which is raw
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(ParserTypes.Erasure).build()),
           mavenProject("project",
             //language=xml
             pomXml(
@@ -400,7 +402,8 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     void stringEscapeUtilsHtmlAndJavaScriptWereRenamed() {
         rewriteRun(
           // ChangeMethodName keeps Commons Lang 2's methods, which aren't final as Commons Lang 3's are
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(ParserTypes.Erasure).build()),
           //language=java
           java(
             """
@@ -437,7 +440,8 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     void isAssignableKeepsAutoboxingDisabled() {
         rewriteRun(
           // ChangePackage keeps Commons Lang 2's isAssignable, whose Class parameters are raw
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(ParserTypes.Erasure).build()),
           //language=java
           java(
             """

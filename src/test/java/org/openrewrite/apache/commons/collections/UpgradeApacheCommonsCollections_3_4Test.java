@@ -21,6 +21,7 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeQualityValidation;
+import org.openrewrite.test.RecipeQualityValidation.ParserTypes;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -528,7 +529,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     void synchronizedSetToJdk() {
         rewriteRun(
           // ChangeMethodTargetToStatic keeps the raw Set types of Commons Collections' synchronizedSet
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(ParserTypes.Erasure).build()),
           //language=java
           java(
             """
@@ -558,7 +560,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     void emptySet() {
         rewriteRun(
           // ChangeStaticFieldToMethod types emptySet() without the Set<String> it is assigned to
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(ParserTypes.Erasure).build()),
           //language=java
           java(
             """

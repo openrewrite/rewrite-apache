@@ -20,6 +20,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeQualityValidation;
+import org.openrewrite.test.RecipeQualityValidation.ParserTypes;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -229,7 +230,7 @@ class ApacheCommonsBestPracticesTest implements RewriteTest {
         rewriteRun(
           // ChangePackage keeps Commons Math 2's StatUtils.max, which throws no MathIllegalArgumentException
           spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-math-2", "commons-math3"))
-            .recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+            .recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Erasure).build()),
           //language=java
           java(
             """
