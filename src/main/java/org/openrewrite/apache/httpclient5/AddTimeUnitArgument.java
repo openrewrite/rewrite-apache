@@ -30,7 +30,9 @@ import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Space;
+import org.openrewrite.java.tree.TypeUtils;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @EqualsAndHashCode(callSuper = false)
@@ -81,15 +83,43 @@ public class AddTimeUnitArgument extends Recipe {
 
                     JavaType.Method methodType = m.getMethodType();
                     if (methodType != null) {
-                        methodType = methodType
-                                .withParameterTypes(ListUtils.concat(methodType.getParameterTypes(), timeUnitArgument.getType()))
-                                .withParameterNames(ListUtils.concat(methodType.getParameterNames(), "timeUnit"));
-                        m = m.withMethodType(methodType).withName(m.getName().withType(methodType));
+                        JavaType.Method withTimeUnit = overloadTaking(methodType, m.getArguments());
+                        if (withTimeUnit == null) {
+                            withTimeUnit = methodType
+                                    .withParameterTypes(ListUtils.concat(methodType.getParameterTypes(),
+                                            timeUnitArgument.getType()))
+                                    .withParameterNames(ListUtils.concat(methodType.getParameterNames(), "timeUnit"));
+                        }
+                        m = m.withMethodType(withTimeUnit).withName(m.getName().withType(withTimeUnit));
                     }
                     maybeAddImport("java.util.concurrent.TimeUnit");
                 }
                 return m;
             }
         };
+    }
+
+    /**
+     * The declared overload that takes the arguments, which can widen the duration,
+     * as {@code RequestConfig.Builder} takes a {@code long} where HttpClient 4 took an {@code int}.
+     */
+    private static JavaType.@Nullable Method overloadTaking(JavaType.Method method, List<Expression> arguments) {
+        for (JavaType.Method candidate : method.getDeclaringType().getMethods()) {
+            List<JavaType> parameters = candidate.getParameterTypes();
+            if (candidate.getName().equals(method.getName()) && parameters.size() == arguments.size() &&
+                takes(parameters, arguments)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static boolean takes(List<JavaType> parameters, List<Expression> arguments) {
+        for (int i = 0; i < parameters.size(); i++) {
+            if (!TypeUtils.isAssignableTo(parameters.get(i), arguments.get(i).getType())) {
+                return false;
+            }
+        }
+        return true;
     }
 }

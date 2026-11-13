@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -38,6 +39,8 @@ class MigrateUrlEncodedFormEntityStringCharsetTest implements RewriteTest {
     @Test
     void literalAndConstantCharsetNames() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename, such as UrlEncodedFormEntity(List, String)
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """

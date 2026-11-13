@@ -119,6 +119,10 @@ class MigratePoolingNHttpClientConnectionManagerTest implements RewriteTest {
                   PoolingNHttpClientConnectionManager passthrough(PoolingNHttpClientConnectionManager cm) {
                       return cm;
                   }
+
+                  void use(PoolingNHttpClientConnectionManager cm) {
+                      passthrough(cm);
+                  }
               }
               """,
             """
@@ -127,6 +131,10 @@ class MigratePoolingNHttpClientConnectionManagerTest implements RewriteTest {
               class A {
                   PoolingAsyncClientConnectionManager passthrough(PoolingAsyncClientConnectionManager cm) {
                       return cm;
+                  }
+
+                  void use(PoolingAsyncClientConnectionManager cm) {
+                      passthrough(cm);
                   }
               }
               """

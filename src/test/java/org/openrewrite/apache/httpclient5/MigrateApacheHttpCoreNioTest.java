@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
@@ -146,6 +147,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesSharedInputBuffer() {
         rewriteRun(
+          // ChangeType declares capacity() and abort() on the new type, where HttpCore 5 declares them on AbstractSharedBuffer
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -191,6 +194,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesSharedOutputBuffer() {
         rewriteRun(
+          // ChangeType declares capacity() and abort() on the new type, where HttpCore 5 declares them on AbstractSharedBuffer
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """

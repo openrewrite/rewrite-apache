@@ -68,3 +68,7 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Arewrite.javaParserClasspathFrom=resources")
 }
 
+tasks.withType<Test>().configureEach {
+    // Fails a test whose recipe gives the code it writes other types than a parser gives that code
+    systemProperty("org.openrewrite.test.parserTypedTrees", true)
+}

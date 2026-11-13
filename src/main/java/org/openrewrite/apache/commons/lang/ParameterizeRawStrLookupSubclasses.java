@@ -74,15 +74,17 @@ public class ParameterizeRawStrLookupSubclasses extends Recipe {
             }
 
             private J.ParameterizedType parameterize(TypeTree typeTree) {
-                Expression typeArgument = TypeTree.build("String")
-                        .withType(JavaType.ShallowClass.build("java.lang.String"));
+                JavaType.ShallowClass string = JavaType.ShallowClass.build("java.lang.String");
+                Expression typeArgument = TypeTree.build("String").withType(string);
+                JavaType.FullyQualified strLookup = TypeUtils.asFullyQualified(typeTree.getType());
                 return new J.ParameterizedType(
                         Tree.randomId(),
                         typeTree.getPrefix(),
                         Markers.EMPTY,
                         (NameTree) typeTree.withPrefix(Space.EMPTY),
                         JContainer.build(Space.EMPTY, singletonList(JRightPadded.build(typeArgument)), Markers.EMPTY),
-                        typeTree.getType());
+                        strLookup == null ? typeTree.getType() :
+                                new JavaType.Parameterized(null, strLookup, singletonList(string)));
             }
         });
     }

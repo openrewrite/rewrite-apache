@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -30,6 +31,8 @@ class NewRequestLineTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpclient-4", "httpcore-4"))
+          .afterParser(JavaParser.fromJavaVersion()
+            .classpathFromResources(new InMemoryExecutionContext(), "httpclient5", "httpcore5"))
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
@@ -37,6 +40,8 @@ class NewRequestLineTest implements RewriteTest {
     @Test
     void removeRequestLineHttpResponse() {
         rewriteRun(
+          // HttpCore 5's RequestLine is a class, and ChangeType keeps getMethod() abstract as in HttpCore 4's interface
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """

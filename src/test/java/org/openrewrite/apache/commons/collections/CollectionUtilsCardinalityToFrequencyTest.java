@@ -143,11 +143,58 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
         );
     }
 
+    @Test
+    void parenthesizedArguments() {
+        rewriteRun(
+          java(
+            """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              class A {
+                  int count(String value, Iterable<String> values) {
+                      return CollectionUtils.cardinality((value), (values));
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.collections4.IterableUtils;
+
+              import java.util.Objects;
+
+              class A {
+                  int count(String value, Iterable<String> values) {
+                      return IterableUtils.frequency(Objects.requireNonNull(values), value);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void iterableOfATypeVariableBoundedByAWildcardIsLeftAlone() {
+        rewriteRun(
+          // javac can't infer frequency's type arguments from W
+          java(
+            """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              class A {
+                  <W extends Iterable<? super String>> int count(String value, W values) {
+                      return CollectionUtils.cardinality(value, values);
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"java.util.List<Object>", "java.util.Set<Object>", "org.apache.commons.collections4.Bag<Object>",
       "Iterable<? super String>", "Iterable"})
     void iterableTypes(String iterableType) {
-        rewriteRun(java(
+        rewriteRun(
+          java(
           """
             import org.apache.commons.collections4.CollectionUtils;
 

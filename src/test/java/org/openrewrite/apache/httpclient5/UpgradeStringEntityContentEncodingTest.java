@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -105,6 +106,8 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsUnsupportedLocalShapesWhileMigratingNamespaces() {
         rewriteRun(
+          // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -162,6 +165,8 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsNonlocalAndOtherEntityTargets() {
         rewriteRun(
+          // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -227,6 +232,8 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsCommentedPairAndStillMigratesIndependentPair() {
         rewriteRun(
+          // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -263,6 +270,8 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void movesVariableEncodingAndKeepsLeadingComments() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -318,6 +327,8 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsPairWithNonStringVariable() {
         rewriteRun(
+          // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """

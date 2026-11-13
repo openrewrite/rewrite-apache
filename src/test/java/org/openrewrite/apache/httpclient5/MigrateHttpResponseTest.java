@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -40,6 +41,8 @@ class MigrateHttpResponseTest implements RewriteTest {
     @Test
     void migratesHttpResponseToClassicHttpResponse() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -85,6 +88,8 @@ class MigrateHttpResponseTest implements RewriteTest {
     @Test
     void migratesCloseableHttpResponse() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
@@ -130,6 +135,8 @@ class MigrateHttpResponseTest implements RewriteTest {
     @Test
     void migratesResponseHandlerToHttpClientResponseHandler() {
         rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
           //language=java
           java(
             """
