@@ -87,9 +87,7 @@ class ApacheBestPracticesTest implements RewriteTest {
                   </dependencies>
               </project>
               """,
-            spec -> spec.after(pom -> {
-                return assertThat(pom).contains("<artifactId>poi-ooxml-lite</artifactId>").actual();
-            })
+            spec -> spec.after(pom -> assertThat(pom).contains("<artifactId>poi-ooxml-lite</artifactId>").actual())
           )
         );
     }
