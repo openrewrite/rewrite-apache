@@ -763,6 +763,14 @@ recipeList:
       methodPattern: org.apache.hc.client5.http.impl.classic.HttpClientBuilder setRetryHandler(..)
       newMethodName: setRetryStrategy
   - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager closeExpiredConnections()
+      newMethodName: closeExpired
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager closeIdleConnections(long, java.util.concurrent.TimeUnit)
+      newMethodName: closeIdle
+  - org.openrewrite.apache.httpclient5.ChangeArgumentToTimeValue:
+      methodPattern: org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager closeIdle(long, java.util.concurrent.TimeUnit)
+  - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.http.HttpMessage getAllHeaders()
       newMethodName: getHeaders
   - org.openrewrite.java.ChangeMethodName:
