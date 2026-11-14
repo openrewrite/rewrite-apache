@@ -1,0 +1,128 @@
+#
+# Copyright 2026 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.ignite.UpgradeApacheIgnite_3
+displayName: Migrate to Apache Ignite 3.x
+description: >-
+  Migrates Apache Ignite 2.x applications to the Apache Ignite 3.x client API. Caches become tables read through a
+  `KeyValueView`, transactions are passed explicitly to the operations that run in them, the thin client is built with
+  `IgniteClient.builder()`, and the build moves from `ignite-core` to `ignite-client`. Ignite 3 removes much of the
+  Ignite 2 API, among it cache and node configuration in Java, compute closures, data streamers, services and the
+  embedded node started with `Ignition`; each statement using these is left in place with a `// TODO Ignite 3` comment
+  that says what replaces it. A statement that passes a cache to a library built for Ignite 2, such as a rate limiter,
+  gets such a comment too.
+tags:
+  - apache
+  - ignite
+recipeList:
+  - org.openrewrite.apache.ignite.MigrateThinClientConfiguration
+  - org.openrewrite.apache.ignite.CommentOnIgnite2ApisWithoutEquivalent
+  - org.openrewrite.apache.ignite.MigrateCacheToKeyValueView
+  - org.openrewrite.apache.ignite.MigrateTransactions
+  - org.openrewrite.apache.ignite.ChangeIgnite2ExceptionTypes
+  - org.openrewrite.apache.ignite.UpgradeApacheIgniteDependencies_3
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.ignite.ChangeIgnite2ExceptionTypes
+displayName: Change Ignite 2 exception types to their Ignite 3 equivalents
+description: >-
+  Ignite 3 moved its exceptions to `org.apache.ignite.lang`, and throws `IgniteException` from the thin client where
+  Ignite 2 threw `ClientException`. A multi-catch that then names one type twice keeps it once.
+tags:
+  - apache
+  - ignite
+recipeList:
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.ignite.IgniteException
+      newFullyQualifiedTypeName: org.apache.ignite.lang.IgniteException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.ignite.IgniteCheckedException
+      newFullyQualifiedTypeName: org.apache.ignite.lang.IgniteCheckedException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.ignite.client.ClientException
+      newFullyQualifiedTypeName: org.apache.ignite.lang.IgniteException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.ignite.client.ClientConnectionException
+      newFullyQualifiedTypeName: org.apache.ignite.client.IgniteClientConnectionException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.ignite.client.ClientAddressFinder
+      newFullyQualifiedTypeName: org.apache.ignite.client.IgniteClientAddressFinder
+  - org.openrewrite.apache.ignite.RemoveRedundantCatchAlternatives
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.ignite.UpgradeApacheIgniteDependencies_3
+displayName: Migrate Apache Ignite dependencies to 3.x
+description: >-
+  Replaces `ignite-core` with the Ignite 3 thin client, `ignite-client`. The `ignite-core` artifact of Ignite 3 holds
+  internal classes only, so its version is never just upgraded. Ignite 3 builds SQL in and configures nodes with
+  HOCON, so `ignite-indexing`, `ignite-calcite` and `ignite-spring` are removed, and so are the Ignite 2 logging
+  adapters. A module that used Ignite only through one of those modules gets `ignite-client` added. Applications that
+  embed an Ignite 3 node need `ignite-runner` and `ignite-api` instead.
+tags:
+  - apache
+  - ignite
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.apache.ignite
+      oldArtifactId: ignite-core
+      newArtifactId: ignite-client
+      newVersion: 3.x
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-indexing
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-calcite
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-spring
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-slf4j
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-log4j2
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-log4j
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-jcl
+  - org.openrewrite.apache.ignite.AddIgniteClientToIgnite2Modules
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.ignite.AddIgniteClientToIgnite2Modules
+displayName: Add the Ignite 3 thin client to modules that used Ignite 2
+description: >-
+  Adds `ignite-client` to a module that depends on Ignite 2 and uses Ignite types, such as one that had Ignite only
+  through `ignite-spring`. Modules already on Ignite 3, Ignite 3 itself among them, are left alone, although their
+  types are in `org.apache.ignite` too.
+tags:
+  - apache
+  - ignite
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: org.apache.ignite
+      artifactIdPattern: "*"
+      version: 2.x
+recipeList:
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.ignite
+      artifactId: ignite-client
+      version: 3.x
+      onlyIfUsing: org.apache.ignite..*

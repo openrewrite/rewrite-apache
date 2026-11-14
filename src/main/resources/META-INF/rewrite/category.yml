@@ -71,6 +71,11 @@ packageName: org.openrewrite.apache.poi
 description: Recipes for [Apache POI](https://poi.apache.org/) spreadsheet library.
 ---
 type: specs.openrewrite.org/v1beta/category
+name: Apache Ignite
+packageName: org.openrewrite.apache.ignite
+description: Recipes for migrating from [Apache Ignite](https://ignite.apache.org/) 2.x to 3.x.
+---
+type: specs.openrewrite.org/v1beta/category
 name: Maven Shared Utils
 packageName: org.openrewrite.apache.maven.shared
 description: Recipes for replacing [Maven Shared Utils](https://maven.apache.org/shared/maven-shared-utils/) APIs with Java standard library equivalents.
