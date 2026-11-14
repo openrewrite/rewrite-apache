@@ -35,9 +35,7 @@ recipeList:
       newVersion: 3.x
   - org.openrewrite.apache.poi.ReplaceSetBoldweightWithSetBold
   - org.openrewrite.apache.poi.ReplaceSetCellType
-  - org.openrewrite.java.ChangeMethodInvocationReturnType:
-      methodPattern: org.apache.poi.ss.usermodel.Cell getCellType()
-      newReturnType: org.apache.poi.ss.usermodel.CellType
+  - org.openrewrite.apache.poi.ReplaceTypeCodesWithEnums
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
       existingFullyQualifiedConstantName: org.apache.poi.ss.usermodel.Cell.CELL_TYPE_NUMERIC
       fullyQualifiedConstantName: org.apache.poi.ss.usermodel.CellType.NUMERIC
