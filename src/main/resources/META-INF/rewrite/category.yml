@@ -71,6 +71,11 @@ packageName: org.openrewrite.apache.poi
 description: Recipes for [Apache POI](https://poi.apache.org/) spreadsheet library.
 ---
 type: specs.openrewrite.org/v1beta/category
+name: Apache Xerces
+packageName: org.openrewrite.apache.xerces
+description: Recipes for [Apache Xerces](https://xerces.apache.org/xerces2-j/) migrations.
+---
+type: specs.openrewrite.org/v1beta/category
 name: Maven Shared Utils
 packageName: org.openrewrite.apache.maven.shared
 description: Recipes for replacing [Maven Shared Utils](https://maven.apache.org/shared/maven-shared-utils/) APIs with Java standard library equivalents.
