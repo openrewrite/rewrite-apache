@@ -30,7 +30,10 @@ class WordUtilsToCommonsTextTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang-2", "commons-lang3", "commons-text"))
+        spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),
+          "commons-lang-2",
+          "commons-lang3",
+          "commons-text"))
           .recipeFromResource(
             "/META-INF/rewrite/apache-commons-lang-2-3.yml",
             "org.openrewrite.apache.commons.lang.WordUtilsToCommonsText");

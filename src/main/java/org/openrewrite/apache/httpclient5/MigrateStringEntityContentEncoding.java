@@ -36,9 +36,10 @@ import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static java.util.Collections.singletonList;
 
 @EqualsAndHashCode(callSuper = false)
 @Value
@@ -119,7 +120,7 @@ public class MigrateStringEntityContentEncoding extends Recipe {
                             .apply(constructionCursor, construction.getCoordinates().replace(),
                                     construction.getArguments().get(0), construction.getArguments().get(1), encoding);
                     replacement = replacement.withPrefix(construction.getPrefix()).withClazz(construction.getClazz());
-                    J.VariableDeclarations migrated = declarations.withVariables(Collections.singletonList(variable.withInitializer(replacement)));
+                    J.VariableDeclarations migrated = declarations.withVariables(singletonList(variable.withInitializer(replacement)));
                     if (!setter.getPrefix().getComments().isEmpty()) {
                         // Keep the comments that introduced the setter, now above the declaration that absorbed it
                         migrated = migrated.withPrefix(migrated.getPrefix().withComments(ListUtils.concatAll(
@@ -145,7 +146,7 @@ public class MigrateStringEntityContentEncoding extends Recipe {
                 // The 4.x String/Header overloads make a bare null ambiguous in valid original Java.
                 if (expression instanceof J.TypeCast && TypeUtils.isOfClassType(expression.getType(), "java.lang.String")) {
                     Expression cast = ((J.TypeCast) expression).getExpression();
-                    return cast instanceof J.Literal && ((J.Literal) cast).getValue() == null;
+                    return J.Literal.isLiteralValue(cast, null);
                 }
                 return false;
             }

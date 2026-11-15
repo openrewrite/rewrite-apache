@@ -85,7 +85,8 @@ class CollectionUtilsCardinalityAvailabilityTest {
 
         @Test
         void migrateWithReal41TargetAvailable() {
-            rewriteRun(java(BEFORE, """
+            rewriteRun(java(BEFORE,
+              """
               import org.apache.commons.collections4.IterableUtils;
 
               import java.util.Objects;
@@ -118,7 +119,7 @@ class CollectionUtilsCardinalityAvailabilityTest {
     class Java7 implements RewriteTest {
         @Override
         public void defaults(RecipeSpec spec) {
-            List<Path> classpath = classpath("4.1");
+            var classpath = classpath("4.1");
             spec.recipe(new CollectionUtilsCardinalityToFrequency())
               .parser(JavaParser.fromJavaVersion().classpath(classpath))
               .allSources(source -> source.markers(javaVersion(7), JavaSourceSet.build("main", classpath)));
@@ -191,7 +192,7 @@ class CollectionUtilsCardinalityAvailabilityTest {
     class Java6 implements RewriteTest {
         @Override
         public void defaults(RecipeSpec spec) {
-            List<Path> classpath = classpath("4.1");
+            var classpath = classpath("4.1");
             spec.recipe(new CollectionUtilsCardinalityToFrequency())
               .parser(JavaParser.fromJavaVersion().classpath(classpath))
               .allSources(source -> source.markers(javaVersion(6), JavaSourceSet.build("main", classpath)));

@@ -16,6 +16,7 @@
 package org.openrewrite.apache.httpclient5;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
@@ -40,37 +41,7 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
           .recipeFromResources("org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5");
     }
 
-    @Test
-    @Issue("https://github.com/openrewrite/rewrite-apache/issues/54")
-    void movesAdjacentContentEncodingLiteralToStringEntityConstructor() {
-        rewriteRun(
-          //language=java
-          java(
-            """
-              import org.apache.http.entity.ContentType;
-              import org.apache.http.entity.StringEntity;
-
-              class A {
-                  void foo() {
-                      StringEntity se = new StringEntity("", ContentType.APPLICATION_JSON);
-                      se.setContentEncoding("utf-8");
-                  }
-              }
-              """,
-            """
-              import org.apache.hc.core5.http.ContentType;
-              import org.apache.hc.core5.http.io.entity.StringEntity;
-
-              class A {
-                  void foo() {
-                      StringEntity se = new StringEntity("", ContentType.APPLICATION_JSON, "utf-8", false);
-                  }
-              }
-              """
-          )
-        );
-    }
-
+    @DocumentExample
     @Test
     void movesIndependentPairsIncludingTypedNullEncoding() {
         rewriteRun(
@@ -97,6 +68,37 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
                   void foo(StringBuilder body) {
                       StringEntity first = new StringEntity(body.toString(), ContentType.APPLICATION_JSON, "gzip", false);
                       StringEntity second = new StringEntity("second", ContentType.TEXT_PLAIN, (String) null, false);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Issue("https://github.com/openrewrite/rewrite-apache/issues/54")
+    @Test
+    void movesAdjacentContentEncodingLiteralToStringEntityConstructor() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.entity.ContentType;
+              import org.apache.http.entity.StringEntity;
+
+              class A {
+                  void foo() {
+                      StringEntity se = new StringEntity("", ContentType.APPLICATION_JSON);
+                      se.setContentEncoding("utf-8");
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.ContentType;
+              import org.apache.hc.core5.http.io.entity.StringEntity;
+
+              class A {
+                  void foo() {
+                      StringEntity se = new StringEntity("", ContentType.APPLICATION_JSON, "utf-8", false);
                   }
               }
               """

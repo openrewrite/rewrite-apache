@@ -305,7 +305,8 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
 
     @Test
     void retainClassNameShadowedByLocalVariable() {
-        rewriteRun(java("""
+        rewriteRun(java(
+          """
           import org.apache.commons.collections4.CollectionUtils;
 
           class A {
@@ -319,7 +320,8 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
 
     @Test
     void retainMemberReferencesIncludingSameTypedParameters() {
-        rewriteRun(java("""
+        rewriteRun(java(
+          """
           import org.apache.commons.collections4.CollectionUtils;
 
           import java.util.function.ToIntBiFunction;
@@ -333,7 +335,8 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
 
     @Test
     void retainUnrelatedOverloadAndExistingFrequency() {
-        rewriteRun(java("""
+        rewriteRun(java(
+          """
           import org.apache.commons.collections4.IterableUtils;
 
           class A {
@@ -349,7 +352,8 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
     void retainCommonsCollections3() {
         rewriteRun(
           spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-collections-3")),
-          java("""
+          java(
+            """
             import org.apache.commons.collections.CollectionUtils;
 
             class A {
@@ -357,17 +361,18 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
                     return CollectionUtils.cardinality(value, values);
                 }
             }
-            """)
+            """
+          )
         );
     }
 
-    @ParameterizedTest
     @CsvSource({
       "nested, Objects", "nested, IterableUtils",
       "parameter, Objects", "parameter, IterableUtils",
       "local, Objects", "local, IterableUtils",
       "imported, Objects", "imported, IterableUtils"
     })
+    @ParameterizedTest
     void targetNamesRemainBoundToTheUtilityClasses(String scope, String name) {
         String importConflict = "imported".equals(scope) ? "import binding.Owner." + name + ";\n\n" : "";
         String nested = "nested".equals(scope) ? "    static class " + name + " {}\n\n" : "";
@@ -402,8 +407,8 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
         rewriteRun(java(before, expected));
     }
 
-    @ParameterizedTest
     @CsvSource({"parameter, java", "parameter, org", "nested, java", "nested, org"})
+    @ParameterizedTest
     void retainShadowedPackageRoot(String scope, String name) {
         String nested = "nested".equals(scope) ? "    static class " + name + " {}\n\n" : "";
         String parameter = "parameter".equals(scope) ? ", Object " + name : "";
@@ -431,7 +436,7 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
 
     @Test
     void migrateOnlyStableArgumentsWithClassQualifier() {
-        String before = """
+        var before = """
           import org.apache.commons.collections4.CollectionUtils;
 
           import java.util.Arrays;

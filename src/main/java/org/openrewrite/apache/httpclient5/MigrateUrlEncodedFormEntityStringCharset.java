@@ -121,8 +121,7 @@ public class MigrateUrlEncodedFormEntityStringCharset extends Recipe {
                         if (cu == null) {
                             return false;
                         }
-                        AtomicReference<Boolean> found = new AtomicReference<>(false);
-                        new JavaIsoVisitor<AtomicReference<Boolean>>() {
+                        return new JavaIsoVisitor<AtomicReference<Boolean>>() {
                             @Override
                             public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, AtomicReference<Boolean> f) {
                                 if (TypeUtils.isOfType(variable.getVariableType(), constant) &&
@@ -132,8 +131,7 @@ public class MigrateUrlEncodedFormEntityStringCharset extends Recipe {
                                 }
                                 return variable;
                             }
-                        }.visit(cu, found);
-                        return found.get();
+                        }.reduce(cu, new AtomicReference<>(false)).get();
                     }
                 });
     }

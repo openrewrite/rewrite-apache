@@ -35,7 +35,10 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec
-          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-lang-2", "commons-lang3", "commons-text"))
+          .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),
+            "commons-lang-2",
+            "commons-lang3",
+            "commons-text"))
           .recipeFromResources("org.openrewrite.apache.commons.lang.UpgradeApacheCommonsLang_2_3");
     }
 
