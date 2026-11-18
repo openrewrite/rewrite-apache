@@ -40,6 +40,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)");
 
     private static final String HTTP_CLIENT_CONNECTION_MANAGER = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
+    private static final String CONNECTION_MANAGER_NAME = "cm";
 
     String displayName = "Migrate deprecated `SSLConnectionSocketFactory` to `DefaultClientTlsStrategy`";
 
@@ -133,7 +134,6 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             J.VariableDeclarations tlsStrategyDecl = null;
             for (Statement statement : b.getStatements()) {
                 if (statement instanceof J.VariableDeclarations &&
-                        !((J.VariableDeclarations) statement).getVariables().isEmpty() &&
                         TypeUtils.isOfClassType(((J.VariableDeclarations) statement).getType(), TLS_SOCKET_STRATEGY)) {
                     tlsStrategyDecl = (J.VariableDeclarations) statement;
                 }
@@ -145,7 +145,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             BlockAnalyzer analyzer = new BlockAnalyzer();
             analyzer.visit(b, ctx, getCursor().getParentOrThrow());
             if (!analyzer.hasSetSSLSocketFactory || analyzer.connectionManagerExists ||
-                    hasVisibleConnectionManager(getCursor().getParentOrThrow())) {
+                    hasVisibleConnectionManager(getCursor())) {
                 return b;
             }
 
@@ -179,11 +179,6 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     hasSetSSLSocketFactory = true;
                 }
                 return super.visitMethodInvocation(method, ctx);
-            }
-
-            @Override
-            public J.Lambda visitLambda(J.Lambda lambda, ExecutionContext ctx) {
-                return lambda;
             }
 
             @Override
@@ -232,11 +227,17 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     }
 
     private static boolean isConnectionManagerDeclaration(J.VariableDeclarations vd) {
-        return !vd.getVariables().isEmpty() &&
-                TypeUtils.isOfClassType(vd.getVariables().get(0).getType(), HTTP_CLIENT_CONNECTION_MANAGER);
+        for (J.VariableDeclarations.NamedVariable variable : vd.getVariables()) {
+            if (CONNECTION_MANAGER_NAME.equals(variable.getSimpleName()) &&
+                    TypeUtils.isOfClassType(variable.getType(), HTTP_CLIENT_CONNECTION_MANAGER)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasVisibleConnectionManager(Cursor cursor) {
+        Object child = null;
         for (Cursor c = cursor; c != null; c = c.getParent()) {
             Object value = c.getValue();
             if (value instanceof J.MethodDeclaration || value instanceof J.ClassDeclaration) {
@@ -244,11 +245,17 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             }
             if (value instanceof J.Block) {
                 for (Statement statement : ((J.Block) value).getStatements()) {
+                    if (statement == child) {
+                        break;
+                    }
                     if (statement instanceof J.VariableDeclarations &&
                             isConnectionManagerDeclaration((J.VariableDeclarations) statement)) {
                         return true;
                     }
                 }
+            }
+            if (value instanceof J) {
+                child = value;
             }
         }
         return false;
