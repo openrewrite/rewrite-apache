@@ -220,4 +220,274 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void migratesInsideTryBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.ssl.SSLContexts;
+
+              class HttpClientManager {
+                  void create() {
+                      try {
+                          SSLContext sslContext = SSLContexts.createDefault();
+                          SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+                          HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+                      } catch (Exception e) {
+                      }
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+              import org.apache.hc.core5.ssl.SSLContexts;
+
+              class HttpClientManager {
+                  void create() {
+                      try {
+                          SSLContext sslContext = SSLContexts.createDefault();
+                          TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
+                          HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
+                          HttpClients.custom().setConnectionManager(cm).build();
+                      } catch (Exception e) {
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesInsideIfBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.ssl.SSLContexts;
+
+              class HttpClientManager {
+                  void create(boolean secure) {
+                      if (secure) {
+                          SSLContext sslContext = SSLContexts.createDefault();
+                          SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+                          HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+                      }
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+              import org.apache.hc.core5.ssl.SSLContexts;
+
+              class HttpClientManager {
+                  void create(boolean secure) {
+                      if (secure) {
+                          SSLContext sslContext = SSLContexts.createDefault();
+                          TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
+                          HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
+                          HttpClients.custom().setConnectionManager(cm).build();
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void doesNotAddConnectionManagerWhenStrategyIsInLambdaAndBuilderOutside() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.HttpClients;
+
+              class HttpClientManager {
+                  void create(SSLContext sslContext, SSLConnectionSocketFactory existing) {
+                      Runnable r = () -> {
+                          SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+                      };
+                      HttpClients.custom().setSSLSocketFactory(existing).build();
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+              import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+              import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+
+              class HttpClientManager {
+                  void create(SSLContext sslContext, SSLConnectionSocketFactory existing) {
+                      Runnable r = () -> {
+                          TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
+                      };
+                      HttpClients.custom().setSSLSocketFactory(existing).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void migratesBuilderInsideLambda() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.util.function.Supplier;
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClients;
+
+              class HttpClientManager {
+                  Supplier<CloseableHttpClient> create(SSLContext sslContext) {
+                      SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+                      return () -> HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+                  }
+              }
+              """,
+            """
+              import java.util.function.Supplier;
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+
+              class HttpClientManager {
+                  Supplier<CloseableHttpClient> create(SSLContext sslContext) {
+                      TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
+                      HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
+                      return () -> HttpClients.custom().setConnectionManager(cm).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void addsConnectionManagerWhenExistingOneHasDifferentName() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.HttpClients;
+
+              class HttpClientManager {
+                  void create(SSLContext sslContext, HttpClientConnectionManager pool, boolean secure) {
+                      HttpClientConnectionManager connectionManager = pool;
+                      if (secure) {
+                          SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+                          HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+                      }
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.SSLContext;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+
+              class HttpClientManager {
+                  void create(SSLContext sslContext, HttpClientConnectionManager pool, boolean secure) {
+                      HttpClientConnectionManager connectionManager = pool;
+                      if (secure) {
+                          TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
+                          HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
+                          HttpClients.custom().setConnectionManager(cm).build();
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void ignoresConnectionManagerDeclaredAfterNestedBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.HttpClients;
+
+              class HttpClientManager {
+                  void create(SSLContext sslContext, HttpClientConnectionManager pool, boolean secure) {
+                      if (secure) {
+                          SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+                          HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+                      }
+                      HttpClientConnectionManager cm = pool;
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.SSLContext;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+              import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+              import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+              import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+
+              class HttpClientManager {
+                  void create(SSLContext sslContext, HttpClientConnectionManager pool, boolean secure) {
+                      if (secure) {
+                          TlsSocketStrategy tlsSocketStrategy = new DefaultClientTlsStrategy(sslContext);
+                          HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(tlsSocketStrategy).build();
+                          HttpClients.custom().setConnectionManager(cm).build();
+                      }
+                      HttpClientConnectionManager cm = pool;
+                  }
+              }
+              """
+          )
+        );
+    }
 }

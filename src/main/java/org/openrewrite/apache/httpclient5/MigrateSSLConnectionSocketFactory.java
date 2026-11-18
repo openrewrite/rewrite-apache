@@ -17,7 +17,6 @@ package org.openrewrite.apache.httpclient5;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
@@ -39,6 +38,9 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     private static final String TLS_SOCKET_STRATEGY = "org.apache.hc.client5.http.ssl.TlsSocketStrategy";
     private static final MethodMatcher SET_SSL_SOCKET_FACTORY = new MethodMatcher(
             "org.apache..*..HttpClientBuilder setSSLSocketFactory(..)");
+
+    private static final String HTTP_CLIENT_CONNECTION_MANAGER = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
+    private static final String CONNECTION_MANAGER_NAME = "cm";
 
     String displayName = "Migrate deprecated `SSLConnectionSocketFactory` to `DefaultClientTlsStrategy`";
 
@@ -119,94 +121,80 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
     }
 
     private static class AddConnectionManagerVisitor extends JavaIsoVisitor<ExecutionContext> {
-        private static final String HTTP_CLIENT_CONNECTION_MANAGER = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
         private static final String POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER = "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder";
 
         @Override
-        public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
-            J.MethodDeclaration m = super.visitMethodDeclaration(method, ctx);
-
-            if (m.getBody() == null) {
-                return m;
+        public J.Block visitBlock(J.Block block, ExecutionContext ctx) {
+            J.Block b = super.visitBlock(block, ctx);
+            Object parent = getCursor().getParentTreeCursor().getValue();
+            if (parent instanceof J.ClassDeclaration || parent instanceof J.NewClass) {
+                return b;
             }
 
-            class MethodAnalyzer extends JavaIsoVisitor<ExecutionContext> {
-                boolean connectionManagerExists;
-                boolean hasSetSSLSocketFactory;
-                J.@Nullable VariableDeclarations tlsStrategyDecl;
-
-                @Override
-                public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations vd, ExecutionContext ctx) {
-                    if (!vd.getVariables().isEmpty()) {
-                        if (TypeUtils.isOfClassType(vd.getType(), TLS_SOCKET_STRATEGY)) {
-                            tlsStrategyDecl = vd;
-                        } else if (TypeUtils.isOfClassType(vd.getVariables().get(0).getType(), HTTP_CLIENT_CONNECTION_MANAGER)) {
-                            connectionManagerExists = true;
-                        }
-                    }
-                    return super.visitVariableDeclarations(vd, ctx);
-                }
-
-                @Override
-                public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-                    if (SET_SSL_SOCKET_FACTORY.matches(method)) {
-                        hasSetSSLSocketFactory = true;
-                    }
-                    return super.visitMethodInvocation(method, ctx);
-                }
-
-                boolean shouldAddConnectionManager() {
-                    return tlsStrategyDecl != null && hasSetSSLSocketFactory && !connectionManagerExists;
+            J.VariableDeclarations tlsStrategyDecl = null;
+            for (Statement statement : b.getStatements()) {
+                if (statement instanceof J.VariableDeclarations &&
+                        TypeUtils.isOfClassType(((J.VariableDeclarations) statement).getType(), TLS_SOCKET_STRATEGY)) {
+                    tlsStrategyDecl = (J.VariableDeclarations) statement;
                 }
             }
-
-            MethodAnalyzer analyzer = new MethodAnalyzer();
-            analyzer.visit(m.getBody(), ctx);
-
-            if (analyzer.shouldAddConnectionManager()) {
-                J.Identifier tlsStrategyIdentifier = analyzer.tlsStrategyDecl.getVariables().get(0).getName();
-                String httpClientConnectionManagerCode = "HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
-                        ".setTlsSocketStrategy(#{any(org.apache.hc.client5.http.ssl.TlsSocketStrategy)}).build();";
-
-                maybeAddImport(HTTP_CLIENT_CONNECTION_MANAGER);
-                maybeAddImport(POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER);
-
-                return JavaTemplate.builder(httpClientConnectionManagerCode)
-                        .javaParser(JavaParser.fromJavaVersion()
-                                .classpathFromResources(ctx, "httpclient5", "httpcore5"))
-                        .imports(HTTP_CLIENT_CONNECTION_MANAGER,
-                                POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER)
-                        .build()
-                        .apply(updateCursor(m), analyzer.tlsStrategyDecl.getCoordinates().after(), tlsStrategyIdentifier);
+            if (tlsStrategyDecl == null) {
+                return b;
             }
 
-            return m;
+            BlockAnalyzer analyzer = new BlockAnalyzer();
+            analyzer.visit(b, ctx, getCursor().getParentOrThrow());
+            if (!analyzer.hasSetSSLSocketFactory || analyzer.connectionManagerExists ||
+                    hasVisibleConnectionManager(getCursor())) {
+                return b;
+            }
+
+            maybeAddImport(HTTP_CLIENT_CONNECTION_MANAGER);
+            maybeAddImport(POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER);
+            return JavaTemplate.builder("HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()" +
+                            ".setTlsSocketStrategy(#{any(org.apache.hc.client5.http.ssl.TlsSocketStrategy)}).build();")
+                    .javaParser(JavaParser.fromJavaVersion()
+                            .classpathFromResources(ctx, "httpclient5", "httpcore5"))
+                    .imports(HTTP_CLIENT_CONNECTION_MANAGER, POOLING_HTTP_CLIENT_CONNECTION_MANAGER_BUILDER)
+                    .build()
+                    .apply(updateCursor(b), tlsStrategyDecl.getCoordinates().after(),
+                            tlsStrategyDecl.getVariables().get(0).getName());
+        }
+
+        private static class BlockAnalyzer extends JavaIsoVisitor<ExecutionContext> {
+            boolean connectionManagerExists;
+            boolean hasSetSSLSocketFactory;
+
+            @Override
+            public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations vd, ExecutionContext ctx) {
+                if (isConnectionManagerDeclaration(vd)) {
+                    connectionManagerExists = true;
+                }
+                return super.visitVariableDeclarations(vd, ctx);
+            }
+
+            @Override
+            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                if (SET_SSL_SOCKET_FACTORY.matches(method)) {
+                    hasSetSSLSocketFactory = true;
+                }
+                return super.visitMethodInvocation(method, ctx);
+            }
+
+            @Override
+            public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
+                return classDecl;
+            }
+
+            @Override
+            public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
+                super.visitNewClass(newClass.withBody(null), ctx);
+                return newClass;
+            }
         }
     }
 
     private static class TransformSetSSLSocketFactoryVisitor extends JavaIsoVisitor<ExecutionContext> {
-        private static final String HTTP_CLIENT_CONNECTION_MANAGER = "org.apache.hc.client5.http.io.HttpClientConnectionManager";
-
-        private boolean isInsideMethodWithConnectionManager(Cursor cursor) {
-            // Walk up the cursor to find the enclosing method
-            J.MethodDeclaration enclosingMethod = cursor.firstEnclosing(J.MethodDeclaration.class);
-            if (enclosingMethod == null || enclosingMethod.getBody() == null) {
-                return false;
-            }
-
-            // Check if a ConnectionManager variable exists in this method
-            for (Statement stmt : enclosingMethod.getBody().getStatements()) {
-                if (stmt instanceof J.VariableDeclarations) {
-                    J.VariableDeclarations vd = (J.VariableDeclarations) stmt;
-                    if (!vd.getVariables().isEmpty() &&
-                            TypeUtils.isOfClassType(vd.getVariables().get(0).getType(), HTTP_CLIENT_CONNECTION_MANAGER)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
         @Override
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
             J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
@@ -219,8 +207,7 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
                     if (arg.getType() != null &&
                             (TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY) ||
                                     TypeUtils.isOfClassType(arg.getType(), HTTPCLIENT_5_SSL_CONNECTION_SOCKET_FACTORY))) {
-                        // Only transform if a ConnectionManager exists in the enclosing method
-                        if (!isInsideMethodWithConnectionManager(getCursor())) {
+                        if (!hasVisibleConnectionManager(getCursor())) {
                             return mi;
                         }
                         maybeRemoveImport(HTTPCLIENT_4_SSL_CONNECTION_SOCKET_FACTORY);
@@ -237,5 +224,40 @@ public class MigrateSSLConnectionSocketFactory extends Recipe {
             }
             return mi;
         }
+    }
+
+    private static boolean isConnectionManagerDeclaration(J.VariableDeclarations vd) {
+        for (J.VariableDeclarations.NamedVariable variable : vd.getVariables()) {
+            if (CONNECTION_MANAGER_NAME.equals(variable.getSimpleName()) &&
+                    TypeUtils.isOfClassType(variable.getType(), HTTP_CLIENT_CONNECTION_MANAGER)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasVisibleConnectionManager(Cursor cursor) {
+        Object child = null;
+        for (Cursor c = cursor; c != null; c = c.getParent()) {
+            Object value = c.getValue();
+            if (value instanceof J.MethodDeclaration || value instanceof J.ClassDeclaration) {
+                return false;
+            }
+            if (value instanceof J.Block) {
+                for (Statement statement : ((J.Block) value).getStatements()) {
+                    if (statement == child) {
+                        break;
+                    }
+                    if (statement instanceof J.VariableDeclarations &&
+                            isConnectionManagerDeclaration((J.VariableDeclarations) statement)) {
+                        return true;
+                    }
+                }
+            }
+            if (value instanceof J) {
+                child = value;
+            }
+        }
+        return false;
     }
 }
