@@ -44,6 +44,15 @@ recipeList:
   - org.openrewrite.apache.httpclient5.MigrateRequestConfig
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
   - org.openrewrite.apache.httpclient5.StatusLine
+  # HttpClient 5's HttpEntity returns the content type and encoding as a String rather than a Header
+  - org.openrewrite.java.SimplifyMethodChain:
+      methodPatternChain: ['org.apache.http.HttpEntity getContentType()', 'org.apache.http.NameValuePair getValue()']
+      newMethodName: getContentType
+      matchOverrides: true
+  - org.openrewrite.java.SimplifyMethodChain:
+      methodPatternChain: ['org.apache.http.HttpEntity getContentEncoding()', 'org.apache.http.NameValuePair getValue()']
+      newMethodName: getContentEncoding
+      matchOverrides: true
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
   - org.openrewrite.apache.httpclient5.MigrateStringEntityContentEncoding
   - org.openrewrite.apache.httpclient5.MigrateAuthState
@@ -774,6 +783,37 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.hc.client5.http.auth.AuthScheme getSchemeName()
       newMethodName: getName
+  # HttpClient 5's entities take a ContentType; 4.x's constructors without one left it null
+  - org.openrewrite.java.AddNullMethodArgument:
+      methodPattern: org.apache.hc.core5.http.io.entity.ByteArrayEntity <constructor>(byte[])
+      argumentIndex: 1
+      parameterType: org.apache.hc.core5.http.ContentType
+      parameterName: contentType
+      explicitCast: false
+  - org.openrewrite.java.AddNullMethodArgument:
+      methodPattern: org.apache.hc.core5.http.io.entity.ByteArrayEntity <constructor>(byte[], int, int)
+      argumentIndex: 3
+      parameterType: org.apache.hc.core5.http.ContentType
+      parameterName: contentType
+      explicitCast: false
+  - org.openrewrite.java.AddNullMethodArgument:
+      methodPattern: org.apache.hc.core5.http.io.entity.InputStreamEntity <constructor>(java.io.InputStream)
+      argumentIndex: 1
+      parameterType: org.apache.hc.core5.http.ContentType
+      parameterName: contentType
+      explicitCast: false
+  - org.openrewrite.java.AddNullMethodArgument:
+      methodPattern: org.apache.hc.core5.http.io.entity.InputStreamEntity <constructor>(java.io.InputStream, long)
+      argumentIndex: 2
+      parameterType: org.apache.hc.core5.http.ContentType
+      parameterName: contentType
+      explicitCast: false
+  - org.openrewrite.java.AddNullMethodArgument:
+      methodPattern: org.apache.hc.core5.http.io.entity.FileEntity <constructor>(java.io.File)
+      argumentIndex: 1
+      parameterType: org.apache.hc.core5.http.ContentType
+      parameterName: contentType
+      explicitCast: false
 
 ---
 type: specs.openrewrite.org/v1beta/recipe
