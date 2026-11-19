@@ -162,6 +162,7 @@ class MigrateHttpResponseTest implements RewriteTest {
               import java.io.IOException;
               import java.nio.charset.Charset;
               import org.apache.hc.core5.http.ClassicHttpResponse;
+              import org.apache.hc.core5.http.ParseException;
               import org.apache.hc.core5.http.io.HttpClientResponseHandler;
               import org.apache.hc.core5.http.io.entity.EntityUtils;
               import org.apache.hc.core5.http.HttpEntity;
@@ -170,7 +171,7 @@ class MigrateHttpResponseTest implements RewriteTest {
               public class StringResponseHandler implements HttpClientResponseHandler<String> {
                   private static final String DEFAULT_CHAR_SET = "UTF-8";
                   public String handleResponse(
-                          final ClassicHttpResponse response) throws IOException {
+                          final ClassicHttpResponse response) throws IOException, ParseException {
                       HttpEntity entity = response.getEntity();
                       return entity == null ? null : EntityUtils.toString(entity, Charset.forName(DEFAULT_CHAR_SET));
                   }
