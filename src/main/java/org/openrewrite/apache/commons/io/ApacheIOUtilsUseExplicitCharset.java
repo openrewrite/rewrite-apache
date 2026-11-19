@@ -19,9 +19,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
-import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
+import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.J;
@@ -33,10 +33,13 @@ import java.util.*;
 public class ApacheIOUtilsUseExplicitCharset extends Recipe {
 
     private static final Map<MethodMatcher, String> MATCHER_TEMPLATES = new HashMap<>();
-    // `IOUtils.toByteArray(java.lang.String)` is unique It's converted to String#getBytes()
-    private static final MethodMatcher STRING_GET_BYTES = new MethodMatcher("org.apache.commons.io.IOUtils toByteArray(java.lang.String)");
+    // Commons IO has no overload of these that takes a Charset, so the whole call becomes the JDK's equivalent
+    private static final Map<MethodMatcher, String> JDK_TEMPLATES = new HashMap<>();
 
     static {
+        JDK_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toByteArray(java.lang.String)"), "#{any(String)}.getBytes(StandardCharsets.#{})");
+        JDK_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toString(byte[])"), "new String(#{anyArray(byte)}, StandardCharsets.#{})");
+
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils copy(java.io.InputStream, java.io.Writer)"), "copy(#{any(java.io.InputStream)}, #{any(java.io.Writer)}, StandardCharsets.#{})");
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils copy(java.io.Reader, java.io.OutputStream)"), "copy(#{any(java.io.InputStream)}, #{any(java.io.OutputStream)}, StandardCharsets.#{})");
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils readLines(java.io.InputStream)"), "readLines(#{any(java.io.InputStream)}, StandardCharsets.#{})");
@@ -44,7 +47,6 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toCharArray(java.io.InputStream)"), "toCharArray(#{any(java.io.InputStream)}, StandardCharsets.#{})");
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toInputStream(java.lang.CharSequence)"), "toInputStream(#{any(java.lang.CharSequence)}, StandardCharsets.#{})");
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toInputStream(java.lang.String)"), "toInputStream(#{any(java.lang.String)}, StandardCharsets.#{})");
-        MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toString(byte[])"), "toString(#{anyArray(byte)}, StandardCharsets.#{})");
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toString(java.io.InputStream)"), "toString(#{any(java.io.InputStream)}, StandardCharsets.#{})");
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toString(java.net.URI)"), "toString(#{any(java.net.URI)}, StandardCharsets.#{})");
         MATCHER_TEMPLATES.put(new MethodMatcher("org.apache.commons.io.IOUtils toString(java.net.URL)"), "toString(#{any(java.net.URL)}, StandardCharsets.#{})");
@@ -76,19 +78,25 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new UsesType<>("org.apache.commons.io.IOUtils", false), new JavaIsoVisitor<ExecutionContext>() {
+        return Preconditions.check(new UsesType<>("org.apache.commons.io.IOUtils", false), new JavaVisitor<ExecutionContext>() {
             @Override
-            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-                J.MethodInvocation mi = super.visitMethodInvocation(method, ctx);
-                if (STRING_GET_BYTES.matches(mi)) {
-                    maybeAddImport("java.nio.charset.StandardCharsets");
-                    return JavaTemplate.builder("#{any(String)}.getBytes(StandardCharsets.#{})")
-                            .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-io"))
-                            .imports("java.nio.charset.StandardCharsets")
-                            .build()
-                            .apply(updateCursor(mi),
-                                    mi.getCoordinates().replace(),
-                                    mi.getArguments().get(0), encoding == null ? "UTF_8" : encoding);
+            public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                J visited = super.visitMethodInvocation(method, ctx);
+                if (!(visited instanceof J.MethodInvocation)) {
+                    return visited;
+                }
+                J.MethodInvocation mi = (J.MethodInvocation) visited;
+                for (Map.Entry<MethodMatcher, String> entry : JDK_TEMPLATES.entrySet()) {
+                    if (entry.getKey().matches(mi)) {
+                        maybeAddImport("java.nio.charset.StandardCharsets");
+                        maybeRemoveImport("org.apache.commons.io.IOUtils");
+                        return JavaTemplate.builder(entry.getValue())
+                                .imports("java.nio.charset.StandardCharsets")
+                                .build()
+                                .apply(updateCursor(mi),
+                                        mi.getCoordinates().replace(),
+                                        mi.getArguments().get(0), encoding == null ? "UTF_8" : encoding);
+                    }
                 }
 
                 for (Map.Entry<MethodMatcher, String> entry : MATCHER_TEMPLATES.entrySet()) {
