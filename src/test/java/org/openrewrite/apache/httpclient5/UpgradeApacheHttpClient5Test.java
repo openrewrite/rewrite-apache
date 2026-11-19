@@ -886,6 +886,90 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         }
 
         @Test
+        void keepCommonsCodecThatHttpClient4BroughtAlong() {
+            rewriteRun(
+              spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(),
+                "httpclient-4", "httpcore-4", "httpclient5", "httpcore5", "commons-codec")),
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                    import org.apache.commons.codec.binary.Base64;
+                    import org.apache.http.client.methods.HttpGet;
+
+                    public class A {
+                        HttpGet get(String url, String user, String password) {
+                            HttpGet get = new HttpGet(url);
+                            get.setHeader("Authorization", "Basic " + Base64.encodeBase64String((user + ":" + password).getBytes()));
+                            return get;
+                        }
+                    }
+                    """,
+                    """
+                    import org.apache.commons.codec.binary.Base64;
+                    import org.apache.hc.client5.http.classic.methods.HttpGet;
+
+                    public class A {
+                        HttpGet get(String url, String user, String password) {
+                            HttpGet get = new HttpGet(url);
+                            get.setHeader("Authorization", "Basic " + Base64.encodeBase64String((user + ":" + password).getBytes()));
+                            return get;
+                        }
+                    }
+                    """
+                  )
+                ),
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.httpcomponents</groupId>
+                                <artifactId>httpclient</artifactId>
+                                <version>4.5.14</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """,
+                  spec -> spec.after(pom -> {
+                      Matcher httpClient = Pattern.compile("5\\.6\\.\\d+").matcher(pom);
+                      assertThat(httpClient.find()).describedAs("Expected 5.6.x in %s", pom).isTrue();
+                      Matcher codec = Pattern.compile("<artifactId>commons-codec</artifactId>\\s*<version>(1\\.\\d+(\\.\\d+)?)</version>").matcher(pom);
+                      assertThat(codec.find()).describedAs("Expected commons-codec 1.x in %s", pom).isTrue();
+                      //language=xml
+                      return """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>org.example</groupId>
+                            <artifactId>example</artifactId>
+                            <version>1.0.0</version>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>commons-codec</groupId>
+                                    <artifactId>commons-codec</artifactId>
+                                    <version>%s</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>org.apache.httpcomponents.client5</groupId>
+                                    <artifactId>httpclient5</artifactId>
+                                    <version>%s</version>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """.formatted(codec.group(1), httpClient.group());
+                  })
+                )
+              )
+            );
+        }
+
+        @Test
         void migrateDependenciesForTransitive() {
             rewriteRun(
               mavenProject("project",

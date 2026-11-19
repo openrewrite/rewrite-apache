@@ -93,6 +93,13 @@ recipeList:
   - org.openrewrite.java.dependencies.RemoveDependency:
       groupId: org.apache.httpcomponents
       artifactId: httpasyncclient
+  # httpclient 4 depends on commons-codec, which code may use without declaring it; httpclient5 does not
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-codec
+      artifactId: commons-codec
+      version: 1.x
+      onlyIfUsing: org.apache.commons.codec..*
+      acceptTransitive: true
 
 ---
 type: specs.openrewrite.org/v1beta/recipe
