@@ -566,7 +566,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape3HttpAsyncMethodsCreatePost() {
         rewriteRun(
-          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          // AsyncEntityProducers.create(..) has no type while ContentType is HttpCore 4's, which the rest of UpgradeApacheHttpClient_5 migrates
           spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
@@ -584,15 +584,15 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               }
               """,
             """
+              import org.apache.hc.core5.http.nio.AsyncRequestProducer;
               import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
               import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
               import org.apache.http.entity.ContentType;
-              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
 
               import java.net.URI;
 
               class A {
-                  HttpAsyncRequestProducer producer(URI uri, String body) throws Exception {
+                  AsyncRequestProducer producer(URI uri, String body) throws Exception {
                       return AsyncRequestBuilder.post(uri).setEntity(AsyncEntityProducers.create(body, ContentType.APPLICATION_JSON)).build();
                   }
               }
@@ -604,8 +604,6 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape3HttpAsyncMethodsCreateGet() {
         rewriteRun(
-          // No step migrates HttpCore 4's NIO protocol types, such as the method's return type
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -621,13 +619,13 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               }
               """,
             """
+              import org.apache.hc.core5.http.nio.AsyncRequestProducer;
               import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
-              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
 
               import java.net.URI;
 
               class A {
-                  HttpAsyncRequestProducer producer(URI uri) {
+                  AsyncRequestProducer producer(URI uri) {
                       return AsyncRequestBuilder.get(uri).build();
                   }
               }
@@ -639,8 +637,6 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape3HttpAsyncMethodsCreateConsumer() {
         rewriteRun(
-          // No step migrates HttpCore 4's NIO protocol types, such as the method's return type
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -655,13 +651,38 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               }
               """,
             """
+              import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
               import org.apache.hc.client5.http.async.methods.SimpleResponseConsumer;
-              import org.apache.http.HttpResponse;
-              import org.apache.http.nio.protocol.HttpAsyncResponseConsumer;
+              import org.apache.hc.core5.http.nio.AsyncResponseConsumer;
 
               class A {
-                  HttpAsyncResponseConsumer<HttpResponse> consumer() {
+                  AsyncResponseConsumer<SimpleHttpResponse> consumer() {
                       return SimpleResponseConsumer.create();
+                  }
+              }
+              """
+          ),
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpResponse;
+              import org.apache.http.nio.client.methods.HttpAsyncMethods;
+              import org.apache.http.nio.protocol.HttpAsyncResponseConsumer;
+
+              class B {
+                  void consume() {
+                      HttpAsyncResponseConsumer<HttpResponse> consumer = HttpAsyncMethods.createConsumer();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+              import org.apache.hc.client5.http.async.methods.SimpleResponseConsumer;
+              import org.apache.hc.core5.http.nio.AsyncResponseConsumer;
+
+              class B {
+                  void consume() {
+                      AsyncResponseConsumer<SimpleHttpResponse> consumer = SimpleResponseConsumer.create();
                   }
               }
               """

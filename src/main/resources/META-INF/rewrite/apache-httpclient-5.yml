@@ -260,6 +260,12 @@ recipeList:
   - org.openrewrite.apache.httpclient5.InlineBasicAsyncRequestProducerLocals
   - org.openrewrite.apache.httpclient5.MigrateBasicAsyncRequestProducer
   - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.protocol.HttpAsyncRequestProducer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.AsyncRequestProducer
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.nio.protocol.HttpAsyncResponseConsumer
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.nio.AsyncResponseConsumer
+  - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.nio.entity.NStringEntity
       newFullyQualifiedTypeName: org.apache.hc.core5.http.io.entity.StringEntity
   - org.openrewrite.java.ChangeType:
