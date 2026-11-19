@@ -398,13 +398,12 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
               """,
             """
               import org.apache.commons.collections4.map.ReferenceMap;
-              import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 
               import java.util.Map;
 
               class A {
-                  Map<String, Object> soft = new ReferenceMap(ReferenceStrength.SOFT, ReferenceStrength.SOFT);
-                  Map<String, Object> weak = new ReferenceMap(ReferenceStrength.HARD, ReferenceStrength.WEAK, true);
+                  Map<String, Object> soft = new ReferenceMap(org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.SOFT, org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.SOFT);
+                  Map<String, Object> weak = new ReferenceMap(org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.HARD, org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.WEAK, true);
               }
               """
           )
@@ -426,13 +425,13 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
               }
               """,
             """
-              import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
+              import org.apache.commons.collections4.map.AbstractReferenceMap;
               import org.apache.commons.collections4.map.ReferenceMap;
 
               import java.util.Map;
 
               class A {
-                  Map<String, Object> cache = new ReferenceMap(ReferenceStrength.SOFT, ReferenceStrength.SOFT);
+                  Map<String, Object> cache = new ReferenceMap(AbstractReferenceMap.ReferenceStrength.SOFT, AbstractReferenceMap.ReferenceStrength.SOFT);
               }
               """
           )
