@@ -136,9 +136,8 @@ class MigrateHttpResponseTest implements RewriteTest {
     @Test
     void migratesResponseHandlerToHttpClientResponseHandler() {
         rewriteRun(
-          // HttpCore 5's EntityUtils.toString throws the checked ParseException
           // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).compilableOutput(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """
@@ -164,6 +163,7 @@ class MigrateHttpResponseTest implements RewriteTest {
               import java.io.IOException;
               import java.nio.charset.Charset;
               import org.apache.hc.core5.http.ClassicHttpResponse;
+              import org.apache.hc.core5.http.HttpException;
               import org.apache.hc.core5.http.io.HttpClientResponseHandler;
               import org.apache.hc.core5.http.io.entity.EntityUtils;
               import org.apache.hc.core5.http.HttpEntity;
@@ -172,7 +172,7 @@ class MigrateHttpResponseTest implements RewriteTest {
               public class StringResponseHandler implements HttpClientResponseHandler<String> {
                   private static final String DEFAULT_CHAR_SET = "UTF-8";
                   public String handleResponse(
-                          final ClassicHttpResponse response) throws IOException {
+                          final ClassicHttpResponse response) throws IOException, HttpException {
                       HttpEntity entity = response.getEntity();
                       return entity == null ? null : EntityUtils.toString(entity, Charset.forName(DEFAULT_CHAR_SET));
                   }
