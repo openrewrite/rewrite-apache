@@ -252,6 +252,10 @@ recipeList:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setSoLinger(int)
   - org.openrewrite.java.RemoveMethodInvocations:
       methodPattern: org.apache.hc.core5.reactor.IOReactorConfig.Builder setConnectTimeout(int)
+  - org.openrewrite.apache.httpclient5.RemoveUnusedDefaultConnectingIOReactors
+  - org.openrewrite.java.AddCommentToMethodInvocations:
+      comment: "TODO: HttpCore 5's `DefaultConnectingIOReactor` has no constructor without arguments. Let `HttpAsyncClients` create the reactor, or pass the constructor an `IOEventHandlerFactory`."
+      methodPattern: org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor <constructor>()
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.nio.reactor.ConnectingIOReactor
       newFullyQualifiedTypeName: org.apache.hc.core5.reactor.ConnectionInitiator

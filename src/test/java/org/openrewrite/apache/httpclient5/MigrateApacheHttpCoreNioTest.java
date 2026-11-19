@@ -310,7 +310,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesIOReactorClasses() {
         rewriteRun(
-          // HttpCore 5's DefaultConnectingIOReactor has no constructor without arguments
+          // Keeps a constructor that HttpCore 5 removed, with a comment for a person to finish
           spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
@@ -330,7 +330,32 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
 
               class A {
                   ConnectionInitiator getReactor() throws Exception {
-                      return new DefaultConnectingIOReactor();
+                      return /* TODO: HttpCore 5's `DefaultConnectingIOReactor` has no constructor without arguments. Let `HttpAsyncClients` create the reactor, or pass the constructor an `IOEventHandlerFactory`. */ new DefaultConnectingIOReactor();
+                  }
+              }
+              """
+          ),
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+              import org.apache.http.nio.reactor.ConnectingIOReactor;
+
+              class B {
+                  ConnectingIOReactor getReactor() throws Exception {
+                      ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor();
+                      return ioReactor;
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.reactor.ConnectionInitiator;
+              import org.apache.hc.core5.reactor.DefaultConnectingIOReactor;
+
+              class B {
+                  ConnectionInitiator getReactor() throws Exception {
+                      ConnectionInitiator ioReactor = /* TODO: HttpCore 5's `DefaultConnectingIOReactor` has no constructor without arguments. Let `HttpAsyncClients` create the reactor, or pass the constructor an `IOEventHandlerFactory`. */ new DefaultConnectingIOReactor();
+                      return ioReactor;
                   }
               }
               """
