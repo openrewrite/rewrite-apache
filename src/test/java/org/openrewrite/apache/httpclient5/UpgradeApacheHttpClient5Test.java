@@ -250,9 +250,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void convertRequestBuilderToClassicRequestBuilder() {
         rewriteRun(
-          // ClassicRequestBuilder.build() returns a ClassicHttpRequest, not an HttpUriRequest
           // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).compilableOutput(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """
@@ -274,10 +273,10 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               }
               """,
             """
-              import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+              import org.apache.hc.core5.http.ClassicHttpRequest;
               import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 
               import java.io.IOException;
@@ -285,7 +284,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               class A {
                   void method() throws IOException {
                       ClassicRequestBuilder requestBuilder = ClassicRequestBuilder.get("https://moderne.io");
-                      HttpUriRequest request = requestBuilder.build();
+                      ClassicHttpRequest request = requestBuilder.build();
                       CloseableHttpClient instance = HttpClientBuilder.create().build();
                       CloseableHttpResponse response = instance.execute(request);
                   }
