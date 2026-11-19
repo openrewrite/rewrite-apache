@@ -473,6 +473,112 @@ recipeList:
       oldPackageName: org.apache.http.pool
       newPackageName: org.apache.hc.core5.pool
 
+  # HttpClient 5 has no Consts class; its charsets are the JDK's and its characters are in Chars
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.Consts.UTF_8
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.UTF_8
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.Consts.ASCII
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.US_ASCII
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.Consts.ISO_8859_1
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.ISO_8859_1
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.http.Consts
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.Chars
+  # HTTP constants that HttpHeaders has under another name, or that live elsewhere in HttpClient 5
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CR
+      fullyQualifiedConstantName: org.apache.hc.core5.http.Chars.CR
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.LF
+      fullyQualifiedConstantName: org.apache.hc.core5.http.Chars.LF
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.SP
+      fullyQualifiedConstantName: org.apache.hc.core5.http.Chars.SP
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.HT
+      fullyQualifiedConstantName: org.apache.hc.core5.http.Chars.HT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.EXPECT_DIRECTIVE
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.EXPECT
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CONN_DIRECTIVE
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.CONNECTION
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.TARGET_HOST
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.HOST
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.DATE_HEADER
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.DATE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.SERVER_HEADER
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.SERVER
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.EXPECT_CONTINUE
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HeaderElements.CONTINUE
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CHUNK_CODING
+      fullyQualifiedConstantName: org.apache.hc.core5.http.HeaderElements.CHUNKED_ENCODING
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.DEF_CONTENT_CHARSET
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.ISO_8859_1
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.DEF_PROTOCOL_CHARSET
+      fullyQualifiedConstantName: java.nio.charset.StandardCharsets.US_ASCII
+  # HTTP String constants with no 5.x constant of the same value
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: CONN_CLOSE
+      literalValue: '"Close"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: IDENTITY_CODING
+      literalValue: '"identity"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: UTF_8
+      literalValue: '"UTF-8"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: UTF_16
+      literalValue: '"UTF-16"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: US_ASCII
+      literalValue: '"US-ASCII"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: ASCII
+      literalValue: '"ASCII"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: ISO_8859_1
+      literalValue: '"ISO-8859-1"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: DEFAULT_CONTENT_CHARSET
+      literalValue: '"ISO-8859-1"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: DEFAULT_PROTOCOL_CHARSET
+      literalValue: '"US-ASCII"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: OCTET_STREAM_TYPE
+      literalValue: '"application/octet-stream"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: PLAIN_TEXT_TYPE
+      literalValue: '"text/plain"'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: CHARSET_PARAM
+      literalValue: '"; charset="'
+  - org.openrewrite.java.ReplaceConstant:
+      owningType: org.apache.http.protocol.HTTP
+      constantName: DEFAULT_CONTENT_TYPE
+      literalValue: '"application/octet-stream"'
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
       existingFullyQualifiedConstantName: org.apache.http.protocol.HTTP.CONN_KEEP_ALIVE
       fullyQualifiedConstantName: org.apache.hc.core5.http.HttpHeaders.KEEP_ALIVE
