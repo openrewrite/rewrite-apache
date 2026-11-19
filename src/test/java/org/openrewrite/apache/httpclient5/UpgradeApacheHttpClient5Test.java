@@ -525,6 +525,61 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
+    void getAllHeadersToGetHeadersWhenRootPackageTypesAreUsed() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.Header;
+              import org.apache.http.HttpResponse;
+              import org.apache.http.client.methods.HttpGet;
+
+              import java.util.HashMap;
+              import java.util.Map;
+
+              class A {
+                  Map<String, String> headers(HttpResponse httpResponse) {
+                      Map<String, String> headers = new HashMap<>();
+                      Header[] allHeaders = httpResponse.getAllHeaders();
+                      for (Header header : allHeaders) {
+                          headers.put(header.getName(), header.getValue());
+                      }
+                      return headers;
+                  }
+
+                  int requestHeaders(HttpGet get) {
+                      return get.getAllHeaders().length;
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.http.ClassicHttpResponse;
+              import org.apache.hc.core5.http.Header;
+              import org.apache.hc.client5.http.classic.methods.HttpGet;
+
+              import java.util.HashMap;
+              import java.util.Map;
+
+              class A {
+                  Map<String, String> headers(ClassicHttpResponse httpResponse) {
+                      Map<String, String> headers = new HashMap<>();
+                      Header[] allHeaders = httpResponse.getHeaders();
+                      for (Header header : allHeaders) {
+                          headers.put(header.getName(), header.getValue());
+                      }
+                      return headers;
+                  }
+
+                  int requestHeaders(HttpGet get) {
+                      return get.getHeaders().length;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void getURIToGetUri() {
         rewriteRun(
           // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
