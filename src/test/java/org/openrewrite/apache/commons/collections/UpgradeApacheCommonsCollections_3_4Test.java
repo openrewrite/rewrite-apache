@@ -403,12 +403,13 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
               """,
             """
               import org.apache.commons.collections4.map.ReferenceMap;
+              import org.apache.commons.collections4.map.AbstractReferenceMap;
 
               import java.util.Map;
 
               class A {
-                  Map<String, Object> soft = new ReferenceMap(org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.SOFT, org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.SOFT);
-                  Map<String, Object> weak = new ReferenceMap(org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.HARD, org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength.WEAK, true);
+                  Map<String, Object> soft = new ReferenceMap(AbstractReferenceMap.ReferenceStrength.SOFT, AbstractReferenceMap.ReferenceStrength.SOFT);
+                  Map<String, Object> weak = new ReferenceMap(AbstractReferenceMap.ReferenceStrength.HARD, AbstractReferenceMap.ReferenceStrength.WEAK, true);
               }
               """
           )
