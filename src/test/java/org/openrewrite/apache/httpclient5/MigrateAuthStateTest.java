@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -108,6 +109,8 @@ class MigrateAuthStateTest implements RewriteTest {
     @Test
     void updateWithGenericAuthSchemeAddsComment() {
         rewriteRun(
+          // Keeps a call that HttpClient 5 removed, with a comment for a person to finish
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -140,6 +143,8 @@ class MigrateAuthStateTest implements RewriteTest {
     @Test
     void setCredentialsAddsComment() {
         rewriteRun(
+          // Keeps a call that HttpClient 5 removed, with a comment for a person to finish
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -203,6 +208,8 @@ class MigrateAuthStateTest implements RewriteTest {
     @Test
     void getCredentialsAddsComment() {
         rewriteRun(
+          // Keeps a call that HttpClient 5 removed, with a comment for a person to finish
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """

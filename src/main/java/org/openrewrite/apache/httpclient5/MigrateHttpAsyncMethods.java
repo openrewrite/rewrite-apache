@@ -17,10 +17,14 @@ package org.openrewrite.apache.httpclient5;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.jspecify.annotations.Nullable;
+import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
+import org.openrewrite.SourceFile;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
@@ -28,8 +32,13 @@ import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.TypeTree;
+import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 @EqualsAndHashCode(callSuper = false)
 @Value
@@ -39,6 +48,10 @@ public class MigrateHttpAsyncMethods extends Recipe {
     private static final String FQN_ASYNC_REQUEST_BUILDER = "org.apache.hc.core5.http.nio.support.AsyncRequestBuilder";
     private static final String FQN_ASYNC_ENTITY_PRODUCERS = "org.apache.hc.core5.http.nio.entity.AsyncEntityProducers";
     private static final String FQN_SIMPLE_RESPONSE_CONSUMER = "org.apache.hc.client5.http.async.methods.SimpleResponseConsumer";
+    private static final String FQN_SIMPLE_HTTP_RESPONSE = "org.apache.hc.client5.http.async.methods.SimpleHttpResponse";
+    private static final String FQN_OLD_RESPONSE_CONSUMER = "org.apache.http.nio.protocol.HttpAsyncResponseConsumer";
+    private static final String FQN_RESPONSE_CONSUMER = "org.apache.hc.core5.http.nio.AsyncResponseConsumer";
+    private static final String RETYPE_CONSUMER = "RETYPE_CONSUMER";
 
     private static final MethodMatcher CREATE_POST = new MethodMatcher(FQN_OLD + " createPost(..)");
     private static final MethodMatcher CREATE_GET = new MethodMatcher(FQN_OLD + " createGet(..)");
@@ -85,6 +98,7 @@ public class MigrateHttpAsyncMethods extends Recipe {
                             .apply(getCursor(), mi.getCoordinates().replace(), args.get(0));
                 }
                 if (CREATE_CONSUMER.matches(mi)) {
+                    markDeclarationToRetype();
                     maybeRemoveImport(FQN_OLD);
                     maybeAddImport(FQN_SIMPLE_RESPONSE_CONSUMER);
                     return JavaTemplate.builder("SimpleResponseConsumer.create()")
@@ -94,6 +108,78 @@ public class MigrateHttpAsyncMethods extends Recipe {
                             .apply(getCursor(), mi.getCoordinates().replace());
                 }
                 return mi;
+            }
+
+            // SimpleResponseConsumer is an AsyncResponseConsumer<SimpleHttpResponse>, not an
+            // AsyncResponseConsumer<HttpResponse>, so the declaration that receives it has to say so
+            private void markDeclarationToRetype() {
+                Cursor parent = getCursor().getParentTreeCursor();
+                if (parent.getValue() instanceof J.VariableDeclarations.NamedVariable) {
+                    parent.getParentTreeCursor().putMessage(RETYPE_CONSUMER, true);
+                } else if (parent.getValue() instanceof J.Return) {
+                    for (Cursor c = parent.getParentTreeCursor(); !(c.getValue() instanceof SourceFile); c = c.getParentTreeCursor()) {
+                        if (c.getValue() instanceof J.MethodDeclaration) {
+                            c.putMessage(RETYPE_CONSUMER, true);
+                            return;
+                        }
+                        if (c.getValue() instanceof J.Lambda || c.getValue() instanceof J.ClassDeclaration) {
+                            return;
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public J visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
+                J.MethodDeclaration md = (J.MethodDeclaration) super.visitMethodDeclaration(method, ctx);
+                if (getCursor().pollMessage(RETYPE_CONSUMER) != null) {
+                    J.ParameterizedType retyped = retypeConsumer(md.getReturnTypeExpression());
+                    if (retyped != null) {
+                        md = md.withReturnTypeExpression(retyped);
+                        if (md.getMethodType() != null) {
+                            JavaType.Method methodType = md.getMethodType().withReturnType(retyped.getType());
+                            md = md.withMethodType(methodType).withName(md.getName().withType(methodType));
+                        }
+                    }
+                }
+                return md;
+            }
+
+            @Override
+            public J visitVariableDeclarations(J.VariableDeclarations multiVariable, ExecutionContext ctx) {
+                J.VariableDeclarations vd = (J.VariableDeclarations) super.visitVariableDeclarations(multiVariable, ctx);
+                if (getCursor().pollMessage(RETYPE_CONSUMER) != null && vd.getVariables().size() == 1) {
+                    J.ParameterizedType retyped = retypeConsumer(vd.getTypeExpression());
+                    if (retyped != null) {
+                        JavaType type = retyped.getType();
+                        vd = vd.withTypeExpression(retyped).withVariables(ListUtils.map(vd.getVariables(), v -> {
+                            JavaType.Variable variableType = v.getVariableType() == null ? null : v.getVariableType().withType(type);
+                            return v.withName(v.getName().withType(type).withFieldType(variableType)).withVariableType(variableType);
+                        }));
+                    }
+                }
+                return vd;
+            }
+
+            private J.@Nullable ParameterizedType retypeConsumer(@Nullable TypeTree typeTree) {
+                if (!(typeTree instanceof J.ParameterizedType)) {
+                    return null;
+                }
+                J.ParameterizedType consumer = (J.ParameterizedType) typeTree;
+                JavaType.FullyQualified consumerType = TypeUtils.asFullyQualified(consumer.getClazz().getType());
+                if (consumerType == null || consumer.getTypeParameters() == null || consumer.getTypeParameters().size() != 1 ||
+                    !TypeUtils.isOfClassType(consumerType, FQN_OLD_RESPONSE_CONSUMER) &&
+                    !TypeUtils.isOfClassType(consumerType, FQN_RESPONSE_CONSUMER)) {
+                    return null;
+                }
+                maybeAddImport(FQN_SIMPLE_HTTP_RESPONSE);
+                maybeRemoveImport("org.apache.http.HttpResponse");
+                JavaType.FullyQualified simpleHttpResponse = JavaType.ShallowClass.build(FQN_SIMPLE_HTTP_RESPONSE);
+                Expression typeArgument = TypeTree.build("SimpleHttpResponse")
+                        .withType(simpleHttpResponse)
+                        .withPrefix(consumer.getTypeParameters().get(0).getPrefix());
+                return consumer.withTypeParameters(singletonList(typeArgument))
+                        .withType(new JavaType.Parameterized(null, consumerType, singletonList(simpleHttpResponse)));
             }
         });
     }

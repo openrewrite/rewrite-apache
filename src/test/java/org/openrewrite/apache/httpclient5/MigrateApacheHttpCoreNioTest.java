@@ -58,7 +58,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
 
               class A {
                   void method() {
-                      IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+                      IOReactorConfig.Builder builder = IOReactorConfig.custom();
                       builder.setSelectInterval(500);
                       builder.setShutdownGracePeriod(400);
                       builder.setInterestOpQueued(true);
@@ -85,7 +85,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
 
               class A {
                   void method() {
-                      IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+                      IOReactorConfig.Builder builder = IOReactorConfig.custom();
                       builder.setSelectInterval(TimeValue.of(500, TimeUnit.MILLISECONDS));
                       builder.setSoTimeout(300, TimeUnit.MILLISECONDS);
                       builder.setSoLinger(200, TimeUnit.MILLISECONDS);
@@ -310,6 +310,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesIOReactorClasses() {
         rewriteRun(
+          // Keeps a constructor that HttpCore 5 removed, with a comment for a person to finish
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -328,7 +330,32 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
 
               class A {
                   ConnectionInitiator getReactor() throws Exception {
-                      return new DefaultConnectingIOReactor();
+                      return /* TODO: HttpCore 5's `DefaultConnectingIOReactor` has no constructor without arguments. Let `HttpAsyncClients` create the reactor, or pass the constructor an `IOEventHandlerFactory`. */ new DefaultConnectingIOReactor();
+                  }
+              }
+              """
+          ),
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+              import org.apache.http.nio.reactor.ConnectingIOReactor;
+
+              class B {
+                  ConnectingIOReactor getReactor() throws Exception {
+                      ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor();
+                      return ioReactor;
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.core5.reactor.ConnectionInitiator;
+              import org.apache.hc.core5.reactor.DefaultConnectingIOReactor;
+
+              class B {
+                  ConnectionInitiator getReactor() throws Exception {
+                      ConnectionInitiator ioReactor = /* TODO: HttpCore 5's `DefaultConnectingIOReactor` has no constructor without arguments. Let `HttpAsyncClients` create the reactor, or pass the constructor an `IOEventHandlerFactory`. */ new DefaultConnectingIOReactor();
+                      return ioReactor;
                   }
               }
               """
@@ -339,6 +366,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape1NStringEntityToStringEntity() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -370,6 +399,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape1NByteArrayEntityToByteArrayEntity() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -401,6 +432,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape1NFileEntityToFileEntity() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -515,6 +548,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void doesNotInlineMultiUseLocal() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -556,7 +591,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape3HttpAsyncMethodsCreatePost() {
         rewriteRun(
-          // Only the after-image needs relaxing: the migrated `AsyncRequestBuilder...build()` returns a core5 producer, but this recipe intentionally leaves the enclosing method's 4.x `BasicAsyncRequestProducer` return type for a later step, so the `build()` invocation cannot be type-attributed.
+          // AsyncEntityProducers.create(..) has no type while ContentType is HttpCore 4's, which the rest of UpgradeApacheHttpClient_5 migrates
           spec -> spec.afterTypeValidationOptions(TypeValidation.all().methodInvocations(false)),
           //language=java
           java(
@@ -574,15 +609,15 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               }
               """,
             """
+              import org.apache.hc.core5.http.nio.AsyncRequestProducer;
               import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
               import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
               import org.apache.http.entity.ContentType;
-              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
 
               import java.net.URI;
 
               class A {
-                  HttpAsyncRequestProducer producer(URI uri, String body) throws Exception {
+                  AsyncRequestProducer producer(URI uri, String body) throws Exception {
                       return AsyncRequestBuilder.post(uri).setEntity(AsyncEntityProducers.create(body, ContentType.APPLICATION_JSON)).build();
                   }
               }
@@ -609,13 +644,13 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               }
               """,
             """
+              import org.apache.hc.core5.http.nio.AsyncRequestProducer;
               import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
-              import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
 
               import java.net.URI;
 
               class A {
-                  HttpAsyncRequestProducer producer(URI uri) {
+                  AsyncRequestProducer producer(URI uri) {
                       return AsyncRequestBuilder.get(uri).build();
                   }
               }
@@ -641,13 +676,38 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               }
               """,
             """
+              import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
               import org.apache.hc.client5.http.async.methods.SimpleResponseConsumer;
-              import org.apache.http.HttpResponse;
-              import org.apache.http.nio.protocol.HttpAsyncResponseConsumer;
+              import org.apache.hc.core5.http.nio.AsyncResponseConsumer;
 
               class A {
-                  HttpAsyncResponseConsumer<HttpResponse> consumer() {
+                  AsyncResponseConsumer<SimpleHttpResponse> consumer() {
                       return SimpleResponseConsumer.create();
+                  }
+              }
+              """
+          ),
+          //language=java
+          java(
+            """
+              import org.apache.http.HttpResponse;
+              import org.apache.http.nio.client.methods.HttpAsyncMethods;
+              import org.apache.http.nio.protocol.HttpAsyncResponseConsumer;
+
+              class B {
+                  void consume() {
+                      HttpAsyncResponseConsumer<HttpResponse> consumer = HttpAsyncMethods.createConsumer();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+              import org.apache.hc.client5.http.async.methods.SimpleResponseConsumer;
+              import org.apache.hc.core5.http.nio.AsyncResponseConsumer;
+
+              class B {
+                  void consume() {
+                      AsyncResponseConsumer<SimpleHttpResponse> consumer = SimpleResponseConsumer.create();
                   }
               }
               """

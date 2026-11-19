@@ -22,6 +22,7 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeQualityValidation;
+import org.openrewrite.test.RecipeQualityValidation.ParserTypes;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
@@ -250,7 +251,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     void convertRequestBuilderToClassicRequestBuilder() {
         rewriteRun(
           // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """
@@ -272,10 +273,10 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               }
               """,
             """
-              import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+              import org.apache.hc.core5.http.ClassicHttpRequest;
               import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 
               import java.io.IOException;
@@ -283,7 +284,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               class A {
                   void method() throws IOException {
                       ClassicRequestBuilder requestBuilder = ClassicRequestBuilder.get("https://moderne.io");
-                      HttpUriRequest request = requestBuilder.build();
+                      ClassicHttpRequest request = requestBuilder.build();
                       CloseableHttpClient instance = HttpClientBuilder.create().build();
                       CloseableHttpResponse response = instance.execute(request);
                   }
@@ -325,6 +326,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void setStaleConnectionCheckEnabledTrue() {
         rewriteRun(
+          // Keeps setStaleConnectionCheckEnabled, which HttpClient 5 removed
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -746,8 +749,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
 
               class A {
                   void method() {
-                      String a = HttpMultipartMode.BROWSER_COMPATIBLE;
-                      String b = HttpMultipartMode.STRICT;
+                      HttpMultipartMode a = HttpMultipartMode.BROWSER_COMPATIBLE;
+                      HttpMultipartMode b = HttpMultipartMode.STRICT;
 
                       String c = HTTP.CONN_KEEP_ALIVE;
                       String d = HTTP.CONTENT_LEN;
@@ -761,8 +764,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
 
               class A {
                   void method() {
-                      String a = HttpMultipartMode.LEGACY;
-                      String b = HttpMultipartMode.STRICT;
+                      HttpMultipartMode a = HttpMultipartMode.LEGACY;
+                      HttpMultipartMode b = HttpMultipartMode.STRICT;
 
                       String c = HttpHeaders.KEEP_ALIVE;
                       String d = HttpHeaders.CONTENT_LENGTH;

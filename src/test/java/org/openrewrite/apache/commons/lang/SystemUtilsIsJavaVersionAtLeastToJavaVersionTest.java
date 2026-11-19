@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -39,6 +40,8 @@ class SystemUtilsIsJavaVersionAtLeastToJavaVersionTest implements RewriteTest {
     @Test
     void replaceFloatArgument() {
         rewriteRun(
+          // Commons Lang 2's SystemUtils takes no JavaVersion. UpgradeApacheCommonsLang_2_3 runs this recipe after ChangePackage.
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -76,6 +79,8 @@ class SystemUtilsIsJavaVersionAtLeastToJavaVersionTest implements RewriteTest {
     void replaceAllKnownVersions(String before, String constant) {
         // language=java
         rewriteRun(
+          // Commons Lang 2's SystemUtils takes no JavaVersion. UpgradeApacheCommonsLang_2_3 runs this recipe after ChangePackage.
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           java(
             """
               import org.apache.commons.lang.SystemUtils;

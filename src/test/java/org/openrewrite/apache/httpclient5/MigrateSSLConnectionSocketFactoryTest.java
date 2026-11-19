@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -320,6 +321,8 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
     @Test
     void doesNotAddConnectionManagerWhenStrategyIsInLambdaAndBuilderOutside() {
         rewriteRun(
+          // Keeps setSSLSocketFactory, which HttpClient 5 removed
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """

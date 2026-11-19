@@ -74,6 +74,37 @@ class MigrateApacheHttpAsyncClientTest implements RewriteTest {
     }
 
     @Test
+    void removesTheReactorThatTheConnectionManagerNoLongerTakes() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
+              import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+              import org.apache.http.nio.reactor.ConnectingIOReactor;
+
+              class A {
+                  void method() throws Exception {
+                      ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor();
+                      PoolingNHttpClientConnectionManager cm = new PoolingNHttpClientConnectionManager(ioReactor);
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+              import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+
+              class A {
+                  void method() throws Exception {
+                      PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create().build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void migratesAdditionalHttpClientClasses() {
         rewriteRun(
           //language=java

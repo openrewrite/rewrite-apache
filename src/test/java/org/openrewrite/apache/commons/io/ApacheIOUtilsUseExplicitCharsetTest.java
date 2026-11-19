@@ -118,7 +118,7 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
                         IOUtils.toCharArray(inputStream, StandardCharsets.UTF_8);
                         IOUtils.toInputStream(charSequence, StandardCharsets.UTF_8);
                         IOUtils.toInputStream("Test", StandardCharsets.UTF_8);
-                        IOUtils.toString("Test".getBytes(), StandardCharsets.UTF_8);
+                        new String("Test".getBytes(), StandardCharsets.UTF_8);
                         IOUtils.toString(inputStream, StandardCharsets.UTF_8);
                         IOUtils.toString(uri, StandardCharsets.UTF_8);
                         IOUtils.toString(url, StandardCharsets.UTF_8);
