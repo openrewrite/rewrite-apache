@@ -345,6 +345,13 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.impl.classic.DefaultRedirectStrategy
       newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.DefaultRedirectStrategy
+  # 5.x's DefaultRedirectStrategy redirects every method, as LaxRedirectStrategy did in 4.x
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.impl.classic.LaxRedirectStrategy
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.DefaultRedirectStrategy
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.client5.http.impl.classic.BasicResponseHandler
+      newFullyQualifiedTypeName: org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.hc.client5.http.impl.classic.RedirectLocations
       newFullyQualifiedTypeName: org.apache.hc.client5.http.protocol.RedirectLocations
@@ -409,6 +416,9 @@ recipeList:
   - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
       existingFullyQualifiedConstantName: org.apache.http.entity.mime.HttpMultipartMode.BROWSER_COMPATIBLE
       fullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.LEGACY
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.entity.mime.HttpMultipartMode.RFC6532
+      fullyQualifiedConstantName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode.EXTENDED
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.http.entity.mime.HttpMultipartMode
       newFullyQualifiedTypeName: org.apache.hc.client5.http.entity.mime.HttpMultipartMode
@@ -468,6 +478,10 @@ recipeList:
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.message
       newPackageName: org.apache.hc.core5.http.message
+  # Fixing specific mappings
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.hc.core5.http.message.BasicStatusLine
+      newFullyQualifiedTypeName: org.apache.hc.core5.http.message.StatusLine
 
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.http.pool
