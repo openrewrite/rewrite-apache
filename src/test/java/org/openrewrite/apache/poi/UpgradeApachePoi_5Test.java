@@ -17,10 +17,13 @@ package org.openrewrite.apache.poi;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.InMemoryExecutionContext;
+import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.maven.Assertions.pomXml;
 
 class UpgradeApachePoi_5Test implements RewriteTest {
@@ -67,6 +70,90 @@ class UpgradeApachePoi_5Test implements RewriteTest {
               .doesNotContain("<artifactId>poi-ooxml-schemas</artifactId>")
               .containsPattern("<version>5\\.\\d+\\.\\d+</version>")
               .actual())
+          )
+        );
+    }
+
+    @Test
+    void enumAccessorsRemovedIn5BecomeThePlainOnes() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi-3.15")),
+          //language=java
+          java(
+            """
+              import org.apache.poi.common.usermodel.Hyperlink;
+              import org.apache.poi.common.usermodel.HyperlinkType;
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+              import org.apache.poi.ss.usermodel.CellValue;
+              import org.apache.poi.ss.usermodel.FormulaEvaluator;
+
+              class Test {
+                  boolean method(Cell cell, CellValue value, FormulaEvaluator evaluator, Hyperlink link) {
+                      return cell.getCellTypeEnum() == CellType.STRING ||
+                             cell.getCachedFormulaResultTypeEnum() == CellType.BLANK ||
+                             value.getCellTypeEnum() == CellType.ERROR ||
+                             evaluator.evaluateFormulaCellEnum(cell) == CellType.BOOLEAN ||
+                             link.getTypeEnum() == HyperlinkType.URL;
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.common.usermodel.Hyperlink;
+              import org.apache.poi.common.usermodel.HyperlinkType;
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+              import org.apache.poi.ss.usermodel.CellValue;
+              import org.apache.poi.ss.usermodel.FormulaEvaluator;
+
+              class Test {
+                  boolean method(Cell cell, CellValue value, FormulaEvaluator evaluator, Hyperlink link) {
+                      return cell.getCellType() == CellType.STRING ||
+                             cell.getCachedFormulaResultType() == CellType.BLANK ||
+                             value.getCellType() == CellType.ERROR ||
+                             evaluator.evaluateFormulaCell(cell) == CellType.BOOLEAN ||
+                             link.getType() == HyperlinkType.URL;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void switchOnIntCodeBecomesSwitchOnEnum() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi-3.15")),
+          //language=java
+          java(
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+
+              class Test {
+                  String method(Cell cell) {
+                      switch (cell.getCellType()) {
+                          case Cell.CELL_TYPE_STRING:
+                              return cell.getStringCellValue();
+                          default:
+                              return null;
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+
+              class Test {
+                  String method(Cell cell) {
+                      switch (cell.getCellType()) {
+                          case STRING:
+                              return cell.getStringCellValue();
+                          default:
+                              return null;
+                      }
+                  }
+              }
+              """
           )
         );
     }

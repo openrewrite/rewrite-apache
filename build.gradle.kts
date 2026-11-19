@@ -33,6 +33,7 @@ recipeDependencies {
     testParserClasspath("org.apache.commons:commons-math:2.2")
     testParserClasspath("org.apache.commons:commons-math3:3.+")
     testParserClasspath("org.apache.commons:commons-text:1.+")
+    testParserClasspath("org.apache.poi:poi:3.15")
     testParserClasspath("org.codehaus.plexus:plexus-container-default:2.+")
 }
 

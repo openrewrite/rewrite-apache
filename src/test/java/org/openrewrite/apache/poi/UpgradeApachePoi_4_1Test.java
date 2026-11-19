@@ -102,6 +102,135 @@ class UpgradeApachePoi_4_1Test implements RewriteTest {
     }
 
     @Test
+    void intCodesBecomeThePlainAccessors() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi-3.15")),
+          //language=java
+          java(
+            """
+              import org.apache.poi.common.usermodel.Hyperlink;
+              import org.apache.poi.hssf.usermodel.HSSFCell;
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.Row;
+
+              class Test {
+                  String read(Cell cell, HSSFCell hssfCell, Hyperlink link, Row row, int code) {
+                      int type = cell.getCellType();
+                      row.createCell(0, type);
+                      row.createCell(1, code);
+                      if (link.getType() == Hyperlink.LINK_URL) {
+                          return "link";
+                      }
+                      System.out.println(hssfCell.getCellType() + cell.getCachedFormulaResultType());
+                      switch (cell.getCachedFormulaResultType()) {
+                          case Cell.CELL_TYPE_STRING:
+                              return cell.getStringCellValue();
+                          default:
+                              return null;
+                      }
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.common.usermodel.Hyperlink;
+              import org.apache.poi.common.usermodel.HyperlinkType;
+              import org.apache.poi.hssf.usermodel.HSSFCell;
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+              import org.apache.poi.ss.usermodel.Row;
+
+              class Test {
+                  String read(Cell cell, HSSFCell hssfCell, Hyperlink link, Row row, int code) {
+                      CellType type = cell.getCellType();
+                      row.createCell(0, type);
+                      row.createCell(1, CellType.forInt(code));
+                      if (link.getType() == HyperlinkType.URL) {
+                          return "link";
+                      }
+                      System.out.println(hssfCell.getCellType().getCode() + cell.getCachedFormulaResultType().getCode());
+                      switch (cell.getCachedFormulaResultType()) {
+                          case STRING:
+                              return cell.getStringCellValue();
+                          default:
+                              return null;
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void intCodesOfFormulaEvaluationBecomeThePlainAccessors() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi-3.15")),
+          //language=java
+          java(
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellValue;
+              import org.apache.poi.ss.usermodel.FormulaEvaluator;
+
+              class Test {
+                  boolean method(Cell cell, CellValue value, FormulaEvaluator evaluator) {
+                      evaluator.evaluateFormulaCell(cell);
+                      return evaluator.evaluateFormulaCell(cell) == 0 || value.getCellType() == 1;
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.ss.usermodel.Cell;
+              import org.apache.poi.ss.usermodel.CellType;
+              import org.apache.poi.ss.usermodel.CellValue;
+              import org.apache.poi.ss.usermodel.FormulaEvaluator;
+
+              class Test {
+                  boolean method(Cell cell, CellValue value, FormulaEvaluator evaluator) {
+                      evaluator.evaluateFormulaCell(cell);
+                      return evaluator.evaluateFormulaCell(cell) == CellType.NUMERIC || value.getCellType() == CellType.STRING;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void enumAccessorsDeprecatedIn4BecomeThePlainOnes() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "poi-3.15")),
+          //language=java
+          java(
+            """
+              import org.apache.poi.common.usermodel.Hyperlink;
+              import org.apache.poi.common.usermodel.HyperlinkType;
+              import org.apache.poi.hssf.usermodel.HSSFCell;
+              import org.apache.poi.ss.usermodel.CellType;
+
+              class Test {
+                  boolean method(HSSFCell cell, Hyperlink link) {
+                      return cell.getCellTypeEnum() == CellType.STRING || link.getTypeEnum() == HyperlinkType.URL;
+                  }
+              }
+              """,
+            """
+              import org.apache.poi.common.usermodel.Hyperlink;
+              import org.apache.poi.common.usermodel.HyperlinkType;
+              import org.apache.poi.hssf.usermodel.HSSFCell;
+              import org.apache.poi.ss.usermodel.CellType;
+
+              class Test {
+                  boolean method(HSSFCell cell, Hyperlink link) {
+                      return cell.getCellType() == CellType.STRING || link.getType() == HyperlinkType.URL;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void upgradePoiVersion() {
         rewriteRun(
           //language=xml

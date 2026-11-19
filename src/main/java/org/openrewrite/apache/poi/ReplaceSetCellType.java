@@ -37,28 +37,28 @@ public class ReplaceSetCellType extends Recipe {
 
     private static final MethodMatcher SET_CELL_TYPE = new MethodMatcher("org.apache.poi.ss.usermodel.Cell#setCellType(..)");
 
-    private @Nullable JavaTemplate numericLiteral;
-    private @Nullable JavaTemplate numericField;
-    private @Nullable JavaTemplate numericStaticField;
-    private @Nullable JavaTemplate stringLiteral;
-    private @Nullable JavaTemplate stringField;
-    private @Nullable JavaTemplate stringStaticField;
-    private @Nullable JavaTemplate blankLiteral;
-    private @Nullable JavaTemplate blankField;
-    private @Nullable JavaTemplate blankStaticField;
-    private @Nullable JavaTemplate formulaLiteral;
-    private @Nullable JavaTemplate formulaField;
-    private @Nullable JavaTemplate formulaStaticField;
-    private @Nullable JavaTemplate booleanLiteral;
-    private @Nullable JavaTemplate booleanField;
-    private @Nullable JavaTemplate booleanStaticField;
-    private @Nullable JavaTemplate errorLiteral;
-    private @Nullable JavaTemplate errorField;
-    private @Nullable JavaTemplate errorStaticField;
-
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(new UsesMethod<>(SET_CELL_TYPE), new JavaIsoVisitor<ExecutionContext>() {
+            private @Nullable JavaTemplate numericLiteral;
+            private @Nullable JavaTemplate numericField;
+            private @Nullable JavaTemplate numericStaticField;
+            private @Nullable JavaTemplate stringLiteral;
+            private @Nullable JavaTemplate stringField;
+            private @Nullable JavaTemplate stringStaticField;
+            private @Nullable JavaTemplate blankLiteral;
+            private @Nullable JavaTemplate blankField;
+            private @Nullable JavaTemplate blankStaticField;
+            private @Nullable JavaTemplate formulaLiteral;
+            private @Nullable JavaTemplate formulaField;
+            private @Nullable JavaTemplate formulaStaticField;
+            private @Nullable JavaTemplate booleanLiteral;
+            private @Nullable JavaTemplate booleanField;
+            private @Nullable JavaTemplate booleanStaticField;
+            private @Nullable JavaTemplate errorLiteral;
+            private @Nullable JavaTemplate errorField;
+            private @Nullable JavaTemplate errorStaticField;
+
             @Override
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);

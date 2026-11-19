@@ -27,6 +27,25 @@ tags:
   - poi
 recipeList:
   - org.openrewrite.apache.poi.UpgradeApachePoi_3_17
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.poi.ss.usermodel.Cell getCellTypeEnum()
+      newMethodName: getCellType
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.poi.ss.usermodel.Cell getCachedFormulaResultTypeEnum()
+      newMethodName: getCachedFormulaResultType
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.poi.ss.usermodel.CellValue getCellTypeEnum()
+      newMethodName: getCellType
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.poi.ss.usermodel.FormulaEvaluator evaluateFormulaCellEnum(org.apache.poi.ss.usermodel.Cell)
+      newMethodName: evaluateFormulaCell
+      matchOverrides: true
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.poi.common.usermodel.Hyperlink getTypeEnum()
+      newMethodName: getType
+      matchOverrides: true
   - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
       groupId: org.apache.poi
       artifactId: poi*
