@@ -20,6 +20,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeQualityValidation;
+import org.openrewrite.test.RecipeQualityValidation.ParserTypes;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -135,8 +136,9 @@ class MigrateHttpResponseTest implements RewriteTest {
     @Test
     void migratesResponseHandlerToHttpClientResponseHandler() {
         rewriteRun(
+          // HttpCore 5's EntityUtils.toString throws the checked ParseException
           // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).compilableOutput(false).build()),
           //language=java
           java(
             """

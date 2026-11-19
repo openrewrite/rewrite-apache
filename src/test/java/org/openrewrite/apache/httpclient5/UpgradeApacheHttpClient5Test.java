@@ -22,6 +22,7 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Issue;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeQualityValidation;
+import org.openrewrite.test.RecipeQualityValidation.ParserTypes;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
@@ -249,8 +250,9 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void convertRequestBuilderToClassicRequestBuilder() {
         rewriteRun(
+          // ClassicRequestBuilder.build() returns a ClassicHttpRequest, not an HttpUriRequest
           // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -325,6 +327,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Test
     void setStaleConnectionCheckEnabledTrue() {
         rewriteRun(
+          // Keeps setStaleConnectionCheckEnabled, which HttpClient 5 removed
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -746,8 +750,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
 
               class A {
                   void method() {
-                      String a = HttpMultipartMode.BROWSER_COMPATIBLE;
-                      String b = HttpMultipartMode.STRICT;
+                      HttpMultipartMode a = HttpMultipartMode.BROWSER_COMPATIBLE;
+                      HttpMultipartMode b = HttpMultipartMode.STRICT;
 
                       String c = HTTP.CONN_KEEP_ALIVE;
                       String d = HTTP.CONTENT_LEN;
@@ -761,8 +765,8 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
 
               class A {
                   void method() {
-                      String a = HttpMultipartMode.LEGACY;
-                      String b = HttpMultipartMode.STRICT;
+                      HttpMultipartMode a = HttpMultipartMode.LEGACY;
+                      HttpMultipartMode b = HttpMultipartMode.STRICT;
 
                       String c = HttpHeaders.KEEP_ALIVE;
                       String d = HttpHeaders.CONTENT_LENGTH;

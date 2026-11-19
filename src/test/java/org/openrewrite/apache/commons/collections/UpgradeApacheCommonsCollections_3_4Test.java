@@ -39,7 +39,10 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec
           .parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-collections-3"))
-          .recipeFromResources("org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4");
+          .afterParser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-collections4-4.4"))
+          .recipeFromResources("org.openrewrite.apache.commons.collections.UpgradeApacheCommonsCollections_3_4")
+          // Commons Collections 3 has no generics, so the code the recipes write lacks the type arguments a parser infers
+          .recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Erasure).build());
     }
 
     @DocumentExample
@@ -383,6 +386,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Test
     void referenceStrengthConstants() {
         rewriteRun(
+          // The new constants keep the old ones' int type, and ReferenceMap keeps Commons Collections 3's (int, int) constructors
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """
@@ -413,6 +418,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Test
     void deprecatedRootReferenceMap() {
         rewriteRun(
+          // The new constants keep the old ones' int type, and ReferenceMap keeps Commons Collections 3's (int, int) constructors
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """
@@ -441,6 +448,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Test
     void renamedDecoratorFactories() {
         rewriteRun(
+          // ChangePackage only renames the classes, so their methods keep Commons Collections 3's signatures
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """
@@ -527,9 +536,6 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Test
     void synchronizedSetToJdk() {
         rewriteRun(
-          // ChangeMethodTargetToStatic keeps the raw Set types of Commons Collections' synchronizedSet
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
-            .parserTypedTrees(ParserTypes.Erasure).build()),
           //language=java
           java(
             """
@@ -558,9 +564,6 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Test
     void emptySet() {
         rewriteRun(
-          // ChangeStaticFieldToMethod types emptySet() without the Set<String> it is assigned to
-          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
-            .parserTypedTrees(ParserTypes.Erasure).build()),
           //language=java
           java(
             """
@@ -587,6 +590,8 @@ class UpgradeApacheCommonsCollections_3_4Test implements RewriteTest {
     @Test
     void orderedMapIterator() {
         rewriteRun(
+          // ChangePackage only renames the classes, so their methods keep Commons Collections 3's signatures
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """

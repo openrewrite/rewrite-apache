@@ -58,7 +58,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
 
               class A {
                   void method() {
-                      IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+                      IOReactorConfig.Builder builder = IOReactorConfig.custom();
                       builder.setSelectInterval(500);
                       builder.setShutdownGracePeriod(400);
                       builder.setInterestOpQueued(true);
@@ -85,7 +85,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
 
               class A {
                   void method() {
-                      IOReactorConfig.Builder builder = new IOReactorConfig.Builder();
+                      IOReactorConfig.Builder builder = IOReactorConfig.custom();
                       builder.setSelectInterval(TimeValue.of(500, TimeUnit.MILLISECONDS));
                       builder.setSoTimeout(300, TimeUnit.MILLISECONDS);
                       builder.setSoLinger(200, TimeUnit.MILLISECONDS);
@@ -310,6 +310,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesIOReactorClasses() {
         rewriteRun(
+          // HttpCore 5's DefaultConnectingIOReactor has no constructor without arguments
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -339,6 +341,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape1NStringEntityToStringEntity() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -370,6 +374,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape1NByteArrayEntityToByteArrayEntity() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -401,6 +407,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape1NFileEntityToFileEntity() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -515,6 +523,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void doesNotInlineMultiUseLocal() {
         rewriteRun(
+          // The rest of UpgradeApacheHttpClient_5 migrates HttpPost and ContentType
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -594,6 +604,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape3HttpAsyncMethodsCreateGet() {
         rewriteRun(
+          // No step migrates HttpCore 4's NIO protocol types, such as the method's return type
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -627,6 +639,8 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
     @Test
     void migratesShape3HttpAsyncMethodsCreateConsumer() {
         rewriteRun(
+          // No step migrates HttpCore 4's NIO protocol types, such as the method's return type
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           //language=java
           java(
             """

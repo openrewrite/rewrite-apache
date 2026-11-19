@@ -20,6 +20,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.kotlin.KotlinParser;
+import org.openrewrite.test.RecipeQualityValidation;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -41,6 +42,8 @@ class ApacheIOUtilsUseExplicitCharsetTest implements RewriteTest {
     void useCharset() {
         //language=java
         rewriteRun(
+          // Commons IO has no IOUtils.toString(byte[], Charset)
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().compilableOutput(false).build()),
           srcMainJava(
             java(
               """

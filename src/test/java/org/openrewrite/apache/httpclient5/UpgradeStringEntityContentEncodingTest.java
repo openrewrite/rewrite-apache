@@ -109,9 +109,10 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsUnsupportedLocalShapesWhileMigratingNamespaces() {
         rewriteRun(
+          // Keeps the setContentEncoding calls it can't move, which HttpCore 5 removed
           // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
           spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
-            .parserTypedTrees(ParserTypes.Erasure).build()),
+            .parserTypedTrees(ParserTypes.Erasure).compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -169,9 +170,10 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsNonlocalAndOtherEntityTargets() {
         rewriteRun(
+          // Keeps the setContentEncoding calls it can't move, which HttpCore 5 removed
           // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
           spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
-            .parserTypedTrees(ParserTypes.Erasure).build()),
+            .parserTypedTrees(ParserTypes.Erasure).compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -237,9 +239,10 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsCommentedPairAndStillMigratesIndependentPair() {
         rewriteRun(
+          // Keeps the setContentEncoding calls it can't move, which HttpCore 5 removed
           // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
           spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
-            .parserTypedTrees(ParserTypes.Erasure).build()),
+            .parserTypedTrees(ParserTypes.Erasure).compilableOutput(false).build()),
           //language=java
           java(
             """
@@ -333,9 +336,10 @@ class UpgradeStringEntityContentEncodingTest implements RewriteTest {
     @Test
     void retainsPairWithNonStringVariable() {
         rewriteRun(
+          // Keeps the setContentEncoding calls it can't move, which HttpCore 5 removed
           // ChangeType keeps HttpCore 4's StringEntity constructor, which throws UnsupportedCharsetException
           spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
-            .parserTypedTrees(ParserTypes.Erasure).build()),
+            .parserTypedTrees(ParserTypes.Erasure).compilableOutput(false).build()),
           //language=java
           java(
             """

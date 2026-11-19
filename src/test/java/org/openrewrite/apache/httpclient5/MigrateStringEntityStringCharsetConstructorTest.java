@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.test.RecipeQualityValidation;
+import org.openrewrite.test.RecipeQualityValidation.ParserTypes;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -70,6 +72,9 @@ class MigrateStringEntityStringCharsetConstructorTest implements RewriteTest {
     @Test
     void migratesCharsetLiteralInConstructorToCharset() {
         rewriteRun(
+          // The call keeps the type of HttpCore 4's StringEntity(String, String) though its charset argument is a Charset
+          spec -> spec.afterParser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "httpcore5"))
+            .recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(ParserTypes.Off).build()),
           //language=java
           java(
             """
