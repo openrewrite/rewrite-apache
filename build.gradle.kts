@@ -62,6 +62,10 @@ dependencies {
     testImplementation("org.openrewrite:rewrite-kotlin")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
+    testImplementation("org.openrewrite:rewrite-gradle")
+    testImplementation("org.openrewrite:rewrite-toml")
+    testImplementation("org.openrewrite.gradle.tooling:model:$rewriteVersion")
+    testRuntimeOnly("org.gradle:gradle-tooling-api:latest.release")
 }
 
 tasks.withType<JavaCompile> {

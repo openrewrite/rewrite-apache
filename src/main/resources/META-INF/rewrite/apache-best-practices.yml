@@ -21,11 +21,12 @@ displayName: Apache best practices
 description: >-
   Apply best practices to code that uses [Apache](https://apache.org/) libraries. This migrates Apache Commons,
   [HttpClient](https://hc.apache.org/) and [POI](https://poi.apache.org/) off their end-of-life major versions,
-  replaces deprecated APIs with their supported replacements, and prefers the Java standard library where it now
-  offers an equivalent.
+  corrects the `xerces` coordinates, replaces deprecated APIs with their supported replacements, and prefers the Java
+  standard library where it now offers an equivalent.
 tags:
   - apache
 recipeList:
   - org.openrewrite.apache.commons.ApacheCommonsBestPractices
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5
   - org.openrewrite.apache.poi.UpgradeApachePoi_5
+  - org.openrewrite.apache.xerces.RelocateApacheXerces

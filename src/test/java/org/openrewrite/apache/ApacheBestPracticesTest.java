@@ -24,6 +24,7 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.java.Assertions.mavenProject;
 import static org.openrewrite.maven.Assertions.pomXml;
 
 class ApacheBestPracticesTest implements RewriteTest {
@@ -88,6 +89,46 @@ class ApacheBestPracticesTest implements RewriteTest {
               </project>
               """,
             spec -> spec.after(pom -> assertThat(pom).contains("<artifactId>poi-ooxml-lite</artifactId>").actual())
+          )
+        );
+    }
+
+    @Test
+    void relocateApacheXerces() {
+        rewriteRun(
+          mavenProject("my-app",
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.mycompany.app</groupId>
+                    <artifactId>my-app</artifactId>
+                    <version>1</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>xerces</groupId>
+                            <artifactId>xerces</artifactId>
+                            <version>2.4.0</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """,
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.mycompany.app</groupId>
+                    <artifactId>my-app</artifactId>
+                    <version>1</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>xerces</groupId>
+                            <artifactId>xercesImpl</artifactId>
+                            <version>2.4.0</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """
+            )
           )
         );
     }

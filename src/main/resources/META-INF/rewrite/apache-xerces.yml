@@ -1,0 +1,159 @@
+#
+# Copyright 2026 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.xerces.RelocateApacheXerces
+displayName: Relocate `xerces:xerces` to `xerces:xercesImpl`
+description: >-
+  Apache Xerces moved from `xerces:xerces` to `xerces:xercesImpl`, where versions 2.0.0, 2.0.2, 2.2.1, 2.3.0 and 2.4.0 are
+  the same classes under new coordinates. Other versions are left alone, as `xerces:xercesImpl` does not publish them.
+  A `dependencyManagement` entry is left alone too, as it can hold the version of a declaration that no recipe can see,
+  such as one in a module that only a Maven profile adds.
+tags:
+  - apache
+  - xerces
+recipeList:
+  - org.openrewrite.apache.xerces.RelocateApacheXerces_2_0_0
+  - org.openrewrite.apache.xerces.RelocateApacheXerces_2_0_2
+  - org.openrewrite.apache.xerces.RelocateApacheXerces_2_2_1
+  - org.openrewrite.apache.xerces.RelocateApacheXerces_2_3_0
+  - org.openrewrite.apache.xerces.RelocateApacheXerces_2_4_0
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.xerces.RelocateApacheXerces_2_0_0
+displayName: Relocate `xerces:xerces:2.0.0` to `xerces:xercesImpl`
+description: Relocate a direct dependency on `xerces:xerces` at version 2.0.0 to `xerces:xercesImpl` at the same version.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: xerces
+      artifactIdPattern: xerces
+      version: 2.0.0
+      onlyDirect: true
+  # With a new version to set, ChangeDependency would pull a newer declared xerces:xercesImpl down to it
+  - org.openrewrite.java.dependencies.search.DoesNotIncludeDependency:
+      groupId: xerces
+      artifactId: xercesImpl
+      version: "[2.5,)"
+      onlyDirect: true
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: xerces
+      oldArtifactId: xerces
+      newGroupId: xerces
+      newArtifactId: xercesImpl
+      newVersion: 2.0.0
+      changeManagedDependency: false
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.xerces.RelocateApacheXerces_2_0_2
+displayName: Relocate `xerces:xerces:2.0.2` to `xerces:xercesImpl`
+description: Relocate a direct dependency on `xerces:xerces` at version 2.0.2 to `xerces:xercesImpl` at the same version.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: xerces
+      artifactIdPattern: xerces
+      version: 2.0.2
+      onlyDirect: true
+  # With a new version to set, ChangeDependency would pull a newer declared xerces:xercesImpl down to it
+  - org.openrewrite.java.dependencies.search.DoesNotIncludeDependency:
+      groupId: xerces
+      artifactId: xercesImpl
+      version: "[2.5,)"
+      onlyDirect: true
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: xerces
+      oldArtifactId: xerces
+      newGroupId: xerces
+      newArtifactId: xercesImpl
+      newVersion: 2.0.2
+      changeManagedDependency: false
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.xerces.RelocateApacheXerces_2_2_1
+displayName: Relocate `xerces:xerces:2.2.1` to `xerces:xercesImpl`
+description: Relocate a direct dependency on `xerces:xerces` at version 2.2.1 to `xerces:xercesImpl` at the same version.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: xerces
+      artifactIdPattern: xerces
+      version: 2.2.1
+      onlyDirect: true
+  # With a new version to set, ChangeDependency would pull a newer declared xerces:xercesImpl down to it
+  - org.openrewrite.java.dependencies.search.DoesNotIncludeDependency:
+      groupId: xerces
+      artifactId: xercesImpl
+      version: "[2.5,)"
+      onlyDirect: true
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: xerces
+      oldArtifactId: xerces
+      newGroupId: xerces
+      newArtifactId: xercesImpl
+      newVersion: 2.2.1
+      changeManagedDependency: false
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.xerces.RelocateApacheXerces_2_3_0
+displayName: Relocate `xerces:xerces:2.3.0` to `xerces:xercesImpl`
+description: Relocate a direct dependency on `xerces:xerces` at version 2.3.0 to `xerces:xercesImpl` at the same version.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: xerces
+      artifactIdPattern: xerces
+      version: 2.3.0
+      onlyDirect: true
+  # With a new version to set, ChangeDependency would pull a newer declared xerces:xercesImpl down to it
+  - org.openrewrite.java.dependencies.search.DoesNotIncludeDependency:
+      groupId: xerces
+      artifactId: xercesImpl
+      version: "[2.5,)"
+      onlyDirect: true
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: xerces
+      oldArtifactId: xerces
+      newGroupId: xerces
+      newArtifactId: xercesImpl
+      newVersion: 2.3.0
+      changeManagedDependency: false
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.xerces.RelocateApacheXerces_2_4_0
+displayName: Relocate `xerces:xerces:2.4.0` to `xerces:xercesImpl`
+description: Relocate a direct dependency on `xerces:xerces` at version 2.4.0 to `xerces:xercesImpl` at the same version.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: xerces
+      artifactIdPattern: xerces
+      version: 2.4.0
+      onlyDirect: true
+  # With a new version to set, ChangeDependency would pull a newer declared xerces:xercesImpl down to it
+  - org.openrewrite.java.dependencies.search.DoesNotIncludeDependency:
+      groupId: xerces
+      artifactId: xercesImpl
+      version: "[2.5,)"
+      onlyDirect: true
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: xerces
+      oldArtifactId: xerces
+      newGroupId: xerces
+      newArtifactId: xercesImpl
+      newVersion: 2.4.0
+      changeManagedDependency: false
