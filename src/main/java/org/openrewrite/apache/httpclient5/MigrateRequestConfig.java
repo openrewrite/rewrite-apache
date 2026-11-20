@@ -21,6 +21,7 @@ import org.openrewrite.*;
 import org.openrewrite.java.*;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.trait.MethodAccess;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
 import org.openrewrite.marker.SearchResult;
@@ -124,11 +125,14 @@ public class MigrateRequestConfig extends Recipe {
                 } else if (MATCHER_REQUEST_CONFIG.matches(method)) {
                     J.Identifier connectionManagerIdentifier = getCursor().pollNearestMessage(KEY_POOL_CONN_MANAGER);
                     if (connectionManagerIdentifier != null) {
-                        method = JavaTemplate.builder("#{any()}.setConnectionManager(#{any()});")
+                        J.MethodInvocation extended = JavaTemplate.builder("#{any()}.setConnectionManager(#{any()});")
                                 .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "httpclient5", "httpcore5"))
                                 .imports(FQN_POOL_CONN_MANAGER5)
                                 .build()
                                 .apply(getCursor(), method.getCoordinates().replace(), method, connectionManagerIdentifier);
+                        // The template formats the call chain it extends, so put back the chain as it was written
+                        Expression select = extended.getSelect();
+                        method = select == null ? extended : extended.withSelect(method.withPrefix(select.getPrefix()));
                     }
                 }
                 return super.visitMethodInvocation(method, ctx);
