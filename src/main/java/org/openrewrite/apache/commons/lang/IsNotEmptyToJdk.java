@@ -29,6 +29,7 @@ import org.openrewrite.java.template.Semantics;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
+import org.openrewrite.staticanalysis.UnnecessaryParentheses;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -89,7 +90,7 @@ public class IsNotEmptyToJdk extends Recipe {
                     maybeRemoveImport("org.apache.maven.shared.utils.StringUtils");
                     maybeRemoveImport("org.codehaus.plexus.util.StringUtils");
                     // Remove excess parentheses inserted in lambda that may be required depending on the context
-                    doAfterVisit(new org.openrewrite.staticanalysis.UnnecessaryParentheses().getVisitor());
+                    doAfterVisit(new UnnecessaryParentheses().getVisitor());
                     return replacementTemplate.apply(updateCursor(mi), mi.getCoordinates().replace(), arg);
                 }
 
