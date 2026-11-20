@@ -1237,5 +1237,105 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
               )
             );
         }
+
+        @Test
+        void skipsModulesOverridingALibraryMethodThatUsesHttpClient4() {
+            rewriteRun(
+              spec -> spec.parser(JavaParser.fromJavaVersion()
+                .classpathFromResources(new InMemoryExecutionContext(),
+                  "httpclient-4",
+                  "httpcore-4",
+                  "httpmime-4",
+                  "httpclient5",
+                  "httpcore5")
+                .dependsOn(
+                  //language=java
+                  """
+                    package org.example.lib;
+
+                    import org.apache.http.client.config.RequestConfig;
+
+                    public class SessionManager {
+                        public RequestConfig getDefaultRequestConfig() {
+                            return RequestConfig.DEFAULT;
+                        }
+                    }
+                    """)),
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.apache.http.client.config.RequestConfig;
+                      import org.example.lib.SessionManager;
+
+                      class TimeoutSessionManager extends SessionManager {
+                          @Override
+                          public RequestConfig getDefaultRequestConfig() {
+                              return RequestConfig.copy(super.getDefaultRequestConfig())
+                                .setSocketTimeout(1000)
+                                .build();
+                          }
+                      }
+                      """
+                  )
+                )
+              )
+            );
+        }
+
+        @Test
+        void stillMigratesAnOverrideOfAMethodDeclaredInTheSources() {
+            rewriteRun(
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.apache.http.client.config.RequestConfig;
+
+                      class Base {
+                          RequestConfig config() {
+                              return RequestConfig.DEFAULT;
+                          }
+                      }
+                      """,
+                    """
+                      import org.apache.hc.client5.http.config.RequestConfig;
+
+                      class Base {
+                          RequestConfig config() {
+                              return RequestConfig.DEFAULT;
+                          }
+                      }
+                      """
+                  ),
+                  //language=java
+                  java(
+                    """
+                      import org.apache.http.client.config.RequestConfig;
+
+                      class Derived extends Base {
+                          @Override
+                          RequestConfig config() {
+                              return RequestConfig.DEFAULT;
+                          }
+                      }
+                      """,
+                    """
+                      import org.apache.hc.client5.http.config.RequestConfig;
+
+                      class Derived extends Base {
+                          @Override
+                          RequestConfig config() {
+                              return RequestConfig.DEFAULT;
+                          }
+                      }
+                      """
+                  )
+                )
+              )
+            );
+        }
     }
 }
