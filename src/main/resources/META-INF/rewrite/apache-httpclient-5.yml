@@ -34,6 +34,10 @@ preconditions:
       artifactIdPattern: rest-assured
       scope: compile
       invertMarking: true
+  # Skip modules that override a method of a library that is itself still on HttpClient 4, such as RDF4J's
+  # `SharedHttpClientSessionManager.getDefaultRequestConfig()`, as the override has to keep the 4.x signature.
+  - org.openrewrite.apache.httpclient5.ModuleOverridesHttpClient4Library:
+      invertMarking: true
 recipeList:
   - org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
   - org.openrewrite.apache.httpclient5.RemoveSettingsIgnoredWithConnectionManager
