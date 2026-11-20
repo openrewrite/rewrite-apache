@@ -1285,6 +1285,65 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         }
 
         @Test
+        void skipsModulesNarrowingTheReturnTypeOfALibraryMethodThatUsesHttpClient4() {
+            rewriteRun(
+              spec -> spec.parser(JavaParser.fromJavaVersion()
+                .classpathFromResources(new InMemoryExecutionContext(),
+                  "httpclient-4",
+                  "httpcore-4",
+                  "httpmime-4",
+                  "httpclient5",
+                  "httpcore5")
+                .dependsOn(
+                  //language=java
+                  """
+                    package org.example.lib;
+
+                    import org.apache.http.impl.client.CloseableHttpClient;
+
+                    public abstract class ClientFactory {
+                        public abstract CloseableHttpClient create();
+                    }
+                    """,
+                  //language=java
+                  """
+                    package org.example.app;
+
+                    import org.apache.http.impl.client.CloseableHttpClient;
+
+                    public abstract class TracingHttpClient extends CloseableHttpClient {
+                    }
+                    """)),
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.example.app.TracingHttpClient;
+                      import org.example.lib.ClientFactory;
+
+                      abstract class TracingClientFactory extends ClientFactory {
+                          @Override
+                          public abstract TracingHttpClient create();
+                      }
+                      """
+                  ),
+                  //language=java
+                  java(
+                    """
+                      import org.apache.http.client.config.RequestConfig;
+
+                      class Config {
+                          RequestConfig config = RequestConfig.DEFAULT;
+                      }
+                      """
+                  )
+                )
+              )
+            );
+        }
+
+        @Test
         void stillMigratesAnOverrideOfAMethodDeclaredInTheSources() {
             rewriteRun(
               mavenProject("proj",

@@ -26,6 +26,7 @@ import org.openrewrite.Tree;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.marker.JavaProject;
+import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
@@ -96,17 +97,46 @@ public class ModuleOverridesHttpClient4Library extends ScanningRecipe<ModuleOver
             @Override
             public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
                 JavaType.Method methodType = method.getMethodType();
-                JavaProject project = getCursor().firstEnclosingOrThrow(J.CompilationUnit.class)
-                        .getMarkers().findFirst(JavaProject.class).orElse(null);
-                if (methodType != null && project != null) {
-                    TypeUtils.findOverriddenMethod(methodType)
-                            .filter(overridden -> usesHttpClient4(overridden) &&
-                                                  !overridden.getDeclaringType().getFullyQualifiedName().startsWith(HTTPCLIENT_4_PACKAGE))
-                            .ifPresent(overridden -> acc.overriddenLibraryTypes
-                                    .computeIfAbsent(project, p -> new HashSet<>())
-                                    .add(overridden.getDeclaringType().getFullyQualifiedName()));
+                if (methodType != null && mayOverrideHttpClient4Method(methodType)) {
+                    getCursor().firstEnclosingOrThrow(J.CompilationUnit.class).getMarkers().findFirst(JavaProject.class)
+                            .ifPresent(project -> TypeUtils.findOverriddenMethod(methodType)
+                                    .filter(overridden -> usesHttpClient4(overridden) &&
+                                                          !overridden.getDeclaringType().getFullyQualifiedName().startsWith(HTTPCLIENT_4_PACKAGE))
+                                    .ifPresent(overridden -> acc.overriddenLibraryTypes
+                                            .computeIfAbsent(project, p -> new HashSet<>())
+                                            .add(overridden.getDeclaringType().getFullyQualifiedName())));
                 }
                 return super.visitMethodDeclaration(method, ctx);
+            }
+
+            private boolean mayOverrideHttpClient4Method(JavaType.Method method) {
+                if (method.isConstructor() || method.hasFlags(Flag.Static) || method.hasFlags(Flag.Private)) {
+                    return false;
+                }
+                for (JavaType parameterType : method.getParameterTypes()) {
+                    if (isHttpClient4(parameterType)) {
+                        return true;
+                    }
+                }
+                // An override may narrow the return type to a subtype declared outside HttpClient 4
+                JavaType returnType = method.getReturnType();
+                return isOrExtendsHttpClient4(TypeUtils.asFullyQualified(
+                        returnType instanceof JavaType.Array ? ((JavaType.Array) returnType).getElemType() : returnType));
+            }
+
+            private boolean isOrExtendsHttpClient4(JavaType.@Nullable FullyQualified type) {
+                if (type == null) {
+                    return false;
+                }
+                if (isHttpClient4(type) || isOrExtendsHttpClient4(type.getSupertype())) {
+                    return true;
+                }
+                for (JavaType.FullyQualified anInterface : type.getInterfaces()) {
+                    if (isOrExtendsHttpClient4(anInterface)) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             private boolean usesHttpClient4(JavaType.Method overridden) {
