@@ -61,6 +61,11 @@ packageName: org.openrewrite.apache.commons.collections
 description: Recipes for [Apache Commons Collections](https://commons.apache.org/proper/commons-collections/) migrations.
 ---
 type: specs.openrewrite.org/v1beta/category
+name: Commons DBCP
+packageName: org.openrewrite.apache.commons.dbcp
+description: Recipes for [Apache Commons DBCP](https://commons.apache.org/proper/commons-dbcp/) migrations.
+---
+type: specs.openrewrite.org/v1beta/category
 name: Commons Math
 packageName: org.openrewrite.apache.commons.math
 description: Recipes for [Apache Commons Math](https://commons.apache.org/proper/commons-math/) migrations.
