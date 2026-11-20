@@ -21,11 +21,13 @@ import lombok.Value;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Option;
+import org.openrewrite.Preconditions;
 import org.openrewrite.ScanningRecipe;
 import org.openrewrite.Tree;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.marker.JavaProject;
+import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -85,7 +87,7 @@ public class ModuleOverridesHttpClient4Library extends ScanningRecipe<ModuleOver
 
     @Override
     public TreeVisitor<?, ExecutionContext> getScanner(Accumulator acc) {
-        return new JavaIsoVisitor<ExecutionContext>() {
+        return Preconditions.check(new UsesType<>(HTTPCLIENT_4_PACKAGE + ".*", false), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
                 if (classDecl.getType() != null) {
@@ -155,7 +157,7 @@ public class ModuleOverridesHttpClient4Library extends ScanningRecipe<ModuleOver
                 JavaType.FullyQualified fq = TypeUtils.asFullyQualified(type instanceof JavaType.Array ? ((JavaType.Array) type).getElemType() : type);
                 return fq != null && fq.getFullyQualifiedName().startsWith(HTTPCLIENT_4_PACKAGE);
             }
-        };
+        });
     }
 
     @Override
