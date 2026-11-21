@@ -64,6 +64,7 @@ public class ModuleOverridesHttpClient4Library extends ScanningRecipe<ModuleOver
     public static class Accumulator {
         final Set<String> declaredTypes = new HashSet<>();
         final Map<JavaProject, Set<String>> overriddenLibraryTypes = new HashMap<>();
+
         @Nullable
         Set<JavaProject> tied;
 

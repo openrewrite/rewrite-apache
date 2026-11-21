@@ -56,8 +56,8 @@ public class RetypeClassicRequestBuilderResults extends Recipe {
                 if (!(initializer instanceof J.MethodInvocation) || !BUILD.matches((J.MethodInvocation) initializer)) {
                     return vd;
                 }
-                maybeAddImport(FQN_CLASSIC_HTTP_REQUEST);
                 maybeRemoveImport(FQN_HTTP_URI_REQUEST);
+                maybeAddImport(FQN_CLASSIC_HTTP_REQUEST);
                 JavaType.FullyQualified type = JavaType.ShallowClass.build(FQN_CLASSIC_HTTP_REQUEST);
                 J.Identifier classicHttpRequest = TypeTree.<J.Identifier>build("ClassicHttpRequest")
                         .withType(type)

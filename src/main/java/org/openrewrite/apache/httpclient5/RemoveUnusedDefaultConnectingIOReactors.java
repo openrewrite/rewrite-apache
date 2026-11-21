@@ -74,8 +74,7 @@ public class RemoveUnusedDefaultConnectingIOReactors extends Recipe {
         if (!(reactor.getInitializer() instanceof J.NewClass) || !NEW_REACTOR.matches((J.NewClass) reactor.getInitializer())) {
             return false;
         }
-        AtomicBoolean referenced = new AtomicBoolean();
-        new JavaIsoVisitor<AtomicBoolean>() {
+        return !new JavaIsoVisitor<AtomicBoolean>() {
             @Override
             public J.Identifier visitIdentifier(J.Identifier identifier, AtomicBoolean found) {
                 if (identifier != reactor.getName() && identifier.getFieldType() != null &&
@@ -84,7 +83,6 @@ public class RemoveUnusedDefaultConnectingIOReactors extends Recipe {
                 }
                 return identifier;
             }
-        }.visit(block, referenced);
-        return !referenced.get();
+        }.reduce(block, new AtomicBoolean()).get();
     }
 }

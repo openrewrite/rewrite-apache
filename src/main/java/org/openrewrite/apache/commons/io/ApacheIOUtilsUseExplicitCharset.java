@@ -88,8 +88,8 @@ public class ApacheIOUtilsUseExplicitCharset extends Recipe {
                 J.MethodInvocation mi = (J.MethodInvocation) visited;
                 for (Map.Entry<MethodMatcher, String> entry : JDK_TEMPLATES.entrySet()) {
                     if (entry.getKey().matches(mi)) {
-                        maybeAddImport("java.nio.charset.StandardCharsets");
                         maybeRemoveImport("org.apache.commons.io.IOUtils");
+                        maybeAddImport("java.nio.charset.StandardCharsets");
                         return JavaTemplate.builder(entry.getValue())
                                 .imports("java.nio.charset.StandardCharsets")
                                 .build()
