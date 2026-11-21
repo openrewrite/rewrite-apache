@@ -111,8 +111,7 @@ public class AddHttpExceptionToResponseHandlers extends Recipe {
 
     // Calls in a lambda or class declared in the body throw from that lambda or class, not from handleResponse
     private static boolean readsEntity(J.MethodDeclaration md) {
-        AtomicBoolean reads = new AtomicBoolean();
-        new JavaIsoVisitor<AtomicBoolean>() {
+        return new JavaIsoVisitor<AtomicBoolean>() {
             @Override
             public J.Lambda visitLambda(J.Lambda lambda, AtomicBoolean found) {
                 return lambda;
@@ -135,7 +134,6 @@ public class AddHttpExceptionToResponseHandlers extends Recipe {
                 }
                 return super.visitMethodInvocation(method, found);
             }
-        }.visit(md.getBody(), reads);
-        return reads.get();
+        }.reduce(md.getBody(), new AtomicBoolean()).get();
     }
 }

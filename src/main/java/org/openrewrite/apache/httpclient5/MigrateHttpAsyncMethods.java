@@ -172,8 +172,8 @@ public class MigrateHttpAsyncMethods extends Recipe {
                     !TypeUtils.isOfClassType(consumerType, FQN_RESPONSE_CONSUMER)) {
                     return null;
                 }
-                maybeAddImport(FQN_SIMPLE_HTTP_RESPONSE);
                 maybeRemoveImport("org.apache.http.HttpResponse");
+                maybeAddImport(FQN_SIMPLE_HTTP_RESPONSE);
                 JavaType.FullyQualified simpleHttpResponse = JavaType.ShallowClass.build(FQN_SIMPLE_HTTP_RESPONSE);
                 Expression typeArgument = TypeTree.build("SimpleHttpResponse")
                         .withType(simpleHttpResponse)
