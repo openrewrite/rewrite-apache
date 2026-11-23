@@ -10,6 +10,7 @@ recipeDependencies {
     parserClasspath("commons-io:commons-io:2.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
     parserClasspath("org.apache.commons:commons-lang3:3.+")
+    parserClasspath("org.apache.commons:commons-text:1.+")
 
     parserClasspath("org.apache.httpcomponents.client5:httpclient5:5.+")
     parserClasspath("org.apache.httpcomponents.core5:httpcore5:5.+")
@@ -32,7 +33,6 @@ recipeDependencies {
     testParserClasspath("commons-lang:commons-lang:2.6")
     testParserClasspath("org.apache.commons:commons-math:2.2")
     testParserClasspath("org.apache.commons:commons-math3:3.+")
-    testParserClasspath("org.apache.commons:commons-text:1.+")
     testParserClasspath("org.codehaus.plexus:plexus-container-default:2.+")
 }
 

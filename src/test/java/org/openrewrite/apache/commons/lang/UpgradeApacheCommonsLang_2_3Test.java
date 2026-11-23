@@ -293,6 +293,288 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     }
 
     @Test
+    void transitiveCommonsLang2GetsDirectCommonsLang3Dependency() {
+        // Commons Lang 2 arrives through commons-configuration, so there is no commons-lang dependency to change
+        rewriteRun(
+          mavenProject("project",
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>commons-configuration</groupId>
+                            <artifactId>commons-configuration</artifactId>
+                            <version>1.10</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """,
+              spec -> spec.after(pom -> assertThat(pom)
+                .contains("<artifactId>commons-lang3</artifactId>")
+                .actual())
+            ),
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """
+              )
+            )
+          )
+        );
+    }
+
+    @Test
+    void randomUtilsNextIntGainsLowerBound() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.math.RandomUtils;
+
+              class A {
+                  void f() {
+                      int i = RandomUtils.nextInt(500);
+                      int unbounded = RandomUtils.nextInt();
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.lang3.RandomUtils;
+
+              class A {
+                  void f() {
+                      int i = RandomUtils.nextInt(0, 500);
+                      int unbounded = RandomUtils.nextInt();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void fullyQualifiedUsagesAreMigrated() {
+        rewriteRun(
+          // ChangePackage keeps the Lang 2 parameter types of the method
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(false).build()),
+          //language=java
+          java(
+            """
+              class A {
+                  boolean f(String s) {
+                      return org.apache.commons.lang.StringUtils.containsIgnoreCase(s, "GET");
+                  }
+              }
+              """,
+            """
+              class A {
+                  boolean f(String s) {
+                      return org.apache.commons.lang3.StringUtils.containsIgnoreCase(s, "GET");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void escapeSqlWasRemovedSoDoubleTheQuotes() {
+        rewriteRun(
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(ParserTypes.Erasure).build()),
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.StringEscapeUtils;
+
+              class A {
+                  String f(String s) {
+                      return StringEscapeUtils.escapeSql(s);
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  String f(String s) {
+                      return StringUtils.replace(s, "'", "''");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void stringEscapeUtilsWriterMethodsMoveToCommonsText() {
+        rewriteRun(
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(false).build()),
+          mavenProject("project",
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>commons-lang</groupId>
+                            <artifactId>commons-lang</artifactId>
+                            <version>2.6</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """,
+              spec -> spec.after(pom -> assertThat(pom)
+                .contains("<artifactId>commons-lang3</artifactId>")
+                .contains("<artifactId>commons-text</artifactId>")
+                .actual())
+            ),
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang.StringEscapeUtils;
+
+                  import java.io.IOException;
+                  import java.io.Writer;
+
+                  class A {
+                      void f(Writer out, String url) throws IOException {
+                          StringEscapeUtils.escapeXml(out, url);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.text.StringEscapeUtils;
+
+                  import java.io.IOException;
+                  import java.io.Writer;
+
+                  class A {
+                      void f(Writer out, String url) throws IOException {
+                          StringEscapeUtils.ESCAPE_XML10.translate(url, out);
+                      }
+                  }
+                  """
+              )
+            )
+          )
+        );
+    }
+
+    @Test
+    void enumsPackageHasNoCommonsLang3Counterpart() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.StringUtils;
+              import org.apache.commons.lang.enums.Enum;
+
+              class Color extends Enum {
+                  Color(String name) {
+                      super(StringUtils.trim(name));
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.lang3.StringUtils;
+              import org.apache.commons.lang.enums.Enum;
+
+              class Color extends /*~~(Commons Lang 3 has no `enums` package; replace with a Java `enum`)~~>*/Enum {
+                  Color(String name) {
+                      super(StringUtils.trim(name));
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void commonsLang3AlreadyOnTheClasspathIsNotRedeclared() {
+        // commons-text brings commons-lang3 in at compile scope, and a direct declaration could only narrow that
+        rewriteRun(
+          mavenProject("project",
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>commons-configuration</groupId>
+                            <artifactId>commons-configuration</artifactId>
+                            <version>1.10</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.commons</groupId>
+                            <artifactId>commons-text</artifactId>
+                            <version>1.10.0</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """
+            ),
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """
+              )
+            )
+          )
+        );
+    }
+
+    @Test
     void toBooleanObjectOnPrimitiveHasNoLang3Equivalent() {
         rewriteRun(
           //language=java

@@ -45,9 +45,53 @@ recipeList:
       literal: false
       primitiveType: boolean
   - org.openrewrite.apache.commons.lang.WordUtilsToCommonsText
+  # Commons Lang 3 deprecates StringEscapeUtils in favor of Commons Text, which has the Writer variants it dropped
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.commons
+      artifactId: commons-text
+      version: 1.x
+      onlyIfUsing: org.apache.commons.lang.StringEscapeUtils
+      acceptTransitive: true
+  # Commons Lang 2 is often only transitive, so ChangeDependency has nothing to change
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.commons
+      artifactId: commons-lang3
+      version: 3.x
+      onlyIfUsing: org.apache.commons.lang..*
+      acceptTransitive: true
+  # Commons Lang 3 has no `enums` package, so leave those types alone rather than invent a package
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.commons.lang
       newPackageName: org.apache.commons.lang3
+      recursive: false
+  - org.openrewrite.apache.commons.lang.FindCommonsLangEnums
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.builder
+      newPackageName: org.apache.commons.lang3.builder
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.exception
+      newPackageName: org.apache.commons.lang3.exception
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.math
+      newPackageName: org.apache.commons.lang3.math
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.mutable
+      newPackageName: org.apache.commons.lang3.mutable
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.reflect
+      newPackageName: org.apache.commons.lang3.reflect
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.text
+      newPackageName: org.apache.commons.lang3.text
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.time
+      newPackageName: org.apache.commons.lang3.time
       recursive: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.exception.ExceptionUtils getFullStackTrace(..)
@@ -70,6 +114,12 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.lang3.math.RandomUtils
       newFullyQualifiedTypeName: org.apache.commons.lang3.RandomUtils
+  # Commons Lang 2 nextInt(int) draws below the bound; Lang 3 takes the lower bound too
+  - org.openrewrite.java.AddLiteralMethodArgument:
+      methodPattern: org.apache.commons.lang3.RandomUtils nextInt(int)
+      argumentIndex: 0
+      literal: 0
+      primitiveType: int
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.math.NumberUtils stringToInt(..)
       newMethodName: toInt
@@ -82,6 +132,23 @@ recipeList:
   - org.openrewrite.java.ChangeMethodTargetToStatic:
       methodPattern: org.apache.commons.lang3.ObjectUtils toString(Object, String)
       fullyQualifiedTargetTypeName: java.util.Objects
+  # escapeSql was removed from Commons Lang 3, and only ever doubled single quotes
+  - org.openrewrite.java.AddLiteralMethodArgument:
+      methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeSql(String)
+      argumentIndex: 1
+      literal: "'"
+      primitiveType: String
+  - org.openrewrite.java.AddLiteralMethodArgument:
+      methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeSql(String, String)
+      argumentIndex: 2
+      literal: "''"
+      primitiveType: String
+  - org.openrewrite.java.ChangeMethodTargetToStatic:
+      methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeSql(String, String, String)
+      fullyQualifiedTargetTypeName: org.apache.commons.lang3.StringUtils
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.lang3.StringUtils escapeSql(String, String, String)
+      newMethodName: replace
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeHtml(String)
       newMethodName: escapeHtml4
@@ -94,6 +161,7 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.StringEscapeUtils unescapeJavaScript(String)
       newMethodName: unescapeEcmaScript
+  - org.openrewrite.apache.commons.lang.StringEscapeUtilsWriterMethodsToCommonsText
   - org.openrewrite.apache.commons.lang.SystemUtilsIsJavaVersionAtLeastToJavaVersion
   - org.openrewrite.apache.commons.lang3.MigrateSystemUtilsDeprecations
   - org.openrewrite.apache.commons.lang3.UseStandardCharsets
