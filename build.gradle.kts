@@ -40,6 +40,7 @@ val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 dependencies {
     implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
     implementation("org.openrewrite:rewrite-java")
+    implementation("org.openrewrite:rewrite-gradle")
     implementation("org.openrewrite.recipe:rewrite-java-dependencies:$rewriteVersion")
     implementation("org.openrewrite.recipe:rewrite-logging-frameworks:$rewriteVersion")
     implementation("org.openrewrite.recipe:rewrite-static-analysis:$rewriteVersion")
@@ -62,6 +63,15 @@ dependencies {
     testImplementation("org.openrewrite:rewrite-kotlin")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
+    testImplementation("org.openrewrite.gradle.tooling:model:latest.release")
+    testRuntimeOnly("org.gradle:gradle-tooling-api:latest.release")
+}
+
+repositories {
+    maven {
+        url = uri("https://repo.gradle.org/gradle/libs-releases/")
+        content { includeGroup("org.gradle") }
+    }
 }
 
 tasks.withType<JavaCompile> {

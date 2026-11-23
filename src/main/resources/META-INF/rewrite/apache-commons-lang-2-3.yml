@@ -28,6 +28,7 @@ tags:
   - commons
   - lang
 recipeList:
+  - org.openrewrite.apache.commons.lang.UpgradeGradleCommonsLangVersionVariables
   - org.openrewrite.java.dependencies.ChangeDependency:
       oldGroupId: commons-lang
       oldArtifactId: commons-lang
