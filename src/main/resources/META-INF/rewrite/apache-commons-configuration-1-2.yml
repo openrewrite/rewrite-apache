@@ -1,0 +1,247 @@
+#
+# Copyright 2026 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+########################################################################################################################
+# Apache Commons Configuration
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.commons.configuration.UpgradeApacheCommonsConfiguration_1_2
+displayName: Migrates to Apache Commons Configuration 2.x
+description: >-
+  Migrate applications from Apache Commons Configuration 1.x to the latest 2.x release. This recipe changes the
+  dependency, moves the `org.apache.commons.configuration` package to `org.apache.commons.configuration2` and the
+  exceptions to its `ex` package, replaces the constructors that loaded a file with a `FileBasedConfigurationBuilder`,
+  moves loading, saving and the file location to a `FileHandler`, replaces the list delimiter methods with a
+  `ListDelimiterHandler`, has subclasses of `AbstractConfiguration` override the `Internal` methods 2.x calls from the
+  methods it made final, and creates and extends `BaseHierarchicalConfiguration` where 1.x code used the
+  `HierarchicalConfiguration` class, which is an interface in 2.x. Configuration 2 no longer splits values at commas by
+  default, so the configurations it creates from a file are given a `DefaultListDelimiterHandler(',')` to keep reading
+  lists as they did. Modules that exchange Configuration 1 types with a library that is still on 1.x, such as
+  TinkerPop 3.4, Archaius 1 or Hadoop's metrics2, are left alone, as their code has to keep using the types that
+  library declares. Reloading strategies, event listeners and hierarchical configuration nodes have no direct
+  replacement, and are left to be migrated by hand.
+tags:
+  - apache
+  - commons
+  - configuration
+preconditions:
+  # Not ModuleHasDependency: it leaves out what belongs to no module with the dependency, and the migration needs those
+  # too, such as a parent's dependencyManagement.
+  - org.openrewrite.java.dependencies.search.RepositoryHasDependency:
+      groupIdPattern: commons-configuration
+      artifactIdPattern: commons-configuration
+  - org.openrewrite.apache.commons.configuration.ModuleUsesCommonsConfiguration1Library:
+      invertMarking: true
+recipeList:
+  # Before the package move gives them names that 2.x may not have
+  - org.openrewrite.apache.commons.configuration.RemoveUnusedCommonsConfiguration1Imports
+  # Types that 2.x has in another package or under another name.
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.ConfigurationException
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.ex.ConfigurationException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.ConfigurationRuntimeException
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.ex.ConfigurationRuntimeException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.ConversionException
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.ex.ConversionException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.PropertyConverter
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.convert.PropertyConverter
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.HierarchicalINIConfiguration
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.INIConfiguration
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.FileSystem
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.io.FileSystem
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.DefaultFileSystem
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.io.DefaultFileSystem
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.VFSFileSystem
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.io.VFSFileSystem
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration.ConfigurationKey
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.tree.DefaultConfigurationKey
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.configuration
+      newPackageName: org.apache.commons.configuration2
+      recursive: true
+
+  # The recipes below match the 1.x API by the names the package move gave it.
+  - org.openrewrite.apache.commons.configuration.MigrateFileBasedConfigurations
+  - org.openrewrite.apache.commons.configuration.MigrateListDelimiterMethods
+  - org.openrewrite.apache.commons.configuration.MigrateAbstractConfigurationSubclasses
+  - org.openrewrite.apache.commons.configuration.MigrateHierarchicalConfigurations
+  - org.openrewrite.apache.commons.configuration.MigrateUntypedListGetters
+  # `FileConfiguration` declared loading and saving, which a `FileHandler` does now.
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.commons.configuration2.FileConfiguration
+      newFullyQualifiedTypeName: org.apache.commons.configuration2.FileBasedConfiguration
+
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: commons-configuration
+      oldArtifactId: commons-configuration
+      newGroupId: org.apache.commons
+      newArtifactId: commons-configuration2
+      newVersion: 2.x
+  # The dependencies are added by the 1.x types a module uses, as these recipes look for them in the code as it was
+  # before the migration.
+  - org.openrewrite.apache.commons.configuration.AddCommonsConfiguration2Dependency
+  # The builders need Commons BeanUtils, which Configuration 2 declares as optional. A module that uses one of the
+  # configurations that 1.x constructed from a file may create it with a builder now.
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      version: 1.x
+      onlyIfUsing: org.apache.commons.configuration.PropertiesConfiguration
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      version: 1.x
+      onlyIfUsing: org.apache.commons.configuration.XMLConfiguration
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      version: 1.x
+      onlyIfUsing: org.apache.commons.configuration.XMLPropertiesConfiguration
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      version: 1.x
+      onlyIfUsing: org.apache.commons.configuration.HierarchicalINIConfiguration
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      version: 1.x
+      onlyIfUsing: org.apache.commons.configuration.INIConfiguration
+      acceptTransitive: true
+  # Configuration 1.x brought these along, and 2.x does not.
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-lang
+      artifactId: commons-lang
+      version: 2.x
+      onlyIfUsing: org.apache.commons.lang..*
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-collections
+      artifactId: commons-collections
+      version: 3.x
+      onlyIfUsing: org.apache.commons.collections..*
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-digester
+      artifactId: commons-digester
+      version: 1.x
+      onlyIfUsing: org.apache.commons.digester..*
+      acceptTransitive: true
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      version: 1.x
+      onlyIfUsing: org.apache.commons.beanutils..*
+      acceptTransitive: true
+  - org.openrewrite.apache.commons.configuration.UpgradeCommonsConfiguration2Dependencies
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.commons.configuration.UpgradeCommonsConfiguration2Dependencies
+displayName: Upgrade the Commons libraries that Commons Configuration 2.x needs
+description: >-
+  Commons Configuration 2.x needs Commons Lang 3, Text and IO at least as recent as the versions it declares, where 1.x
+  needed none of them, and its builders need a Commons BeanUtils of 1.9 or later. Maven resolves an older one instead
+  when it is declared directly, comes from a dependency declared earlier, or is managed by a BOM such as Spring Boot's.
+  Configuration 2 then fails at runtime with a `NoClassDefFoundError` or `NoSuchMethodError` the first time a
+  configuration is created. This upgrades them to the versions that Commons Configuration 2.15.1 declares, in the Maven
+  modules that the migration moved from Commons Configuration 1.x to 2.x. Gradle resolves the most recent version
+  already.
+preconditions:
+  # A module on Configuration 1.x, read from the build as it was
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: commons-configuration
+      artifactIdPattern: commons-configuration
+  # whose pom declares Configuration 2.x once the migration changed it. Read from the pom itself, as the migration's
+  # changes are not resolved again where a dependency's pom can't be downloaded. A module that gets Configuration 1.x
+  # through a library still on it is left alone.
+  - org.openrewrite.xml.search.FindTags:
+      xPath: /project/dependencies/dependency[artifactId='commons-configuration2']
+# The versions commons-configuration2 2.15.1 declares. A later release may need more recent ones, so raise them with it.
+recipeList:
+  - org.openrewrite.maven.UpgradeDependencyVersion:
+      groupId: org.apache.commons
+      artifactId: commons-lang3
+      newVersion: 3.20.0
+      overrideManagedVersion: true
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
+      groupId: org.apache.commons
+      artifactId: commons-lang3
+      version: 3.20.0
+      because: Commons Configuration 2 needs it
+  - org.openrewrite.maven.UpgradeDependencyVersion:
+      groupId: org.apache.commons
+      artifactId: commons-text
+      newVersion: 1.15.0
+      overrideManagedVersion: true
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
+      groupId: org.apache.commons
+      artifactId: commons-text
+      version: 1.15.0
+      because: Commons Configuration 2 needs it
+  - org.openrewrite.maven.UpgradeDependencyVersion:
+      groupId: commons-io
+      artifactId: commons-io
+      newVersion: 2.22.0
+      overrideManagedVersion: true
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
+      groupId: commons-io
+      artifactId: commons-io
+      version: 2.22.0
+      because: Commons Configuration 2 needs it
+  - org.openrewrite.maven.UpgradeDependencyVersion:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      newVersion: 1.11.0
+      overrideManagedVersion: true
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
+      groupId: commons-beanutils
+      artifactId: commons-beanutils
+      version: 1.11.0
+      because: Commons Configuration 2 needs it
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.commons.configuration.AddCommonsConfiguration2Dependency
+displayName: Add Commons Configuration 2.x where 1.x came through another dependency
+description: >-
+  Adds `commons-configuration2` to the modules that use Commons Configuration 1.x types without declaring
+  `commons-configuration` themselves, as they got it through another dependency. A module declaring it has the
+  declaration changed instead, which is not resolved again where a dependency's pom can't be downloaded, so that adding
+  the dependency there would declare it twice.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: commons-configuration
+      artifactIdPattern: commons-configuration
+      onlyDirect: true
+      invertMarking: true
+recipeList:
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.commons
+      artifactId: commons-configuration2
+      version: 2.x
+      onlyIfUsing: org.apache.commons.configuration..*
+      acceptTransitive: true

@@ -8,6 +8,7 @@ description = "Apache Migration"
 
 recipeDependencies {
     parserClasspath("commons-io:commons-io:2.+")
+    parserClasspath("org.apache.commons:commons-configuration2:2.+")
     parserClasspath("org.apache.commons:commons-collections4:4.4")
     parserClasspath("org.apache.commons:commons-lang3:3.+")
 
@@ -27,6 +28,7 @@ recipeDependencies {
 
     testParserClasspath("commons-codec:commons-codec:1.+")
     testParserClasspath("commons-collections:commons-collections:3.2.2")
+    testParserClasspath("commons-configuration:commons-configuration:1.10")
     testParserClasspath("org.apache.commons:commons-collections4:4.0")
     testParserClasspath("org.apache.commons:commons-collections4:4.1")
     testParserClasspath("commons-lang:commons-lang:2.6")
