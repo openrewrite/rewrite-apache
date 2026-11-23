@@ -293,6 +293,61 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     }
 
     @Test
+    void transitiveCommonsLang2GetsDirectCommonsLang3Dependency() {
+        // Commons Lang 2 arrives through commons-configuration, so there is no commons-lang dependency to change
+        rewriteRun(
+          // the dependency is added once the sources already use Commons Lang 3
+          spec -> spec.expectedCyclesThatMakeChanges(2),
+          mavenProject("project",
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>commons-configuration</groupId>
+                            <artifactId>commons-configuration</artifactId>
+                            <version>1.10</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """,
+              spec -> spec.after(pom -> assertThat(pom)
+                .contains("<artifactId>commons-lang3</artifactId>")
+                .actual())
+            ),
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """
+              )
+            )
+          )
+        );
+    }
+
+    @Test
     void toBooleanObjectOnPrimitiveHasNoLang3Equivalent() {
         rewriteRun(
           //language=java
