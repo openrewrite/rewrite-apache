@@ -1,0 +1,180 @@
+#
+# Copyright 2026 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.pdfbox.UpgradeApachePdfBox_3
+displayName: Migrate to Apache PDFBox 3.x
+description: >-
+  Migrates [Apache PDFBox](https://pdfbox.apache.org/) 2.x to 3.0, following the
+  [PDFBox 3.0 migration guide](https://pdfbox.apache.org/3.0/migration.html). It upgrades the PDFBox artifacts,
+  loads documents with `Loader`, creates the standard 14 fonts with `Standard14Fonts.FontName`, passes stream cache
+  functions where PDFBox 2 took a `MemoryUsageSetting`, reads through the new `RandomAccessRead` implementations,
+  replaces the deprecated APIs that PDFBox 3.0 removed, and embeds the dependencies PDFBox 3 added, such as the new
+  `pdfbox-io` artifact, in OSGi bundles that embed PDFBox. It runs only in repositories that declare a PDFBox 2.x
+  dependency, use no PDFBox 1.x, and use no library that still asks for PDFBox 2.x, such as Apache Tika 2. PDFBox 3.0 also changes behavior that code doesn't show, such as saving PDFs
+  compressed by default and fixing up AcroForms when they are read, which the migration guide describes.
+tags:
+  - apache
+  - pdfbox
+preconditions:
+  - org.openrewrite.apache.pdfbox.search.RepositoryUsesPdfBox2
+recipeList:
+  - org.openrewrite.apache.pdfbox.MigrateDocumentLoading
+  - org.openrewrite.apache.pdfbox.MigrateMemoryUsageSettings
+  - org.openrewrite.apache.pdfbox.MigrateRandomAccessReads
+  - org.openrewrite.apache.pdfbox.MigrateParserResults
+  - org.openrewrite.apache.pdfbox.MigrateStandard14Fonts
+  - org.openrewrite.apache.pdfbox.MigratePageContentStream
+  - org.openrewrite.apache.pdfbox.MigrateOperatorProcessors
+  - org.openrewrite.apache.pdfbox.MigrateFieldWidgets
+  - org.openrewrite.apache.pdfbox.MigrateGlyphCallbacks
+  - org.openrewrite.apache.pdfbox.MigrateRenamedApis
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.pdfbox
+      artifactId: pdfbox*
+      newVersion: 3.0.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.pdfbox
+      artifactId: fontbox
+      newVersion: 3.0.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.pdfbox
+      artifactId: xmpbox
+      newVersion: 3.0.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.apache.pdfbox
+      artifactId: preflight*
+      newVersion: 3.0.x
+  - org.openrewrite.apache.pdfbox.EmbedNewPdfBoxDependencies
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.pdfbox.MigrateRenamedApis
+displayName: Use the PDFBox 3 names of renamed and moved APIs
+description: >-
+  Replaces PDFBox 2 types and methods that PDFBox 3.0 removed with the ones their deprecation pointed to, which do the
+  same: `RandomAccessBuffer` with `RandomAccessReadBuffer`, `Charsets` with `java.nio.charset.StandardCharsets`,
+  `AccessPermission.canPrintDegraded()` with `canPrintFaithful()`, the `COSStream` stream accessors with
+  `createInputStream()` and its siblings, and the other methods that only changed their names. It also sorts with
+  `IterativeMergeSort` where code used the `QuickSort` that PDFBox 2.0.25 removed.
+tags:
+  - apache
+  - pdfbox
+recipeList:
+  - org.openrewrite.apache.pdfbox.MigrateCharsets
+  - org.openrewrite.apache.pdfbox.MigrateQuickSort
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.pdfbox.io.RandomAccessBuffer
+      newFullyQualifiedTypeName: org.apache.pdfbox.io.RandomAccessReadBuffer
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.pdfbox.io.RandomAccessBufferedFileInputStream
+      newFullyQualifiedTypeName: org.apache.pdfbox.io.RandomAccessRead
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.pdfbox.io.RandomAccessFile
+      newFullyQualifiedTypeName: org.apache.pdfbox.io.RandomAccessReadBufferedFile
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.pdfbox.pdmodel.encryption.PDEncryptionDictionary
+      newFullyQualifiedTypeName: org.apache.pdfbox.pdmodel.encryption.PDEncryption
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.pdfbox.util.Charsets
+      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.fontbox.util.Charsets
+      newFullyQualifiedTypeName: java.nio.charset.StandardCharsets
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.encryption.AccessPermission canPrintDegraded()
+      newMethodName: canPrintFaithful
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.encryption.AccessPermission setCanPrintDegraded(boolean)
+      newMethodName: setCanPrintFaithful
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.apache.pdfbox.util.QuickSort
+      newFullyQualifiedTypeName: org.apache.pdfbox.util.IterativeMergeSort
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.common.COSArrayList getCOSArray()
+      newMethodName: toList
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.cos.COSStream getFilteredStream()
+      newMethodName: createRawInputStream
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.cos.COSStream getUnfilteredStream()
+      newMethodName: createInputStream
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.cos.COSStream createFilteredStream()
+      newMethodName: createRawOutputStream
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.cos.COSStream createUnfilteredStream()
+      newMethodName: createOutputStream
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.cos.COSStream getString()
+      newMethodName: toTextString
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.common.PDStream getStream()
+      newMethodName: getCOSObject
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.graphics.PDXObject getCOSStream()
+      newMethodName: getCOSObject
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.graphics.PDXObject getPDStream()
+      newMethodName: getStream
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState getNonStrokeAlphaConstants()
+      newMethodName: getNonStrokeAlphaConstant
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState setNonStrokeAlphaConstants(double)
+      newMethodName: setNonStrokeAlphaConstant
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.encryption.PDEncryption getCOSDictionary()
+      newMethodName: getCOSObject
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.encryption.PDCryptFilterDictionary getCOSDictionary()
+      newMethodName: getCOSObject
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.interactive.action.PDActionMovie getS()
+      newMethodName: getSubType
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.interactive.action.PDActionRemoteGoTo getS()
+      newMethodName: getSubType
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.interactive.action.PDActionSound getS()
+      newMethodName: getSubType
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.interactive.action.PDActionURI getS()
+      newMethodName: getSubType
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationFileAttachment setAttachementName(String)
+      newMethodName: setAttachmentName
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSeedValue setReasonsd(java.util.List)
+      newMethodName: setReasons
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField setSignature(org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature)
+      newMethodName: setValue
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.util.Matrix getTranslatingInstance(float, float)
+      newMethodName: getTranslateInstance
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.util.Matrix getXPosition()
+      newMethodName: getTranslateX
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.pdfbox.util.Matrix getYPosition()
+      newMethodName: getTranslateY
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.xmpbox.XMPMetadata createAndAddPFAIdentificationSchema()
+      newMethodName: createAndAddPDFAIdentificationSchema
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.xmpbox.XMPMetadata getPDFIdentificationSchema()
+      newMethodName: getPDFAIdentificationSchema

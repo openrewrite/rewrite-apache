@@ -22,6 +22,11 @@ recipeDependencies {
 
     parserClasspath("org.apache.maven.shared:maven-shared-utils:3.+")
 
+    parserClasspath("org.apache.pdfbox:fontbox:3.0.8")
+    parserClasspath("org.apache.pdfbox:pdfbox:3.0.8")
+    parserClasspath("org.apache.pdfbox:pdfbox-io:3.0.8")
+    parserClasspath("org.apache.pdfbox:xmpbox:3.0.8")
+
     parserClasspath("org.apache.poi:poi:3.16")
 
     parserClasspath("org.codehaus.plexus:plexus-utils:4.+")
@@ -34,12 +39,17 @@ recipeDependencies {
     testParserClasspath("org.apache.commons:commons-math:2.2")
     testParserClasspath("org.apache.commons:commons-math3:3.+")
     testParserClasspath("org.codehaus.plexus:plexus-container-default:2.+")
+    testParserClasspath("org.apache.pdfbox:fontbox:2.0.37")
+    testParserClasspath("org.apache.pdfbox:pdfbox:2.0.37")
+    testParserClasspath("org.apache.pdfbox:xmpbox:2.0.37")
 }
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 dependencies {
     implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
+    implementation("org.openrewrite:rewrite-gradle")
     implementation("org.openrewrite:rewrite-java")
+    implementation("org.openrewrite:rewrite-maven")
     implementation("org.openrewrite.recipe:rewrite-java-dependencies:$rewriteVersion")
     implementation("org.openrewrite.recipe:rewrite-logging-frameworks:$rewriteVersion")
     implementation("org.openrewrite.recipe:rewrite-static-analysis:$rewriteVersion")

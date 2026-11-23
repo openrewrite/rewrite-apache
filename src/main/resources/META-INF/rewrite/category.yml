@@ -66,6 +66,11 @@ packageName: org.openrewrite.apache.commons.math
 description: Recipes for [Apache Commons Math](https://commons.apache.org/proper/commons-math/) migrations.
 ---
 type: specs.openrewrite.org/v1beta/category
+name: Apache PDFBox
+packageName: org.openrewrite.apache.pdfbox
+description: Recipes for migrating [Apache PDFBox](https://pdfbox.apache.org/) PDF library code.
+---
+type: specs.openrewrite.org/v1beta/category
 name: Apache POI
 packageName: org.openrewrite.apache.poi
 description: Recipes for [Apache POI](https://poi.apache.org/) spreadsheet library.
