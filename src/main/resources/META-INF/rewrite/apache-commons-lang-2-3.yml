@@ -45,17 +45,17 @@ recipeList:
       literal: false
       primitiveType: boolean
   - org.openrewrite.apache.commons.lang.WordUtilsToCommonsText
-  - org.openrewrite.java.ChangePackage:
-      oldPackageName: org.apache.commons.lang
-      newPackageName: org.apache.commons.lang3
-      recursive: true
   # Commons Lang 2 is often only transitive, so ChangeDependency has nothing to change
   - org.openrewrite.java.dependencies.AddDependency:
       groupId: org.apache.commons
       artifactId: commons-lang3
       version: 3.x
-      onlyIfUsing: org.apache.commons.lang3..*
-      acceptTransitive: true
+      onlyIfUsing: org.apache.commons.lang..*
+      acceptTransitive: false
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang
+      newPackageName: org.apache.commons.lang3
+      recursive: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.exception.ExceptionUtils getFullStackTrace(..)
       newMethodName: getStackTrace

@@ -296,8 +296,6 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     void transitiveCommonsLang2GetsDirectCommonsLang3Dependency() {
         // Commons Lang 2 arrives through commons-configuration, so there is no commons-lang dependency to change
         rewriteRun(
-          // the dependency is added once the sources already use Commons Lang 3
-          spec -> spec.expectedCyclesThatMakeChanges(2),
           mavenProject("project",
             //language=xml
             pomXml(
