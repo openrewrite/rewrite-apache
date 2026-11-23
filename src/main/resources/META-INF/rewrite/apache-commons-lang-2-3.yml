@@ -77,6 +77,12 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.apache.commons.lang3.math.RandomUtils
       newFullyQualifiedTypeName: org.apache.commons.lang3.RandomUtils
+  # Commons Lang 2 nextInt(int) draws below the bound; Lang 3 takes the lower bound too
+  - org.openrewrite.java.AddLiteralMethodArgument:
+      methodPattern: org.apache.commons.lang3.RandomUtils nextInt(int)
+      argumentIndex: 0
+      literal: 0
+      primitiveType: int
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.math.NumberUtils stringToInt(..)
       newMethodName: toInt

@@ -348,6 +348,35 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     }
 
     @Test
+    void randomUtilsNextIntGainsLowerBound() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.math.RandomUtils;
+
+              class A {
+                  void f() {
+                      int i = RandomUtils.nextInt(500);
+                      int unbounded = RandomUtils.nextInt();
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.lang3.RandomUtils;
+
+              class A {
+                  void f() {
+                      int i = RandomUtils.nextInt(0, 500);
+                      int unbounded = RandomUtils.nextInt();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void toBooleanObjectOnPrimitiveHasNoLang3Equivalent() {
         rewriteRun(
           //language=java
