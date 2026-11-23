@@ -19,6 +19,9 @@ recipeDependencies {
     parserClasspath("org.apache.httpcomponents:httpcore:4.4.16")
     parserClasspath("org.apache.httpcomponents:httpmime:4.5.14")
 
+    parserClasspath("org.apache.ignite:ignite-api:3.1.0")
+    parserClasspath("org.apache.ignite:ignite-client:3.1.0")
+
     parserClasspath("org.apache.maven.shared:maven-shared-utils:3.+")
 
     parserClasspath("org.apache.poi:poi:3.16")
@@ -30,6 +33,8 @@ recipeDependencies {
     testParserClasspath("org.apache.commons:commons-collections4:4.0")
     testParserClasspath("org.apache.commons:commons-collections4:4.1")
     testParserClasspath("commons-lang:commons-lang:2.6")
+    testParserClasspath("javax.cache:cache-api:1.1.1")
+    testParserClasspath("org.apache.ignite:ignite-core:2.17.0")
     testParserClasspath("org.apache.commons:commons-math:2.2")
     testParserClasspath("org.apache.commons:commons-math3:3.+")
     testParserClasspath("org.apache.commons:commons-text:1.+")
