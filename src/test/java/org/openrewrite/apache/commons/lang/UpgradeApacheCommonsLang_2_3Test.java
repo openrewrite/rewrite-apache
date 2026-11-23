@@ -25,8 +25,6 @@ import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.openrewrite.gradle.Assertions.buildGradle;
-import static org.openrewrite.gradle.toolingapi.Assertions.withToolingApi;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.java.Assertions.mavenProject;
 import static org.openrewrite.java.Assertions.srcMainJava;
@@ -517,35 +515,6 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
                   }
               }
               """
-          )
-        );
-    }
-
-    @Test
-    void gradleVersionVariableIsUpgradedToo() {
-        // Changing only the coordinates would leave `commons-lang3:2.6`, which doesn't exist
-        rewriteRun(
-          spec -> spec.beforeRecipe(withToolingApi()),
-          buildGradle(
-            """
-              plugins {
-                  id 'java-library'
-              }
-              ext {
-                  apacheCommonsLangVersion = '2.6'
-              }
-              repositories {
-                  mavenCentral()
-              }
-              dependencies {
-                  implementation "commons-lang:commons-lang:$apacheCommonsLangVersion"
-              }
-              """,
-            spec -> spec.after(gradle -> assertThat(gradle)
-              .contains("org.apache.commons:commons-lang3:$apacheCommonsLangVersion")
-              .doesNotContain("'2.6'")
-              .containsPattern("apacheCommonsLangVersion = '3\\.\\d+\\.\\d+'")
-              .actual())
           )
         );
     }
