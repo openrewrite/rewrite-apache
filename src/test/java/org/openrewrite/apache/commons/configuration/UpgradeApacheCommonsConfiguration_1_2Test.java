@@ -1254,6 +1254,101 @@ class UpgradeApacheCommonsConfiguration_1_2Test implements RewriteTest {
               )
             );
         }
+
+        /**
+         * The constructor of an anonymous class takes what its supertype's does, and no class declaration names it.
+         */
+        @Test
+        void anonymousSubclassOfOwnClassTakingConfiguration() {
+            runInProject(
+              configurationPom(false),
+              //language=java
+              java(
+                """
+                  import org.apache.commons.configuration.BaseConfiguration;
+                  import org.apache.commons.configuration.Configuration;
+
+                  class Realms {
+                      static final Configuration CONFIGURATION = new BaseConfiguration();
+                      static final Realm REALM = new Realm(CONFIGURATION) {
+                          @Override
+                          String name() {
+                              return "test";
+                          }
+                      };
+                  }
+
+                  abstract class Realm {
+                      Realm(Configuration configuration) {
+                      }
+
+                      abstract String name();
+                  }
+                  """,
+                """
+                  import org.apache.commons.configuration2.BaseConfiguration;
+                  import org.apache.commons.configuration2.Configuration;
+
+                  class Realms {
+                      static final Configuration CONFIGURATION = new BaseConfiguration();
+                      static final Realm REALM = new Realm(CONFIGURATION) {
+                          @Override
+                          String name() {
+                              return "test";
+                          }
+                      };
+                  }
+
+                  abstract class Realm {
+                      Realm(Configuration configuration) {
+                      }
+
+                      abstract String name();
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void anonymousSubclassOfLibraryClassTakingConfigurationIsLeftAlone() {
+            rewriteRun(
+              spec -> spec.parser(JavaParser.fromJavaVersion()
+                .classpathFromResources(new InMemoryExecutionContext(), "commons-configuration-1", "commons-configuration2", "commons-lang-2")
+                //language=java
+                .dependsOn(
+                  """
+                    package org.example.graph;
+                    public abstract class GraphRule {
+                        protected GraphRule(org.apache.commons.configuration.Configuration configuration) {
+                        }
+                        public abstract String name();
+                    }
+                    """
+                )),
+              mavenProject("example",
+                unchangedConfigurationPom(),
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.apache.commons.configuration.BaseConfiguration;
+                      import org.example.graph.GraphRule;
+
+                      class Rules {
+                          static final GraphRule RULE = new GraphRule(new BaseConfiguration()) {
+                              @Override
+                              public String name() {
+                                  return "test";
+                              }
+                          };
+                      }
+                      """
+                  )
+                )
+              )
+            );
+        }
     }
 
     /**

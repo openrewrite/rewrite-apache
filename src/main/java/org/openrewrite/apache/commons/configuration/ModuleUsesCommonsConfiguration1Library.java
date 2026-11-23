@@ -39,6 +39,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+
+import static java.util.Collections.emptySet;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
@@ -105,6 +108,21 @@ public class ModuleUsesCommonsConfiguration1Library extends ScanningRecipe<Modul
             }
             return tied;
         }
+
+        /**
+         * The types a module exchanges 1.x types with that the sources don't declare, or, for a module that stays on
+         * 1.x for another module of the repository, the types of the other modules.
+         */
+        String exchangedWith(JavaProject project) {
+            Set<String> types = libraryTypes.getOrDefault(project, emptySet());
+            Set<String> undeclared = new TreeSet<>();
+            for (String type : types) {
+                if (!declaredTypes.containsKey(type)) {
+                    undeclared.add(type);
+                }
+            }
+            return String.join(", ", undeclared.isEmpty() ? new TreeSet<>(types) : undeclared);
+        }
     }
 
     @Override
@@ -168,7 +186,17 @@ public class ModuleUsesCommonsConfiguration1Library extends ScanningRecipe<Modul
 
             @Override
             public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
-                tieIfLibraryCall(newClass.getConstructorType());
+                JavaType.Method constructor = newClass.getConstructorType();
+                if (newClass.getBody() != null && constructor != null) {
+                    // An anonymous class is declared in the sources, though no class declaration names it, and its
+                    // constructor passes what it takes on to the constructor of its supertype
+                    JavaType.FullyQualified anonymous = constructor.getDeclaringType();
+                    acc.declaredTypes.put(anonymous.getFullyQualifiedName(), getCursor().firstEnclosingOrThrow(JavaSourceFile.class)
+                            .getMarkers().findFirst(JavaProject.class).orElse(null));
+                    JavaType.FullyQualified supertype = anonymous.getSupertype();
+                    constructor = supertype == null ? null : constructor.withDeclaringType(supertype);
+                }
+                tieIfLibraryCall(constructor);
                 return super.visitNewClass(newClass, ctx);
             }
 
@@ -213,12 +241,11 @@ public class ModuleUsesCommonsConfiguration1Library extends ScanningRecipe<Modul
                     return null;
                 }
                 JavaProject project = tree.getMarkers().findFirst(JavaProject.class).orElse(null);
-                boolean tied = project != null && acc.tied().contains(project);
-                return tied != invert ?
-                        SearchResult.found(tree, tied ?
-                                "Module exchanges Commons Configuration 1.x types with a library" :
-                                "Module does not exchange Commons Configuration 1.x types with a library") :
-                        tree;
+                if (project != null && acc.tied().contains(project)) {
+                    return invert ? tree : SearchResult.found(tree,
+                            "Module exchanges Commons Configuration 1.x types with " + acc.exchangedWith(project));
+                }
+                return invert ? SearchResult.found(tree, "Module does not exchange Commons Configuration 1.x types with a library") : tree;
             }
         };
     }
