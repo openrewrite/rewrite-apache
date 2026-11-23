@@ -959,6 +959,81 @@ class UpgradeApacheCommonsConfiguration_1_2Test implements RewriteTest {
         }
     }
 
+    /**
+     * The recipe that adds Configuration 2.x on its own, as only a model that isn't resolved again after the
+     * migration changed the dependency, which happens where a dependency's pom can't be downloaded, shows whether it
+     * would declare it twice.
+     */
+    @Nested
+    class AddingConfiguration2 {
+
+        @Test
+        void moduleDeclaringConfiguration1IsLeftToChangeDependency() {
+            rewriteRun(
+              spec -> spec.recipeFromResources("org.openrewrite.apache.commons.configuration.AddCommonsConfiguration2Dependency"),
+              mavenProject("example",
+                unchangedConfigurationPom(),
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.apache.commons.configuration.BaseConfiguration;
+
+                      class Settings {
+                          BaseConfiguration settings = new BaseConfiguration();
+                      }
+                      """
+                  )
+                )
+              )
+            );
+        }
+
+        @Test
+        void moduleGettingConfiguration1ThroughAnotherDependency() {
+            rewriteRun(
+              spec -> spec.recipeFromResources("org.openrewrite.apache.commons.configuration.AddCommonsConfiguration2Dependency"),
+              mavenProject("example",
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>example</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <!-- Brings commons-configuration 1.8 -->
+                            <dependency>
+                                <groupId>com.netflix.archaius</groupId>
+                                <artifactId>archaius-core</artifactId>
+                                <version>0.7.6</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """,
+                  spec -> spec.after(pom -> {
+                      assertThat(pom).containsPattern("<artifactId>commons-configuration2</artifactId>\\s*<version>2\\.\\d+\\.\\d+</version>");
+                      return pom;
+                  })
+                ),
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.apache.commons.configuration.BaseConfiguration;
+
+                      class Settings {
+                          BaseConfiguration settings = new BaseConfiguration();
+                      }
+                      """
+                  )
+                )
+              )
+            );
+        }
+    }
+
     @Nested
     class SpringXml {
 

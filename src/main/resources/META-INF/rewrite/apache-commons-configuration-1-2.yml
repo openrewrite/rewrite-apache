@@ -98,14 +98,9 @@ recipeList:
       newGroupId: org.apache.commons
       newArtifactId: commons-configuration2
       newVersion: 2.x
-  # A module can get Configuration 1.x through another dependency. The dependencies are added by the 1.x types a module
-  # uses, as these recipes look for them in the code as it was before the migration.
-  - org.openrewrite.java.dependencies.AddDependency:
-      groupId: org.apache.commons
-      artifactId: commons-configuration2
-      version: 2.x
-      onlyIfUsing: org.apache.commons.configuration..*
-      acceptTransitive: true
+  # The dependencies are added by the 1.x types a module uses, as these recipes look for them in the code as it was
+  # before the migration.
+  - org.openrewrite.apache.commons.configuration.AddCommonsConfiguration2Dependency
   # The builders need Commons BeanUtils, which Configuration 2 declares as optional. A module that uses one of the
   # configurations that 1.x constructed from a file may create it with a builder now.
   - org.openrewrite.java.dependencies.AddDependency:
@@ -228,3 +223,25 @@ recipeList:
       artifactId: commons-beanutils
       version: 1.11.0
       because: Commons Configuration 2 needs it
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.apache.commons.configuration.AddCommonsConfiguration2Dependency
+displayName: Add Commons Configuration 2.x where 1.x came through another dependency
+description: >-
+  Adds `commons-configuration2` to the modules that use Commons Configuration 1.x types without declaring
+  `commons-configuration` themselves, as they got it through another dependency. A module declaring it has the
+  declaration changed instead, which is not resolved again where a dependency's pom can't be downloaded, so that adding
+  the dependency there would declare it twice.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: commons-configuration
+      artifactIdPattern: commons-configuration
+      onlyDirect: true
+      invertMarking: true
+recipeList:
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.commons
+      artifactId: commons-configuration2
+      version: 2.x
+      onlyIfUsing: org.apache.commons.configuration..*
+      acceptTransitive: true
