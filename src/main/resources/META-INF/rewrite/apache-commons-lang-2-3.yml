@@ -133,22 +133,22 @@ recipeList:
       methodPattern: org.apache.commons.lang3.ObjectUtils toString(Object, String)
       fullyQualifiedTargetTypeName: java.util.Objects
   # escapeSql was removed from Commons Lang 3, and only ever doubled single quotes
-  - org.openrewrite.java.ChangeMethodTargetToStatic:
-      methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeSql(String)
-      fullyQualifiedTargetTypeName: org.apache.commons.lang3.StringUtils
-  - org.openrewrite.java.ChangeMethodName:
-      methodPattern: org.apache.commons.lang3.StringUtils escapeSql(String)
-      newMethodName: replace
   - org.openrewrite.java.AddLiteralMethodArgument:
-      methodPattern: org.apache.commons.lang3.StringUtils replace(String)
+      methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeSql(String)
       argumentIndex: 1
       literal: "'"
       primitiveType: String
   - org.openrewrite.java.AddLiteralMethodArgument:
-      methodPattern: org.apache.commons.lang3.StringUtils replace(String, String)
+      methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeSql(String, String)
       argumentIndex: 2
       literal: "''"
       primitiveType: String
+  - org.openrewrite.java.ChangeMethodTargetToStatic:
+      methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeSql(String, String, String)
+      fullyQualifiedTargetTypeName: org.apache.commons.lang3.StringUtils
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.apache.commons.lang3.StringUtils escapeSql(String, String, String)
+      newMethodName: replace
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.StringEscapeUtils escapeHtml(String)
       newMethodName: escapeHtml4
