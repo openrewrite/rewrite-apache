@@ -1,0 +1,173 @@
+#
+# Copyright 2026 the original author or authors.
+# <p>
+# Licensed under the Moderne Source Available License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# <p>
+# https://docs.moderne.io/licensing/moderne-source-available-license
+# <p>
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.MigrateToCodehausPlexusCipher
+displayName: Migrate from `org.sonatype.plexus:plexus-cipher` to `org.codehaus.plexus:plexus-cipher`
+description: >-
+  Replace the unmaintained `org.sonatype.plexus:plexus-cipher` with `org.codehaus.plexus:plexus-cipher` 2.0, and
+  `org.sonatype.plexus:plexus-sec-dispatcher`, which depends on it, with `org.codehaus.plexus:plexus-sec-dispatcher`
+  2.0, the versions Maven 3.9 uses. Both keep the `org.sonatype.plexus.components` packages and decrypt the passwords
+  that 1.x encrypted. 2.1.0 doesn't, as it derives the key differently, and 3.0.0 has the API of Maven 4. In the modules
+  that declare either artifact, this also removes the `catch` of the `PlexusCipherException` that the constructor of
+  `DefaultPlexusCipher` no longer throws, and replaces the `ROLE` constants 2.0 removed. Where they declare the security
+  dispatcher, it also passes the cipher to the constructor of `DefaultSecDispatcher` and a message to the constructor of
+  `SecDispatcherException`, whose no-argument constructors 2.0 removed. It excludes the Sonatype artifacts where another
+  dependency, such as Maven 3.8 or older, still brings them, as their classes would otherwise be on the classpath twice,
+  and upgrades a `maven-plugin-plugin` older than 3.5, which can't read the classes that plexus-utils 3.4, a dependency
+  of the 2.0 security dispatcher, has for Java 10. The 2.0 components are annotated for JSR-330 and Sisu, which Maven 3
+  uses, and Sisu also creates them from a Plexus `components.xml`, such as the one a Maven plugin declares its own
+  `SecDispatcher` in. A classic Plexus container without Sisu, such as Maven 2's, can't create them, so a repository
+  where a module runs one with the Sonatype artifacts is left alone, and its declarations of them are marked.
+tags:
+  - plexus
+  - maven
+  - security
+recipeList:
+  - org.openrewrite.codehaus.plexus.MigrateToCodehausPlexusCipherWithoutClassicPlexusContainer
+  - org.openrewrite.codehaus.plexus.FindSonatypePlexusCipherInClassicPlexusContainer
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.MigrateToCodehausPlexusCipherWithoutClassicPlexusContainer
+displayName: Migrate to `org.codehaus.plexus:plexus-cipher` where no classic Plexus container runs
+description: >-
+  Migrates a repository to `org.codehaus.plexus:plexus-cipher` and `org.codehaus.plexus:plexus-sec-dispatcher` 2.0
+  unless one of its modules resolves the Sonatype artifacts and runs a classic Plexus container without Sisu, which
+  can't create the components of 2.0.
+preconditions:
+  - org.openrewrite.codehaus.plexus.FindSonatypePlexusCipherInClassicPlexusContainer:
+      invertMarking: true
+recipeList:
+  - org.openrewrite.codehaus.plexus.MigratePlexusSecDispatcherSources
+  - org.openrewrite.codehaus.plexus.MigratePlexusCipherSources
+  - org.openrewrite.codehaus.plexus.ChangeSonatypePlexusCipherDependencies
+  - org.openrewrite.codehaus.plexus.UpgradeMavenPluginPluginForPlexusSecDispatcher2
+  - org.openrewrite.codehaus.plexus.ExcludeSonatypePlexusCipher
+  - org.openrewrite.codehaus.plexus.ExcludeSonatypePlexusSecDispatcher
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.ModuleDeclaresSonatypePlexusCipher
+displayName: Find modules that declare the Sonatype Plexus cipher or security dispatcher
+description: >-
+  Marks the files of the modules that declare `org.sonatype.plexus:plexus-cipher` or
+  `org.sonatype.plexus:plexus-sec-dispatcher` as a dependency of their own, which move to the Codehaus 2.0 artifacts.
+recipeList:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: org.sonatype.plexus
+      artifactIdPattern: plexus-cipher
+      onlyDirect: true
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: org.sonatype.plexus
+      artifactIdPattern: plexus-sec-dispatcher
+      onlyDirect: true
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.ChangeSonatypePlexusCipherDependencies
+displayName: Change the Sonatype Plexus cipher and security dispatcher dependencies to their Codehaus 2.0 successors
+description: >-
+  Changes `org.sonatype.plexus:plexus-cipher` to `org.codehaus.plexus:plexus-cipher` 2.0 and
+  `org.sonatype.plexus:plexus-sec-dispatcher` to `org.codehaus.plexus:plexus-sec-dispatcher` 2.0 where a module declares
+  or manages them. A module that only excludes them, as it already uses their successors, is left alone.
+preconditions:
+  - org.openrewrite.codehaus.plexus.DeclaresSonatypePlexusCipher
+recipeList:
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.sonatype.plexus
+      oldArtifactId: plexus-cipher
+      newGroupId: org.codehaus.plexus
+      newArtifactId: plexus-cipher
+      newVersion: "2.0"
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.sonatype.plexus
+      oldArtifactId: plexus-sec-dispatcher
+      newGroupId: org.codehaus.plexus
+      newArtifactId: plexus-sec-dispatcher
+      newVersion: "2.0"
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.DeclaresSonatypePlexusCipher
+displayName: Find the build files that declare or manage the Sonatype Plexus cipher or security dispatcher
+description: >-
+  Marks the files of the modules that declare `org.sonatype.plexus:plexus-cipher` or
+  `org.sonatype.plexus:plexus-sec-dispatcher` as a dependency of their own, and the Maven poms that manage either.
+recipeList:
+  - org.openrewrite.codehaus.plexus.ModuleDeclaresSonatypePlexusCipher
+  - org.openrewrite.maven.search.FindManagedDependency:
+      groupId: org.sonatype.plexus
+      artifactId: plexus-cipher
+  - org.openrewrite.maven.search.FindManagedDependency:
+      groupId: org.sonatype.plexus
+      artifactId: plexus-sec-dispatcher
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.MigratePlexusCipherSources
+displayName: Migrate code to the API of `org.codehaus.plexus:plexus-cipher` 2.0
+description: >-
+  In the modules that move to `org.codehaus.plexus:plexus-cipher` 2.0, removes the `catch` of the
+  `PlexusCipherException` that the constructor of `DefaultPlexusCipher` no longer throws, and replaces the `ROLE`
+  constants that are gone.
+preconditions:
+  - org.openrewrite.codehaus.plexus.ModuleDeclaresSonatypePlexusCipher
+recipeList:
+  - org.openrewrite.codehaus.plexus.RemovePlexusCipherExceptionCatch
+  - org.openrewrite.codehaus.plexus.ReplacePlexusSecurityRoleConstants
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.MigratePlexusSecDispatcherSources
+displayName: Migrate code to the API of `org.codehaus.plexus:plexus-sec-dispatcher` 2.0
+description: >-
+  In the modules that move to `org.codehaus.plexus:plexus-sec-dispatcher` 2.0, passes the cipher to the constructor of
+  `DefaultSecDispatcher` and a message to the constructor of `SecDispatcherException`, as neither has one without
+  arguments anymore.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: org.sonatype.plexus
+      artifactIdPattern: plexus-sec-dispatcher
+      onlyDirect: true
+recipeList:
+  - org.openrewrite.codehaus.plexus.MigrateDefaultSecDispatcherConstructor
+  - org.openrewrite.codehaus.plexus.MigrateSecDispatcherExceptionConstructor
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.ExcludeSonatypePlexusCipher
+displayName: Exclude `org.sonatype.plexus:plexus-cipher` where its successor is declared
+description: >-
+  In the modules that declared `org.sonatype.plexus:plexus-cipher` or `org.sonatype.plexus:plexus-sec-dispatcher`,
+  excludes `org.sonatype.plexus:plexus-cipher` from the dependencies that still bring it, as its classes have the same
+  names as those of `org.codehaus.plexus:plexus-cipher`.
+preconditions:
+  - org.openrewrite.codehaus.plexus.ModuleDeclaresSonatypePlexusCipher
+recipeList:
+  - org.openrewrite.java.dependencies.ExcludeDependency:
+      groupId: org.sonatype.plexus
+      artifactId: plexus-cipher
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.openrewrite.codehaus.plexus.ExcludeSonatypePlexusSecDispatcher
+displayName: Exclude `org.sonatype.plexus:plexus-sec-dispatcher` where its successor is declared
+description: >-
+  In the modules that declared `org.sonatype.plexus:plexus-sec-dispatcher`, excludes it from the dependencies that still
+  bring it, as its classes have the same names as those of `org.codehaus.plexus:plexus-sec-dispatcher`.
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: org.sonatype.plexus
+      artifactIdPattern: plexus-sec-dispatcher
+      onlyDirect: true
+recipeList:
+  - org.openrewrite.java.dependencies.ExcludeDependency:
+      groupId: org.sonatype.plexus
+      artifactId: plexus-sec-dispatcher
