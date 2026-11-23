@@ -58,7 +58,7 @@ recipeList:
       artifactId: commons-lang3
       version: 3.x
       onlyIfUsing: org.apache.commons.lang..*
-      acceptTransitive: false
+      acceptTransitive: true
   # Commons Lang 3 has no `enums` package, so leave those types alone rather than invent a package
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.commons.lang

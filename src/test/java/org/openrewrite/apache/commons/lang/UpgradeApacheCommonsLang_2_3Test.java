@@ -520,6 +520,61 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     }
 
     @Test
+    void commonsLang3AlreadyOnTheClasspathIsNotRedeclared() {
+        // commons-text brings commons-lang3 in at compile scope, and a direct declaration could only narrow that
+        rewriteRun(
+          mavenProject("project",
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>commons-configuration</groupId>
+                            <artifactId>commons-configuration</artifactId>
+                            <version>1.10</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.commons</groupId>
+                            <artifactId>commons-text</artifactId>
+                            <version>1.10.0</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """
+            ),
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.lang3.StringUtils;
+
+                  class A {
+                      String f(String s) {
+                          return StringUtils.trim(s);
+                      }
+                  }
+                  """
+              )
+            )
+          )
+        );
+    }
+
+    @Test
     void toBooleanObjectOnPrimitiveHasNoLang3Equivalent() {
         rewriteRun(
           //language=java
