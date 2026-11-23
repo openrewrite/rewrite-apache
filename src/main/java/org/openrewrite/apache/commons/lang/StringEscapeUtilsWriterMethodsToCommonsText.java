@@ -88,15 +88,7 @@ public class StringEscapeUtilsWriterMethodsToCommonsText extends Recipe {
                 for (Map.Entry<MethodMatcher, String> e : matchers.entrySet()) {
                     if (e.getKey().matches(m) && m.getArguments().size() == 2) {
                         J replaced = JavaTemplate.builder(COMMONS_TEXT + "." + e.getValue() + ".translate(#{any(java.lang.String)}, #{any(java.io.Writer)})")
-                                .javaParser(JavaParser.fromJavaVersion().dependsOn(
-                                        "package org.apache.commons.text.translate;" +
-                                        "public abstract class CharSequenceTranslator {" +
-                                        "  public final void translate(CharSequence input, java.io.Writer writer) throws java.io.IOException {}" +
-                                        "}",
-                                        "package org.apache.commons.text;" +
-                                        "public class StringEscapeUtils {" +
-                                        TRANSLATOR_FIELDS +
-                                        "}"))
+                                .javaParser(JavaParser.fromJavaVersion().classpathFromResources(ctx, "commons-text"))
                                 .build()
                                 .apply(getCursor(), m.getCoordinates().replace(), m.getArguments().get(1), m.getArguments().get(0));
                         doAfterVisit(modifyOnly(replaced));
@@ -109,15 +101,5 @@ public class StringEscapeUtilsWriterMethodsToCommonsText extends Recipe {
                 return m;
             }
         });
-    }
-
-    private static final String TRANSLATOR_FIELDS;
-
-    static {
-        StringBuilder sb = new StringBuilder();
-        for (String constant : TRANSLATORS.values()) {
-            sb.append("public static final org.apache.commons.text.translate.CharSequenceTranslator ").append(constant).append(" = null;");
-        }
-        TRANSLATOR_FIELDS = sb.toString();
     }
 }
