@@ -45,6 +45,13 @@ recipeList:
       literal: false
       primitiveType: boolean
   - org.openrewrite.apache.commons.lang.WordUtilsToCommonsText
+  # Commons Lang 3 deprecates StringEscapeUtils in favor of Commons Text, which has the Writer variants it dropped
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.apache.commons
+      artifactId: commons-text
+      version: 1.x
+      onlyIfUsing: org.apache.commons.lang.StringEscapeUtils
+      acceptTransitive: true
   # Commons Lang 2 is often only transitive, so ChangeDependency has nothing to change
   - org.openrewrite.java.dependencies.AddDependency:
       groupId: org.apache.commons
@@ -124,6 +131,7 @@ recipeList:
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.StringEscapeUtils unescapeJavaScript(String)
       newMethodName: unescapeEcmaScript
+  - org.openrewrite.apache.commons.lang.StringEscapeUtilsWriterMethodsToCommonsText
   - org.openrewrite.apache.commons.lang.SystemUtilsIsJavaVersionAtLeastToJavaVersion
   - org.openrewrite.apache.commons.lang3.MigrateSystemUtilsDeprecations
   - org.openrewrite.apache.commons.lang3.UseStandardCharsets

@@ -430,6 +430,67 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     }
 
     @Test
+    void stringEscapeUtilsWriterMethodsMoveToCommonsText() {
+        rewriteRun(
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(false).build()),
+          mavenProject("project",
+            //language=xml
+            pomXml(
+              """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>org.example</groupId>
+                    <artifactId>example</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>commons-lang</groupId>
+                            <artifactId>commons-lang</artifactId>
+                            <version>2.6</version>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """,
+              spec -> spec.after(pom -> assertThat(pom)
+                .contains("<artifactId>commons-lang3</artifactId>")
+                .contains("<artifactId>commons-text</artifactId>")
+                .actual())
+            ),
+            srcMainJava(
+              //language=java
+              java(
+                """
+                  import org.apache.commons.lang.StringEscapeUtils;
+
+                  import java.io.IOException;
+                  import java.io.Writer;
+
+                  class A {
+                      void f(Writer out, String url) throws IOException {
+                          StringEscapeUtils.escapeXml(out, url);
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.commons.text.StringEscapeUtils;
+
+                  import java.io.IOException;
+                  import java.io.Writer;
+
+                  class A {
+                      void f(Writer out, String url) throws IOException {
+                          StringEscapeUtils.ESCAPE_XML10.translate(url, out);
+                      }
+                  }
+                  """
+              )
+            )
+          )
+        );
+    }
+
+    @Test
     void toBooleanObjectOnPrimitiveHasNoLang3Equivalent() {
         rewriteRun(
           //language=java
