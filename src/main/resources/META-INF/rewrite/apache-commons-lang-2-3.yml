@@ -65,9 +65,7 @@ recipeList:
       oldPackageName: org.apache.commons.lang
       newPackageName: org.apache.commons.lang3
       recursive: false
-  - org.openrewrite.java.search.FindTypes:
-      fullyQualifiedTypeName: org.apache.commons.lang.enums.*
-      checkAssignability: false
+  - org.openrewrite.apache.commons.lang.FindCommonsLangEnums
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.commons.lang.builder
       newPackageName: org.apache.commons.lang3.builder

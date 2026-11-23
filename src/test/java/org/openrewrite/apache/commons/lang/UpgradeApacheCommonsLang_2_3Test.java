@@ -511,7 +511,7 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
               import org.apache.commons.lang3.StringUtils;
               import org.apache.commons.lang.enums.Enum;
 
-              class Color extends /*~~>*/Enum {
+              class Color extends /*~~(Commons Lang 3 has no `enums` package; replace with a Java `enum`)~~>*/Enum {
                   Color(String name) {
                       super(StringUtils.trim(name));
                   }
