@@ -375,6 +375,61 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     }
 
     @Test
+    void fullyQualifiedUsagesAreMigrated() {
+        rewriteRun(
+          // ChangePackage keeps the Lang 2 parameter types of the method
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(false).build()),
+          //language=java
+          java(
+            """
+              class A {
+                  boolean f(String s) {
+                      return org.apache.commons.lang.StringUtils.containsIgnoreCase(s, "GET");
+                  }
+              }
+              """,
+            """
+              class A {
+                  boolean f(String s) {
+                      return org.apache.commons.lang3.StringUtils.containsIgnoreCase(s, "GET");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void escapeSqlWasRemovedSoDoubleTheQuotes() {
+        rewriteRun(
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder()
+            .parserTypedTrees(ParserTypes.Erasure).build()),
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.StringEscapeUtils;
+
+              class A {
+                  String f(String s) {
+                      return StringEscapeUtils.escapeSql(s);
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.lang3.StringUtils;
+
+              class A {
+                  String f(String s) {
+                      return StringUtils.replace(s, "'", "''");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void toBooleanObjectOnPrimitiveHasNoLang3Equivalent() {
         rewriteRun(
           //language=java
