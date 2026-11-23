@@ -35,6 +35,7 @@ import static org.openrewrite.java.Assertions.mavenProject;
 import static org.openrewrite.java.Assertions.srcMainJava;
 import static org.openrewrite.java.Assertions.version;
 import static org.openrewrite.maven.Assertions.pomXml;
+import static org.openrewrite.xml.Assertions.xml;
 
 class UpgradeApacheCommonsConfiguration_1_2Test implements RewriteTest {
 
@@ -959,6 +960,41 @@ class UpgradeApacheCommonsConfiguration_1_2Test implements RewriteTest {
     }
 
     @Nested
+    class SpringXml {
+
+        /**
+         * The package move renames the class of a bean. Constructor arguments are left as they are, so a bean that 1.x
+         * constructed from a file has to be created with a builder by hand.
+         */
+        @Test
+        void beanOfConfiguration1Class() {
+            rewriteRun(
+              mavenProject("example",
+                configurationPom(false),
+                //language=xml
+                xml(
+                  """
+                    <beans xmlns="http://www.springframework.org/schema/beans"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+                        <bean id="settings" class="org.apache.commons.configuration.PropertiesConfiguration"/>
+                    </beans>
+                    """,
+                  """
+                    <beans xmlns="http://www.springframework.org/schema/beans"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+                        <bean id="settings" class="org.apache.commons.configuration2.PropertiesConfiguration"/>
+                    </beans>
+                    """,
+                  spec -> spec.path("src/main/resources/beans.xml")
+                )
+              )
+            );
+        }
+    }
+
+    @Nested
     class Library {
 
         @Test
@@ -1278,6 +1314,72 @@ class UpgradeApacheCommonsConfiguration_1_2Test implements RewriteTest {
                       assertThat(minorVersion(pom, "commons-lang3")).isGreaterThanOrEqualTo(20);
                       return pom;
                   })
+                )
+              )
+            );
+        }
+
+        /**
+         * A module that gets Configuration 1.x through a library stays on it, and doesn't need what Configuration 2
+         * needs.
+         */
+        @Test
+        void moduleOnConfiguration1ThroughLibraryIsLeftAlone() {
+            rewriteRun(
+              mavenProject("store",
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>store</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>commons-configuration</groupId>
+                                <artifactId>commons-configuration</artifactId>
+                                <version>1.10</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """,
+                  spec -> spec.after(pom -> {
+                      assertThat(pom).contains("<artifactId>commons-configuration2</artifactId>");
+                      return pom;
+                  })
+                )
+              ),
+              mavenProject("metrics",
+                pomXml(
+                  //language=xml
+                  """
+                    <project>
+                        <modelVersion>4.0.0</modelVersion>
+                        <groupId>org.example</groupId>
+                        <artifactId>metrics</artifactId>
+                        <version>1.0.0</version>
+                        <dependencies>
+                            <!-- Brings commons-configuration 1.8 -->
+                            <dependency>
+                                <groupId>com.netflix.archaius</groupId>
+                                <artifactId>archaius-core</artifactId>
+                                <version>0.7.6</version>
+                            </dependency>
+                            <!-- Brings commons-lang3 3.5 -->
+                            <dependency>
+                                <groupId>org.apache.velocity</groupId>
+                                <artifactId>velocity-engine-core</artifactId>
+                                <version>2.0</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.commons</groupId>
+                                <artifactId>commons-lang3</artifactId>
+                                <version>3.17.0</version>
+                            </dependency>
+                        </dependencies>
+                    </project>
+                    """
                 )
               )
             );

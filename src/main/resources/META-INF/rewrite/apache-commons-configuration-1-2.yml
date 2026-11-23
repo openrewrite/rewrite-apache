@@ -170,55 +170,60 @@ name: org.openrewrite.apache.commons.configuration.UpgradeCommonsConfiguration2D
 displayName: Upgrade the Commons libraries that Commons Configuration 2.x needs
 description: >-
   Commons Configuration 2.x needs Commons Lang 3, Text and IO at least as recent as the versions it declares, where 1.x
-  needed none of them, and its builders need a Commons BeanUtils of 1.9 or later. A Maven build resolves an older one
-  instead when it is declared directly, comes from a dependency declared earlier, or is managed by a BOM such as Spring
-  Boot's. Configuration 2 then fails at runtime with a `NoClassDefFoundError` or `NoSuchMethodError` the first time a
-  configuration is created. This upgrades them to the versions that Commons Configuration 2.15.1 declares, in the
-  modules that depend on Commons Configuration 1.x.
-# Read from the build as it was, as the dependencies the migration changes are not resolved again where a build has a
-# dependency whose pom can't be downloaded
+  needed none of them, and its builders need a Commons BeanUtils of 1.9 or later. Maven resolves an older one instead
+  when it is declared directly, comes from a dependency declared earlier, or is managed by a BOM such as Spring Boot's.
+  Configuration 2 then fails at runtime with a `NoClassDefFoundError` or `NoSuchMethodError` the first time a
+  configuration is created. This upgrades them to the versions that Commons Configuration 2.15.1 declares, in the Maven
+  modules that the migration moved from Commons Configuration 1.x to 2.x. Gradle resolves the most recent version
+  already.
 preconditions:
+  # A module on Configuration 1.x, read from the build as it was
   - org.openrewrite.java.dependencies.search.ModuleHasDependency:
       groupIdPattern: commons-configuration
       artifactIdPattern: commons-configuration
+  # whose pom declares Configuration 2.x once the migration changed it. Read from the pom itself, as the migration's
+  # changes are not resolved again where a dependency's pom can't be downloaded. A module that gets Configuration 1.x
+  # through a library still on it is left alone.
+  - org.openrewrite.xml.search.FindTags:
+      xPath: /project/dependencies/dependency[artifactId='commons-configuration2']
 # The versions commons-configuration2 2.15.1 declares. A later release may need more recent ones, so raise them with it.
 recipeList:
-  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+  - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: org.apache.commons
       artifactId: commons-lang3
       newVersion: 3.20.0
       overrideManagedVersion: true
-  - org.openrewrite.java.dependencies.UpgradeTransitiveDependencyVersion:
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
       groupId: org.apache.commons
       artifactId: commons-lang3
       version: 3.20.0
       because: Commons Configuration 2 needs it
-  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+  - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: org.apache.commons
       artifactId: commons-text
       newVersion: 1.15.0
       overrideManagedVersion: true
-  - org.openrewrite.java.dependencies.UpgradeTransitiveDependencyVersion:
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
       groupId: org.apache.commons
       artifactId: commons-text
       version: 1.15.0
       because: Commons Configuration 2 needs it
-  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+  - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: commons-io
       artifactId: commons-io
       newVersion: 2.22.0
       overrideManagedVersion: true
-  - org.openrewrite.java.dependencies.UpgradeTransitiveDependencyVersion:
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
       groupId: commons-io
       artifactId: commons-io
       version: 2.22.0
       because: Commons Configuration 2 needs it
-  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+  - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: commons-beanutils
       artifactId: commons-beanutils
       newVersion: 1.11.0
       overrideManagedVersion: true
-  - org.openrewrite.java.dependencies.UpgradeTransitiveDependencyVersion:
+  - org.openrewrite.maven.UpgradeTransitiveDependencyVersion:
       groupId: commons-beanutils
       artifactId: commons-beanutils
       version: 1.11.0

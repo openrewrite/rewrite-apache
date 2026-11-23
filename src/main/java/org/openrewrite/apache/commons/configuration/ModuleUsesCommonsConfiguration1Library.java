@@ -115,7 +115,7 @@ public class ModuleUsesCommonsConfiguration1Library extends ScanningRecipe<Modul
     @Override
     public TreeVisitor<?, ExecutionContext> getScanner(Accumulator acc) {
         // A module can get 1.x types from a library without naming them, such as by calling a method on what it returns
-        return Preconditions.check(new UsesType<>(CONFIGURATION_1_PACKAGE + ".*", true), new JavaIsoVisitor<ExecutionContext>() {
+        JavaIsoVisitor<ExecutionContext> scanner = new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public @Nullable J visit(@Nullable Tree tree, ExecutionContext ctx) {
                 if (tree instanceof JavaSourceFile) {
@@ -192,6 +192,13 @@ public class ModuleUsesCommonsConfiguration1Library extends ScanningRecipe<Modul
                                     .computeIfAbsent(project, p -> new HashSet<>())
                                     .add(libraryType.getFullyQualifiedName()));
                 }
+            }
+        };
+        // Other sources name 1.x types too, such as the class of a bean in Spring XML, which UsesType finds
+        return Preconditions.check(new UsesType<>(CONFIGURATION_1_PACKAGE + ".*", true), new TreeVisitor<Tree, ExecutionContext>() {
+            @Override
+            public @Nullable Tree visit(@Nullable Tree tree, ExecutionContext ctx) {
+                return tree instanceof JavaSourceFile ? scanner.visit(tree, ctx) : tree;
             }
         });
     }
