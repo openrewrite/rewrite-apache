@@ -491,6 +491,35 @@ class UpgradeApacheCommonsLang_2_3Test implements RewriteTest {
     }
 
     @Test
+    void enumsPackageHasNoCommonsLang3Counterpart() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.commons.lang.StringUtils;
+              import org.apache.commons.lang.enums.Enum;
+
+              class Color extends Enum {
+                  Color(String name) {
+                      super(StringUtils.trim(name));
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.lang3.StringUtils;
+              import org.apache.commons.lang.enums.Enum;
+
+              class Color extends /*~~>*/Enum {
+                  Color(String name) {
+                      super(StringUtils.trim(name));
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void toBooleanObjectOnPrimitiveHasNoLang3Equivalent() {
         rewriteRun(
           //language=java

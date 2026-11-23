@@ -59,9 +59,41 @@ recipeList:
       version: 3.x
       onlyIfUsing: org.apache.commons.lang..*
       acceptTransitive: false
+  # Commons Lang 3 has no `enums` package, so leave those types alone rather than invent a package
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.apache.commons.lang
       newPackageName: org.apache.commons.lang3
+      recursive: false
+  - org.openrewrite.java.search.FindTypes:
+      fullyQualifiedTypeName: org.apache.commons.lang.enums.*
+      checkAssignability: false
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.builder
+      newPackageName: org.apache.commons.lang3.builder
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.exception
+      newPackageName: org.apache.commons.lang3.exception
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.math
+      newPackageName: org.apache.commons.lang3.math
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.mutable
+      newPackageName: org.apache.commons.lang3.mutable
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.reflect
+      newPackageName: org.apache.commons.lang3.reflect
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.text
+      newPackageName: org.apache.commons.lang3.text
+      recursive: true
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.apache.commons.lang.time
+      newPackageName: org.apache.commons.lang3.time
       recursive: true
   - org.openrewrite.java.ChangeMethodName:
       methodPattern: org.apache.commons.lang3.exception.ExceptionUtils getFullStackTrace(..)
