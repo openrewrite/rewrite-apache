@@ -41,6 +41,9 @@ preconditions:
 recipeList:
   - org.openrewrite.apache.httpclient4.UpgradeApacheHttpClient_4_5
   - org.openrewrite.apache.httpclient5.RemoveSettingsIgnoredWithConnectionManager
+  - org.openrewrite.java.ReplaceConstantWithAnotherConstant:
+      existingFullyQualifiedConstantName: org.apache.http.conn.ssl.SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER
+      fullyQualifiedConstantName: org.apache.http.conn.ssl.NoopHostnameVerifier.INSTANCE
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClientDependencies
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_AsyncClientClassMapping
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpCore_5_NioClassMapping
@@ -49,6 +52,7 @@ recipeList:
   - org.openrewrite.apache.httpclient5.UsernamePasswordCredentials
   - org.openrewrite.apache.httpclient5.StatusLine
   - org.openrewrite.apache.httpclient5.UpgradeApacheHttpClient_5_ClassMapping
+  - org.openrewrite.apache.httpclient5.MovePoolSettingsToConnectionManager
   - org.openrewrite.apache.httpclient5.AddHttpExceptionToResponseHandlers
   - org.openrewrite.apache.httpclient5.RetypeClassicRequestBuilderResults
   - org.openrewrite.apache.httpclient5.MigrateStringEntityContentEncoding

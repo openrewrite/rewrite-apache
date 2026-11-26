@@ -493,4 +493,38 @@ class MigrateSSLConnectionSocketFactoryTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void replaceAllowAllHostnameVerifier() {
+        rewriteRun(
+          // ChangePackage and ChangeType keep HttpClient 4's members on the types they rename
+          spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).build()),
+          //language=java
+          java(
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+
+              class A {
+                  SSLConnectionSocketFactory socketFactory(SSLContext sslContext) {
+                      return new SSLConnectionSocketFactory(sslContext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+              import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+
+              class A {
+                  SSLConnectionSocketFactory socketFactory(SSLContext sslContext) {
+                      return new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+                  }
+              }
+              """
+          )
+        );
+    }
 }
