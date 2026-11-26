@@ -65,12 +65,10 @@ class RemoveSettingsIgnoredWithConnectionManagerTest implements RewriteTest {
               import org.apache.hc.client5.http.config.RequestConfig;
               import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
               import org.apache.hc.client5.http.impl.classic.HttpClients;
-              import org.apache.hc.core5.http.io.SocketConfig;
               import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
               class A {
                   CloseableHttpClient open(PoolingHttpClientConnectionManager connectionManager, RequestConfig requestConfig) {
-                      SocketConfig socketConfig = SocketConfig.custom().setSoKeepAlive(true).build();
                       return HttpClients.custom().setConnectionManager(connectionManager)
                           .setDefaultRequestConfig(requestConfig).build();
                   }
@@ -110,6 +108,117 @@ class RemoveSettingsIgnoredWithConnectionManagerTest implements RewriteTest {
                       return HttpClientBuilder.create()
                           .setConnectionManager(connectionManager)
                           .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void removeLocalsLeftUnused() {
+        rewriteRun(
+          spec -> spec.recipe(new RemoveSettingsIgnoredWithConnectionManager()),
+          //language=java
+          java(
+            """
+              import org.apache.http.config.SocketConfig;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
+              class A {
+                  CloseableHttpClient open(PoolingHttpClientConnectionManager connectionManager) {
+                      SocketConfig socketConfig = SocketConfig.custom().setSoKeepAlive(true).build();
+                      int maxPerRoute = Integer.parseInt("5");
+                      connectionManager.setDefaultSocketConfig(socketConfig);
+                      return HttpClients.custom().setConnectionManager(connectionManager)
+                          .setDefaultSocketConfig(socketConfig).setMaxConnPerRoute(maxPerRoute).build();
+                  }
+              }
+              """,
+            """
+              import org.apache.http.config.SocketConfig;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
+              class A {
+                  CloseableHttpClient open(PoolingHttpClientConnectionManager connectionManager) {
+                      SocketConfig socketConfig = SocketConfig.custom().setSoKeepAlive(true).build();
+                      connectionManager.setDefaultSocketConfig(socketConfig);
+                      return HttpClients.custom().setConnectionManager(connectionManager).build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void removeLocalLeftUnusedInLambda() {
+        rewriteRun(
+          spec -> spec.recipe(new RemoveSettingsIgnoredWithConnectionManager()),
+          //language=java
+          java(
+            """
+              import java.util.function.Supplier;
+              import org.apache.http.config.SocketConfig;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
+              class A {
+                  final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+                  final Supplier<CloseableHttpClient> client = () -> {
+                      SocketConfig socketConfig = SocketConfig.custom().setSoKeepAlive(true).build();
+                      return HttpClients.custom().setConnectionManager(connectionManager).setDefaultSocketConfig(socketConfig).build();
+                  };
+              }
+              """,
+            """
+              import java.util.function.Supplier;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
+              class A {
+                  final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+                  final Supplier<CloseableHttpClient> client = () -> {
+                      return HttpClients.custom().setConnectionManager(connectionManager).build();
+                  };
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void removeImportOfDroppedArgument() {
+        rewriteRun(
+          spec -> spec.recipe(new RemoveSettingsIgnoredWithConnectionManager()),
+          //language=java
+          java(
+            """
+              import org.apache.http.conn.HttpClientConnectionManager;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClients;
+              import org.apache.http.impl.conn.SystemDefaultDnsResolver;
+
+              class A {
+                  CloseableHttpClient open(HttpClientConnectionManager connectionManager) {
+                      return HttpClients.custom().setDnsResolver(new SystemDefaultDnsResolver()).setConnectionManager(connectionManager).build();
+                  }
+              }
+              """,
+            """
+              import org.apache.http.conn.HttpClientConnectionManager;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClients;
+
+              class A {
+                  CloseableHttpClient open(HttpClientConnectionManager connectionManager) {
+                      return HttpClients.custom().setConnectionManager(connectionManager).build();
                   }
               }
               """

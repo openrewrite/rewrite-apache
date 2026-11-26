@@ -27,6 +27,8 @@ import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.TypeUtils;
+import org.openrewrite.staticanalysis.RemoveUnusedLocalVariables;
 
 import java.util.Arrays;
 import java.util.List;
@@ -46,22 +48,41 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             new MethodMatcher(BUILDER + " setConnectionTimeToLive(..)"),
             new MethodMatcher(BUILDER + " setDnsResolver(..)"));
 
+    private static final String DROPPED_LOCAL_ARGUMENT = "DROPPED_LOCAL_ARGUMENT";
+
     String displayName = "Remove `HttpClientBuilder` connection settings ignored next to `setConnectionManager`";
 
     String description = "HttpClient 4's `HttpClientBuilder` applies `setDefaultSocketConfig`, `setDefaultConnectionConfig`, " +
             "`setMaxConnTotal`, `setMaxConnPerRoute`, `setConnectionTimeToLive` and `setDnsResolver` only to the connection " +
             "manager it creates itself, so they have no effect when the same builder chain also calls `setConnectionManager`. " +
-            "HttpClient 5's `HttpClientBuilder` no longer has these methods; remove them from such chains.";
+            "HttpClient 5's `HttpClientBuilder` no longer has these methods; remove them from such chains, " +
+            "along with local variables that only held their arguments.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(new UsesMethod<>(SET_CONNECTION_MANAGER), new JavaVisitor<ExecutionContext>() {
+            @Override
+            public J visitBlock(J.Block block, ExecutionContext ctx) {
+                J b = super.visitBlock(block, ctx);
+                if (getCursor().pollMessage(DROPPED_LOCAL_ARGUMENT) != null) {
+                    // The dropped arguments are configuration values, typically built by side effect free builder chains
+                    return (J) new RemoveUnusedLocalVariables(null, null, true).getVisitor()
+                            .visitNonNull(b, ctx, getCursor().getParentOrThrow());
+                }
+                return b;
+            }
+
             @Override
             public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
                 if (m.getSelect() != null &&
                         IGNORED_WITH_CONNECTION_MANAGER.stream().anyMatch(matcher -> matcher.matches(m)) &&
                         chainSetsConnectionManager(m)) {
+                    m.getArguments().forEach(argument -> maybeRemoveImport(TypeUtils.asFullyQualified(argument.getType())));
+                    if (m.getArguments().stream().anyMatch(J.Identifier.class::isInstance)) {
+                        getCursor().dropParentUntil(p -> p instanceof J.Block || p == Cursor.ROOT_VALUE)
+                                .putMessage(DROPPED_LOCAL_ARGUMENT, true);
+                    }
                     return m.getSelect();
                 }
                 return m;
