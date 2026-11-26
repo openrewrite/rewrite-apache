@@ -119,6 +119,48 @@ class MovePoolSettingsToConnectionManagerTest implements RewriteTest {
     }
 
     @Test
+    void separateStatementsBesideOtherSettings() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.client.config.RequestConfig;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClientBuilder;
+              import org.apache.http.impl.client.HttpClients;
+
+              class A {
+                  CloseableHttpClient open(RequestConfig requestConfig) {
+                      HttpClientBuilder builder = HttpClients.custom().setUserAgent("agent");
+                      builder.setMaxConnTotal(100);
+                      builder.setDefaultRequestConfig(requestConfig);
+                      CloseableHttpClient client = builder.build();
+                      return client;
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.config.RequestConfig;
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+              import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+              import org.apache.hc.client5.http.impl.classic.HttpClients;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+
+              class A {
+                  CloseableHttpClient open(RequestConfig requestConfig) {
+                      HttpClientBuilder builder = HttpClients.custom().setUserAgent("agent");
+                      builder.setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create().setMaxConnTotal(100).build());
+                      builder.setDefaultRequestConfig(requestConfig);
+                      CloseableHttpClient client = builder.build();
+                      return client;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void replaceAllowAllHostnameVerifier() {
         rewriteRun(
           //language=java
@@ -176,6 +218,13 @@ class MovePoolSettingsToConnectionManagerTest implements RewriteTest {
                           builder.setMaxConnTotal(100);
                           return builder.build();
                       }
+
+                      CloseableHttpClient assigned(SSLContext sslContext) {
+                          HttpClientBuilder builder;
+                          builder = HttpClientBuilder.create().setSSLContext(sslContext);
+                          builder.setMaxConnTotal(100);
+                          return builder.build();
+                      }
                   }
                   """,
                 """
@@ -194,6 +243,13 @@ class MovePoolSettingsToConnectionManagerTest implements RewriteTest {
                           builder.setMaxConnTotal(100);
                           return builder.build();
                       }
+
+                      CloseableHttpClient assigned(SSLContext sslContext) {
+                          HttpClientBuilder builder;
+                          builder = HttpClientBuilder.create().setSSLContext(sslContext);
+                          builder.setMaxConnTotal(100);
+                          return builder.build();
+                      }
                   }
                   """
               )
@@ -208,28 +264,145 @@ class MovePoolSettingsToConnectionManagerTest implements RewriteTest {
               //language=java
               java(
                 """
+                  import org.apache.http.impl.client.CloseableHttpClient;
                   import org.apache.http.impl.client.HttpClientBuilder;
 
                   class A {
-                      HttpClientBuilder customize() {
+                      HttpClientBuilder newBuilder() {
+                          return HttpClientBuilder.create();
+                      }
+
+                      void configure(HttpClientBuilder builder) {
+                          builder.useSystemProperties();
+                      }
+
+                      HttpClientBuilder returnedChain() {
                           return HttpClientBuilder.create().setMaxConnTotal(100);
+                      }
+
+                      HttpClientBuilder returnedVariable() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          return builder;
                       }
 
                       void parameter(HttpClientBuilder builder) {
                           builder.setMaxConnTotal(100);
+                      }
+
+                      CloseableHttpClient fromOtherMethodChain() {
+                          return newBuilder().setMaxConnTotal(100).build();
+                      }
+
+                      CloseableHttpClient fromOtherMethodVariable() {
+                          HttpClientBuilder builder = newBuilder();
+                          builder.setMaxConnTotal(100);
+                          return builder.build();
+                      }
+
+                      CloseableHttpClient passedToOtherMethod() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          configure(builder);
+                          builder.setMaxConnTotal(100);
+                          return builder.build();
                       }
                   }
                   """,
                 """
+                  import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
                   import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 
                   class A {
-                      HttpClientBuilder customize() {
+                      HttpClientBuilder newBuilder() {
+                          return HttpClientBuilder.create();
+                      }
+
+                      void configure(HttpClientBuilder builder) {
+                          builder.useSystemProperties();
+                      }
+
+                      HttpClientBuilder returnedChain() {
                           return HttpClientBuilder.create().setMaxConnTotal(100);
+                      }
+
+                      HttpClientBuilder returnedVariable() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          return builder;
                       }
 
                       void parameter(HttpClientBuilder builder) {
                           builder.setMaxConnTotal(100);
+                      }
+
+                      CloseableHttpClient fromOtherMethodChain() {
+                          return newBuilder().setMaxConnTotal(100).build();
+                      }
+
+                      CloseableHttpClient fromOtherMethodVariable() {
+                          HttpClientBuilder builder = newBuilder();
+                          builder.setMaxConnTotal(100);
+                          return builder.build();
+                      }
+
+                      CloseableHttpClient passedToOtherMethod() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          configure(builder);
+                          builder.setMaxConnTotal(100);
+                          return builder.build();
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void poolSettingsOutsideTheSeparateStatements() {
+            rewriteRun(
+              // The pool settings stay, so the output still has to be finished by hand
+              spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).compilableOutput(false).build()),
+              //language=java
+              java(
+                """
+                  import org.apache.http.impl.client.CloseableHttpClient;
+                  import org.apache.http.impl.client.HttpClientBuilder;
+
+                  class A {
+                      CloseableHttpClient initializer() {
+                          HttpClientBuilder builder = HttpClientBuilder.create().setMaxConnTotal(100);
+                          builder.setMaxConnPerRoute(5);
+                          return builder.build();
+                      }
+
+                      CloseableHttpClient nested(boolean perRoute) {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          if (perRoute) {
+                              builder.setMaxConnPerRoute(5);
+                          }
+                          return builder.build();
+                      }
+                  }
+                  """,
+                """
+                  import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+                  import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+
+                  class A {
+                      CloseableHttpClient initializer() {
+                          HttpClientBuilder builder = HttpClientBuilder.create().setMaxConnTotal(100);
+                          builder.setMaxConnPerRoute(5);
+                          return builder.build();
+                      }
+
+                      CloseableHttpClient nested(boolean perRoute) {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          if (perRoute) {
+                              builder.setMaxConnPerRoute(5);
+                          }
+                          return builder.build();
                       }
                   }
                   """

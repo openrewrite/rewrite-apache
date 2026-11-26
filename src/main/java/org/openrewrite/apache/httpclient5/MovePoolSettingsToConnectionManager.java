@@ -43,6 +43,8 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
     private static final String BUILDER = "org.apache.hc.client5.http.impl.classic.HttpClientBuilder";
     private static final String POOL_BUILDER = "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder";
     private static final MethodMatcher BUILD = new MethodMatcher(BUILDER + " build()");
+    private static final MethodMatcher CREATE = new MethodMatcher(BUILDER + " create()");
+    private static final MethodMatcher CUSTOM = new MethodMatcher("org.apache.hc.client5.http.impl.classic.HttpClients custom()");
 
     // HttpClient 4 settings that HttpClient 5 has on PoolingHttpClientConnectionManagerBuilder, with their argument types there
     private static final Map<String, String> POOL_SETTINGS = new LinkedHashMap<>();
@@ -77,7 +79,8 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
             "`setDefaultSocketConfig` and `setDnsResolver` to the connection manager it creates when none is set. " +
             "HttpClient 5's `HttpClientBuilder` no longer has these methods; set them on a " +
             "`PoolingHttpClientConnectionManagerBuilder` passed to `setConnectionManager` instead. This covers fluent " +
-            "chains ending in `build()` and separate statements on a local builder variable. Builders that also set a " +
+            "chains from `HttpClientBuilder.create()` or `HttpClients.custom()` to `build()`, and separate statements " +
+            "on a local builder that is created, configured and built in the same block. Builders that also set a " +
             "connection manager, TLS settings, a connection config, a time to live or use system properties are left " +
             "unchanged.";
 
@@ -101,7 +104,7 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                 return moveInChain(method, ctx);
             }
 
-            // builder.setMaxConnTotal(100); as separate statements on a builder declared in the same block
+            // builder.setMaxConnTotal(100); as separate statements on a builder created, configured and built in the same block
             private @Nullable J moveStatement(J.MethodInvocation method, J.Block block, ExecutionContext ctx) {
                 J.Identifier builder = (J.Identifier) method.getSelect();
                 List<J.MethodInvocation> group = new ArrayList<>();
@@ -111,7 +114,7 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                         group.add((J.MethodInvocation) statement);
                     }
                 }
-                if (!isDeclaredIn(builder, block) || usesOtherConnectionManagerInputs(block, builder)) {
+                if (!isCreatedIn(builder, block) || !isOnlyConfiguredAndBuiltIn(block, builder, group)) {
                     return method;
                 }
                 if (group.get(group.size() - 1) != method) {
@@ -132,7 +135,7 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                 }
                 // The last pool setting of a chain that creates and builds the client takes the connection manager
                 if (settings.get(settings.size() - 1) != method || !BUILD.matches(chain.get(chain.size() - 1)) ||
-                        startsFromBuilderVariable(method) ||
+                        !createsBuilder(chain.get(0)) ||
                         chain.stream().anyMatch(MovePoolSettingsToConnectionManager::isOtherConnectionManagerInput)) {
                     return super.visitMethodInvocation(method, ctx);
                 }
@@ -181,14 +184,6 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                 return new ArrayList<>(chain);
             }
 
-            private boolean startsFromBuilderVariable(J.MethodInvocation method) {
-                J.MethodInvocation innermost = method;
-                while (innermost.getSelect() instanceof J.MethodInvocation) {
-                    innermost = (J.MethodInvocation) innermost.getSelect();
-                }
-                return isVariable(innermost.getSelect());
-            }
-
             private @Nullable Expression withoutPoolSettings(@Nullable Expression select) {
                 if (!(select instanceof J.MethodInvocation)) {
                     return select;
@@ -200,29 +195,35 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                 return m.withSelect(withoutPoolSettings(m.getSelect()));
             }
 
-            private boolean usesOtherConnectionManagerInputs(J.Block block, J.Identifier builder) {
-                return new JavaIsoVisitor<AtomicBoolean>() {
+            private boolean isOnlyConfiguredAndBuiltIn(J.Block block, J.Identifier builder, List<J.MethodInvocation> poolSettings) {
+                AtomicBoolean built = new AtomicBoolean();
+                boolean usedOtherwise = new JavaIsoVisitor<AtomicBoolean>() {
                     @Override
                     public J.MethodInvocation visitMethodInvocation(J.MethodInvocation m, AtomicBoolean found) {
-                        if (isOtherConnectionManagerInput(m) &&
-                                (isSameVariable(innermostSelect(m), builder) || initializes(m, builder))) {
-                            found.set(true);
+                        if (isSameVariable(innermostSelect(m), builder)) {
+                            if (BUILD.matches(m)) {
+                                built.set(true);
+                            } else if (isOtherConnectionManagerInput(m) ||
+                                    isPoolSetting(m) && poolSettings.stream().noneMatch(setting -> setting == m)) {
+                                found.set(true);
+                            }
                         }
                         return super.visitMethodInvocation(m, found);
                     }
 
-                    private boolean initializes(J.MethodInvocation m, J.Identifier builder) {
-                        // Part of the initializer of the builder variable, e.g. HttpClientBuilder.create().setSSLContext(..)
-                        for (Cursor c = getCursor().getParentTreeCursor(); !(c.getValue() instanceof J.Block);
-                             c = c.getParentTreeCursor()) {
-                            if (c.getValue() instanceof J.VariableDeclarations.NamedVariable) {
-                                return ((J.VariableDeclarations.NamedVariable) c.getValue()).getName().getSimpleName()
-                                        .equals(builder.getSimpleName());
-                            }
+                    @Override
+                    public J.Identifier visitIdentifier(J.Identifier identifier, AtomicBoolean found) {
+                        // Passed, returned or reassigned, so it may be configured where this recipe cannot see
+                        Object parent = getCursor().getParentTreeCursor().getValue();
+                        if (isSameVariable(identifier, builder) &&
+                                !(parent instanceof J.VariableDeclarations.NamedVariable) &&
+                                !(parent instanceof J.MethodInvocation && ((J.MethodInvocation) parent).getSelect() == identifier)) {
+                            found.set(true);
                         }
-                        return false;
+                        return super.visitIdentifier(identifier, found);
                     }
-                }.reduce(block, new AtomicBoolean(), getCursor().getParentOrThrow()).get();
+                }.reduce(block, new AtomicBoolean(), getCursor().getParentTreeCursor().getParentOrThrow()).get();
+                return built.get() && !usedOtherwise;
             }
         });
     }
@@ -243,26 +244,33 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
         return e;
     }
 
-    private static boolean isVariable(@Nullable Expression e) {
-        if (e instanceof J.FieldAccess) {
-            return ((J.FieldAccess) e).getName().getFieldType() != null;
-        }
-        return e instanceof J.Identifier && ((J.Identifier) e).getFieldType() != null;
-    }
-
     private static boolean isSameVariable(@Nullable Expression e, J.Identifier builder) {
         return e instanceof J.Identifier && ((J.Identifier) e).getSimpleName().equals(builder.getSimpleName()) &&
                 Objects.equals(((J.Identifier) e).getFieldType(), builder.getFieldType());
     }
 
-    private static boolean isDeclaredIn(J.Identifier builder, J.Block block) {
+    private static boolean isCreatedIn(J.Identifier builder, J.Block block) {
         for (Statement statement : block.getStatements()) {
             if (statement instanceof J.VariableDeclarations) {
                 for (J.VariableDeclarations.NamedVariable variable : ((J.VariableDeclarations) statement).getVariables()) {
-                    if (variable.getSimpleName().equals(builder.getSimpleName())) {
-                        return true;
+                    if (isSameVariable(variable.getName(), builder)) {
+                        return createsBuilder(variable.getInitializer());
                     }
                 }
+            }
+        }
+        return false;
+    }
+
+    // HttpClientBuilder.create() or HttpClients.custom(), possibly followed by settings that do not go into the connection manager
+    private static boolean createsBuilder(@Nullable Expression e) {
+        for (; e instanceof J.MethodInvocation; e = ((J.MethodInvocation) e).getSelect()) {
+            J.MethodInvocation m = (J.MethodInvocation) e;
+            if (CREATE.matches(m) || CUSTOM.matches(m)) {
+                return true;
+            }
+            if (isPoolSetting(m) || isOtherConnectionManagerInput(m)) {
+                return false;
             }
         }
         return false;
