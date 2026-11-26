@@ -160,6 +160,41 @@ class MovePoolSettingsToConnectionManagerTest implements RewriteTest {
         );
     }
 
+    @Test
+    void unusedBuilder() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClientBuilder;
+
+              class A {
+                  CloseableHttpClient open() {
+                      HttpClientBuilder builder = HttpClientBuilder.create();
+                      builder.setMaxConnPerRoute(50);
+                      builder.setMaxConnTotal(100);
+                      return HttpClientBuilder.create().build();
+                  }
+              }
+              """,
+            """
+              import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+              import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+              import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+
+              class A {
+                  CloseableHttpClient open() {
+                      HttpClientBuilder builder = HttpClientBuilder.create();
+                      builder.setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create().setMaxConnPerRoute(50).setMaxConnTotal(100).build());
+                      return HttpClientBuilder.create().build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Nested
     class NoChange {
 
@@ -371,6 +406,85 @@ class MovePoolSettingsToConnectionManagerTest implements RewriteTest {
                               builder.setMaxConnPerRoute(5);
                           }
                           return builder.build();
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void builderEscapingWithoutBuild() {
+            rewriteRun(
+              // The pool settings stay, so the output still has to be finished by hand
+              spec -> spec.recipeQualityValidation(RecipeQualityValidation.builder().parserTypedTrees(false).compilableOutput(false).build()),
+              //language=java
+              java(
+                """
+                  import java.util.List;
+                  import java.util.function.Consumer;
+
+                  import org.apache.http.impl.client.HttpClientBuilder;
+
+                  class A {
+                      HttpClientBuilder field;
+
+                      void assignedToField() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          field = builder;
+                      }
+
+                      void addedToList(List<HttpClientBuilder> builders) {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          builders.add(builder);
+                      }
+
+                      Runnable capturedInLambda() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          return () -> builder.useSystemProperties();
+                      }
+
+                      void handedToConsumer(Consumer<HttpClientBuilder> consumer) {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          consumer.accept(builder);
+                      }
+                  }
+                  """,
+                """
+                  import java.util.List;
+                  import java.util.function.Consumer;
+
+                  import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+
+                  class A {
+                      HttpClientBuilder field;
+
+                      void assignedToField() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          field = builder;
+                      }
+
+                      void addedToList(List<HttpClientBuilder> builders) {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          builders.add(builder);
+                      }
+
+                      Runnable capturedInLambda() {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          return () -> builder.useSystemProperties();
+                      }
+
+                      void handedToConsumer(Consumer<HttpClientBuilder> consumer) {
+                          HttpClientBuilder builder = HttpClientBuilder.create();
+                          builder.setMaxConnTotal(100);
+                          consumer.accept(builder);
                       }
                   }
                   """

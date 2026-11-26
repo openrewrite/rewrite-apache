@@ -80,9 +80,9 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
             "HttpClient 5's `HttpClientBuilder` no longer has these methods; set them on a " +
             "`PoolingHttpClientConnectionManagerBuilder` passed to `setConnectionManager` instead. This covers fluent " +
             "chains from `HttpClientBuilder.create()` or `HttpClients.custom()` to `build()`, and separate statements " +
-            "on a local builder that is created, configured and built in the same block. Builders that also set a " +
-            "connection manager, TLS settings, a connection config, a time to live or use system properties are left " +
-            "unchanged.";
+            "on a local builder that is created in the same block and not passed, returned or reassigned. Builders " +
+            "that also set a connection manager, TLS settings, a connection config, a time to live or use system " +
+            "properties are left unchanged.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -104,7 +104,7 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                 return moveInChain(method, ctx);
             }
 
-            // builder.setMaxConnTotal(100); as separate statements on a builder created, configured and built in the same block
+            // builder.setMaxConnTotal(100); as separate statements on a builder created in the same block and only called there
             private @Nullable J moveStatement(J.MethodInvocation method, J.Block block, ExecutionContext ctx) {
                 J.Identifier builder = (J.Identifier) method.getSelect();
                 List<J.MethodInvocation> group = new ArrayList<>();
@@ -114,7 +114,7 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                         group.add((J.MethodInvocation) statement);
                     }
                 }
-                if (!isCreatedIn(builder, block) || !isOnlyConfiguredAndBuiltIn(block, builder, group)) {
+                if (!isCreatedIn(builder, block) || !isOnlyConfiguredIn(block, builder, group)) {
                     return method;
                 }
                 if (group.get(group.size() - 1) != method) {
@@ -195,18 +195,13 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                 return m.withSelect(withoutPoolSettings(m.getSelect()));
             }
 
-            private boolean isOnlyConfiguredAndBuiltIn(J.Block block, J.Identifier builder, List<J.MethodInvocation> poolSettings) {
-                AtomicBoolean built = new AtomicBoolean();
-                boolean usedOtherwise = new JavaIsoVisitor<AtomicBoolean>() {
+            private boolean isOnlyConfiguredIn(J.Block block, J.Identifier builder, List<J.MethodInvocation> poolSettings) {
+                return !new JavaIsoVisitor<AtomicBoolean>() {
                     @Override
                     public J.MethodInvocation visitMethodInvocation(J.MethodInvocation m, AtomicBoolean found) {
-                        if (isSameVariable(innermostSelect(m), builder)) {
-                            if (BUILD.matches(m)) {
-                                built.set(true);
-                            } else if (isOtherConnectionManagerInput(m) ||
-                                    isPoolSetting(m) && poolSettings.stream().noneMatch(setting -> setting == m)) {
-                                found.set(true);
-                            }
+                        if (isSameVariable(innermostSelect(m), builder) && (isOtherConnectionManagerInput(m) ||
+                                isPoolSetting(m) && poolSettings.stream().noneMatch(setting -> setting == m))) {
+                            found.set(true);
                         }
                         return super.visitMethodInvocation(m, found);
                     }
@@ -223,7 +218,6 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
                         return super.visitIdentifier(identifier, found);
                     }
                 }.reduce(block, new AtomicBoolean(), getCursor().getParentTreeCursor().getParentOrThrow()).get();
-                return built.get() && !usedOtherwise;
             }
         });
     }
