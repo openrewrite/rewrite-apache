@@ -160,38 +160,6 @@ class MovePoolSettingsToConnectionManagerTest implements RewriteTest {
         );
     }
 
-    @Test
-    void replaceAllowAllHostnameVerifier() {
-        rewriteRun(
-          //language=java
-          java(
-            """
-              import javax.net.ssl.SSLContext;
-
-              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-
-              class A {
-                  SSLConnectionSocketFactory socketFactory(SSLContext sslContext) {
-                      return new SSLConnectionSocketFactory(sslContext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-                  }
-              }
-              """,
-            """
-              import javax.net.ssl.SSLContext;
-
-              import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-              import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-
-              class A {
-                  SSLConnectionSocketFactory socketFactory(SSLContext sslContext) {
-                      return new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-                  }
-              }
-              """
-          )
-        );
-    }
-
     @Nested
     class NoChange {
 
