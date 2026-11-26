@@ -21,17 +21,23 @@ import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
+import org.openrewrite.SourceFile;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.internal.ListUtils;
+import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.Statement;
 import org.openrewrite.java.tree.TypeUtils;
 import org.openrewrite.staticanalysis.RemoveUnusedLocalVariables;
+import org.openrewrite.trait.Comments;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+
+import static java.util.Collections.emptySet;
 
 @EqualsAndHashCode(callSuper = false)
 @Value
@@ -47,6 +53,15 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             new MethodMatcher(BUILDER + " setMaxConnPerRoute(..)"),
             new MethodMatcher(BUILDER + " setConnectionTimeToLive(..)"),
             new MethodMatcher(BUILDER + " setDnsResolver(..)"));
+    // Ignored the same way, but likely meant to take effect, so their removal is flagged and their arguments are kept
+    private static final List<MethodMatcher> TLS_IGNORED_WITH_CONNECTION_MANAGER = Arrays.asList(
+            new MethodMatcher(BUILDER + " setSSLContext(..)"),
+            new MethodMatcher(BUILDER + " setSslcontext(..)"),
+            new MethodMatcher(BUILDER + " setSSLSocketFactory(..)"),
+            new MethodMatcher(BUILDER + " setSSLHostnameVerifier(..)"),
+            new MethodMatcher(BUILDER + " setHostnameVerifier(..)"));
+    private static final String TLS_SETTINGS_REMOVED = "TLS_SETTINGS_REMOVED";
+    private static final String TLS_ARGUMENTS = "TLS_ARGUMENTS";
 
     String displayName = "Remove `HttpClientBuilder` connection settings ignored next to `setConnectionManager`";
 
@@ -54,7 +69,9 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             "`setMaxConnTotal`, `setMaxConnPerRoute`, `setConnectionTimeToLive` and `setDnsResolver` only to the connection " +
             "manager it creates itself, so they have no effect when the same builder chain also calls `setConnectionManager`. " +
             "HttpClient 5's `HttpClientBuilder` no longer has these methods; remove them from such chains, " +
-            "along with local variables that only held their arguments.";
+            "along with local variables that only held their arguments. The TLS settings `setSSLContext`, " +
+            "`setSSLSocketFactory`, `setSSLHostnameVerifier` and `setHostnameVerifier` are ignored the same way; they " +
+            "are removed too, with a TODO comment, and the local variables they used are kept.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
@@ -63,23 +80,68 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             public J visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
                 J md = super.visitMethodDeclaration(method, ctx);
                 if (md != method) {
+                    Set<String> tlsArguments = getCursor().getMessage(TLS_ARGUMENTS, emptySet());
                     // The dropped arguments are configuration values, typically built by side effect free builder chains
-                    return (J) new RemoveUnusedLocalVariables(null, null, true).getVisitor()
+                    return (J) new RemoveUnusedLocalVariables(tlsArguments.toArray(new String[0]), null, true).getVisitor()
                             .visitNonNull(md, ctx, getCursor().getParentOrThrow());
                 }
                 return md;
             }
 
             @Override
+            public J visitBlock(J.Block block, ExecutionContext ctx) {
+                J.Block b = (J.Block) super.visitBlock(block, ctx);
+                Map<UUID, Set<String>> removed = getCursor().getMessage(TLS_SETTINGS_REMOVED);
+                if (removed == null) {
+                    return b;
+                }
+                return b.withStatements(ListUtils.map(b.getStatements(), statement -> {
+                    Set<String> names = removed.get(statement.getId());
+                    return names == null ? statement : Comments.of(new Cursor(getCursor(), statement)).<Statement>comment(
+                            " TODO: HttpClient 4 ignored " + String.join(", ", names) + " next to setConnectionManager; " +
+                            "configure TLS on that connection manager if it should apply");
+                }));
+            }
+
+            @Override
             public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = (J.MethodInvocation) super.visitMethodInvocation(method, ctx);
-                if (m.getSelect() != null &&
-                        IGNORED_WITH_CONNECTION_MANAGER.stream().anyMatch(matcher -> matcher.matches(m)) &&
-                        chainSetsConnectionManager(m)) {
-                    m.getArguments().forEach(argument -> maybeRemoveImport(TypeUtils.asFullyQualified(argument.getType())));
-                    return m.getSelect();
+                boolean tls = TLS_IGNORED_WITH_CONNECTION_MANAGER.stream().anyMatch(matcher -> matcher.matches(m));
+                if (m.getSelect() == null ||
+                        !(tls || IGNORED_WITH_CONNECTION_MANAGER.stream().anyMatch(matcher -> matcher.matches(m))) ||
+                        !chainSetsConnectionManager(m)) {
+                    return m;
                 }
-                return m;
+                if (tls) {
+                    flagRemovedTlsSetting(m);
+                } else {
+                    m.getArguments().forEach(argument -> maybeRemoveImport(TypeUtils.asFullyQualified(argument.getType())));
+                }
+                return m.getSelect();
+            }
+
+            private void flagRemovedTlsSetting(J.MethodInvocation m) {
+                for (Cursor statement = getCursor(); !(statement.getValue() instanceof SourceFile);
+                     statement = statement.getParentTreeCursor()) {
+                    Cursor block = statement.getParentTreeCursor();
+                    if (block.getValue() instanceof J.Block) {
+                        block.<Map<UUID, Set<String>>>computeMessageIfAbsent(TLS_SETTINGS_REMOVED, k -> new HashMap<>())
+                                .computeIfAbsent(((J) statement.getValue()).getId(), k -> new LinkedHashSet<>())
+                                .add(m.getSimpleName());
+                        break;
+                    }
+                }
+                Cursor methodDeclaration = getCursor().dropParentUntil(c -> c instanceof J.MethodDeclaration || c == Cursor.ROOT_VALUE);
+                if (methodDeclaration.getValue() instanceof J.MethodDeclaration) {
+                    Set<String> tlsArguments = methodDeclaration.computeMessageIfAbsent(TLS_ARGUMENTS, k -> new HashSet<>());
+                    new JavaIsoVisitor<Set<String>>() {
+                        @Override
+                        public J.Identifier visitIdentifier(J.Identifier identifier, Set<String> names) {
+                            names.add(identifier.getSimpleName());
+                            return identifier;
+                        }
+                    }.visit(m.getArguments().get(0), tlsArguments);
+                }
             }
 
             private boolean chainSetsConnectionManager(J.MethodInvocation m) {
