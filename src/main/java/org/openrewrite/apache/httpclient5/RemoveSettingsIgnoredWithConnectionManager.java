@@ -60,15 +60,14 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(new UsesMethod<>(SET_CONNECTION_MANAGER), new JavaVisitor<ExecutionContext>() {
             @Override
-            public J visitBlock(J.Block block, ExecutionContext ctx) {
-                J b = super.visitBlock(block, ctx);
-                Object parent = getCursor().getParentTreeCursor().getValue();
-                if (b != block && !(parent instanceof J.ClassDeclaration || parent instanceof J.NewClass)) {
+            public J visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
+                J md = super.visitMethodDeclaration(method, ctx);
+                if (md != method) {
                     // The dropped arguments are configuration values, typically built by side effect free builder chains
                     return (J) new RemoveUnusedLocalVariables(null, null, true).getVisitor()
-                            .visitNonNull(b, ctx, getCursor().getParentOrThrow());
+                            .visitNonNull(md, ctx, getCursor().getParentOrThrow());
                 }
-                return b;
+                return md;
             }
 
             @Override

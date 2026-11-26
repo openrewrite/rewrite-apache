@@ -169,11 +169,12 @@ class RemoveSettingsIgnoredWithConnectionManagerTest implements RewriteTest {
               import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
               class A {
-                  final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-                  final Supplier<CloseableHttpClient> client = () -> {
-                      SocketConfig socketConfig = SocketConfig.custom().setSoKeepAlive(true).build();
-                      return HttpClients.custom().setConnectionManager(connectionManager).setDefaultSocketConfig(socketConfig).build();
-                  };
+                  Supplier<CloseableHttpClient> open(PoolingHttpClientConnectionManager connectionManager) {
+                      return () -> {
+                          SocketConfig socketConfig = SocketConfig.custom().setSoKeepAlive(true).build();
+                          return HttpClients.custom().setConnectionManager(connectionManager).setDefaultSocketConfig(socketConfig).build();
+                      };
+                  }
               }
               """,
             """
@@ -183,10 +184,11 @@ class RemoveSettingsIgnoredWithConnectionManagerTest implements RewriteTest {
               import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
               class A {
-                  final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-                  final Supplier<CloseableHttpClient> client = () -> {
-                      return HttpClients.custom().setConnectionManager(connectionManager).build();
-                  };
+                  Supplier<CloseableHttpClient> open(PoolingHttpClientConnectionManager connectionManager) {
+                      return () -> {
+                          return HttpClients.custom().setConnectionManager(connectionManager).build();
+                      };
+                  }
               }
               """
           )
