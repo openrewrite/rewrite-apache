@@ -15,6 +15,7 @@
  */
 package org.openrewrite.apache.commons.collections;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -171,24 +172,6 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
         );
     }
 
-    @Test
-    void iterableOfATypeVariableBoundedByAWildcardIsLeftAlone() {
-        rewriteRun(
-          // javac can't infer frequency's type arguments from W
-          java(
-            """
-              import org.apache.commons.collections4.CollectionUtils;
-
-              class A {
-                  <W extends Iterable<? super String>> int count(String value, W values) {
-                      return CollectionUtils.cardinality(value, values);
-                  }
-              }
-              """
-          )
-        );
-    }
-
     @ParameterizedTest
     @ValueSource(strings = {"java.util.List<Object>", "java.util.Set<Object>", "org.apache.commons.collections4.Bag<Object>",
       "Iterable<? super String>", "Iterable"})
@@ -301,69 +284,6 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
               CollectionUtils qualifier() { throw new IllegalStateException(); }
           }
           """.formatted(invocation)));
-    }
-
-    @Test
-    void retainClassNameShadowedByLocalVariable() {
-        rewriteRun(java(
-          """
-          import org.apache.commons.collections4.CollectionUtils;
-
-          class A {
-              int count(Object value, Iterable<Object> values) {
-                  CollectionUtils CollectionUtils = null;
-                  return CollectionUtils.cardinality(value, values);
-              }
-          }
-          """));
-    }
-
-    @Test
-    void retainMemberReferencesIncludingSameTypedParameters() {
-        rewriteRun(java(
-          """
-          import org.apache.commons.collections4.CollectionUtils;
-
-          import java.util.function.ToIntBiFunction;
-
-          class A {
-              ToIntBiFunction<String, Iterable<? super String>> distinct = CollectionUtils::cardinality;
-              ToIntBiFunction<Iterable<Object>, Iterable<Object>> same = CollectionUtils::cardinality;
-          }
-          """));
-    }
-
-    @Test
-    void retainUnrelatedOverloadAndExistingFrequency() {
-        rewriteRun(java(
-          """
-          import org.apache.commons.collections4.IterableUtils;
-
-          class A {
-              int cardinality(Object value, Iterable<Object> values) { return 42; }
-              int count(Object value, Iterable<Object> values) {
-                  return cardinality(value, values) + IterableUtils.frequency(values, value);
-              }
-          }
-          """));
-    }
-
-    @Test
-    void retainCommonsCollections3() {
-        rewriteRun(
-          spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-collections-3")),
-          java(
-            """
-            import org.apache.commons.collections.CollectionUtils;
-
-            class A {
-                int count(String value, java.util.Collection<String> values) {
-                    return CollectionUtils.cardinality(value, values);
-                }
-            }
-            """
-          )
-        );
     }
 
     @CsvSource({
@@ -501,5 +421,90 @@ class CollectionUtilsCardinalityToFrequencyTest implements RewriteTest {
           .replace("CollectionUtils.cardinality(null, values)", "IterableUtils.frequency(Objects.requireNonNull(values), null)")
           .replace("CollectionUtils.cardinality(\"x\", missing)", "IterableUtils.frequency(Objects.requireNonNull(missing), \"x\")");
         rewriteRun(java(before, expected));
+    }
+
+    @Nested
+    class NoChange {
+
+        @Test
+        void iterableOfATypeVariableBoundedByAWildcardIsLeftAlone() {
+            rewriteRun(
+              // javac can't infer frequency's type arguments from W
+              java(
+                """
+                  import org.apache.commons.collections4.CollectionUtils;
+
+                  class A {
+                      <W extends Iterable<? super String>> int count(String value, W values) {
+                          return CollectionUtils.cardinality(value, values);
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void retainClassNameShadowedByLocalVariable() {
+            rewriteRun(java(
+              """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              class A {
+                  int count(Object value, Iterable<Object> values) {
+                      CollectionUtils CollectionUtils = null;
+                      return CollectionUtils.cardinality(value, values);
+                  }
+              }
+              """));
+        }
+
+        @Test
+        void retainMemberReferencesIncludingSameTypedParameters() {
+            rewriteRun(java(
+              """
+              import org.apache.commons.collections4.CollectionUtils;
+
+              import java.util.function.ToIntBiFunction;
+
+              class A {
+                  ToIntBiFunction<String, Iterable<? super String>> distinct = CollectionUtils::cardinality;
+                  ToIntBiFunction<Iterable<Object>, Iterable<Object>> same = CollectionUtils::cardinality;
+              }
+              """));
+        }
+
+        @Test
+        void retainUnrelatedOverloadAndExistingFrequency() {
+            rewriteRun(java(
+              """
+              import org.apache.commons.collections4.IterableUtils;
+
+              class A {
+                  int cardinality(Object value, Iterable<Object> values) { return 42; }
+                  int count(Object value, Iterable<Object> values) {
+                      return cardinality(value, values) + IterableUtils.frequency(values, value);
+                  }
+              }
+              """));
+        }
+
+        @Test
+        void retainCommonsCollections3() {
+            rewriteRun(
+              spec -> spec.parser(JavaParser.fromJavaVersion().classpathFromResources(new InMemoryExecutionContext(), "commons-collections-3")),
+              java(
+                """
+                import org.apache.commons.collections.CollectionUtils;
+
+                class A {
+                    int count(String value, java.util.Collection<String> values) {
+                        return CollectionUtils.cardinality(value, values);
+                    }
+                }
+                """
+              )
+            );
+        }
     }
 }
