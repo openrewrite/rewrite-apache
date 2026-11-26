@@ -229,6 +229,79 @@ class RemoveSettingsIgnoredWithConnectionManagerTest implements RewriteTest {
     }
 
     @Test
+    void removeTlsSettingsNextToConnectionManager() {
+        rewriteRun(
+          spec -> spec.recipe(new RemoveSettingsIgnoredWithConnectionManager()),
+          //language=java
+          java(
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.config.RegistryBuilder;
+              import org.apache.http.conn.socket.ConnectionSocketFactory;
+              import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+              import org.apache.http.conn.ssl.NoopHostnameVerifier;
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClientBuilder;
+              import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+              import org.apache.http.ssl.SSLContexts;
+
+              class A {
+                  CloseableHttpClient trustingAll(SSLContext sslContext) {
+                      return HttpClientBuilder.create()
+                          .setSSLContext(sslContext)
+                          .setConnectionManager(new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory> create()
+                              .register("http", PlainConnectionSocketFactory.INSTANCE)
+                              .register("https", new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
+                              .build()))
+                          .build();
+                  }
+
+                  CloseableHttpClient ignoredContext(PoolingHttpClientConnectionManager connectionManager) {
+                      SSLContext sslContext = SSLContexts.createDefault();
+                      return HttpClientBuilder.create()
+                          .setSSLContext(sslContext)
+                          .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                          .setConnectionManager(connectionManager)
+                          .build();
+                  }
+              }
+              """,
+            """
+              import javax.net.ssl.SSLContext;
+
+              import org.apache.http.config.RegistryBuilder;
+              import org.apache.http.conn.socket.ConnectionSocketFactory;
+              import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+              import org.apache.http.conn.ssl.NoopHostnameVerifier;
+              import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+              import org.apache.http.impl.client.CloseableHttpClient;
+              import org.apache.http.impl.client.HttpClientBuilder;
+              import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
+              class A {
+                  CloseableHttpClient trustingAll(SSLContext sslContext) {
+                      return HttpClientBuilder.create()
+                          .setConnectionManager(new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory> create()
+                              .register("http", PlainConnectionSocketFactory.INSTANCE)
+                              .register("https", new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
+                              .build()))
+                          .build();
+                  }
+
+                  CloseableHttpClient ignoredContext(PoolingHttpClientConnectionManager connectionManager) {
+                      return HttpClientBuilder.create()
+                          .setConnectionManager(connectionManager)
+                          .build();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void keepSocketConfigWithoutConnectionManager() {
         rewriteRun(
           spec -> spec.recipe(new RemoveSettingsIgnoredWithConnectionManager()),

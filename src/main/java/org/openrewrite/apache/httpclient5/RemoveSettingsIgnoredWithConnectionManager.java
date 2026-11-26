@@ -22,16 +22,20 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
 import org.openrewrite.staticanalysis.RemoveUnusedLocalVariables;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = false)
 @Value
@@ -46,13 +50,18 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             new MethodMatcher(BUILDER + " setMaxConnTotal(..)"),
             new MethodMatcher(BUILDER + " setMaxConnPerRoute(..)"),
             new MethodMatcher(BUILDER + " setConnectionTimeToLive(..)"),
-            new MethodMatcher(BUILDER + " setDnsResolver(..)"));
+            new MethodMatcher(BUILDER + " setDnsResolver(..)"),
+            new MethodMatcher(BUILDER + " setSSLSocketFactory(..)"),
+            new MethodMatcher(BUILDER + " setSSLContext(..)"),
+            new MethodMatcher(BUILDER + " setSslcontext(..)"),
+            new MethodMatcher(BUILDER + " setSSLHostnameVerifier(..)"));
 
     String displayName = "Remove `HttpClientBuilder` connection settings ignored next to `setConnectionManager`";
 
     String description = "HttpClient 4's `HttpClientBuilder` applies `setDefaultSocketConfig`, `setDefaultConnectionConfig`, " +
-            "`setMaxConnTotal`, `setMaxConnPerRoute`, `setConnectionTimeToLive` and `setDnsResolver` only to the connection " +
-            "manager it creates itself, so they have no effect when the same builder chain also calls `setConnectionManager`. " +
+            "`setMaxConnTotal`, `setMaxConnPerRoute`, `setConnectionTimeToLive`, `setDnsResolver` and the TLS settings " +
+            "`setSSLSocketFactory`, `setSSLContext` and `setSSLHostnameVerifier` only to the connection manager it creates " +
+            "itself, so they have no effect when the same builder chain also calls `setConnectionManager`. " +
             "HttpClient 5's `HttpClientBuilder` no longer has these methods; remove them from such chains, " +
             "along with local variables that only held their arguments.";
 
@@ -63,6 +72,17 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             public J visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
                 J md = super.visitMethodDeclaration(method, ctx);
                 if (md != method) {
+                    // Types only the removed locals referenced, such as `SSLContexts` in `SSLContexts.createDefault()`
+                    new JavaIsoVisitor<Set<JavaType.FullyQualified>>() {
+                        @Override
+                        public J.Identifier visitIdentifier(J.Identifier identifier, Set<JavaType.FullyQualified> types) {
+                            JavaType.FullyQualified type = TypeUtils.asFullyQualified(identifier.getType());
+                            if (identifier.getFieldType() == null && type != null) {
+                                types.add(type);
+                            }
+                            return identifier;
+                        }
+                    }.reduce(method, new HashSet<>()).forEach(this::maybeRemoveImport);
                     // The dropped arguments are configuration values, typically built by side effect free builder chains
                     return (J) new RemoveUnusedLocalVariables(null, null, true).getVisitor()
                             .visitNonNull(md, ctx, getCursor().getParentOrThrow());
