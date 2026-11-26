@@ -25,10 +25,6 @@ import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
 import org.openrewrite.test.TypeValidation;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.maven.Assertions.pomXml;
 
@@ -121,8 +117,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
               </project>
               """,
             spec -> spec.after(pom -> {
-                Matcher version = Pattern.compile("5\\.4\\.\\d+").matcher(pom);
-                assertThat(version.find()).describedAs("Expected 5.4.x in %s", pom).isTrue();
+                String httpCoreVersion = DependencyVersions.versionOf(pom, "httpcore5");
                 //language=xml
                 return """
                   <project>
@@ -138,7 +133,7 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
                           </dependency>
                       </dependencies>
                   </project>
-                  """.formatted(version.group(0));
+                  """.formatted(httpCoreVersion);
             })
           )
         );

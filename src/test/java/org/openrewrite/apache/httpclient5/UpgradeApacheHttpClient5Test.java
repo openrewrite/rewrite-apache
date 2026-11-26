@@ -28,10 +28,8 @@ import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
 import org.openrewrite.test.TypeValidation;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.openrewrite.gradle.Assertions.buildGradle;
+import static org.openrewrite.gradle.toolingapi.Assertions.withToolingApi;
 import static org.openrewrite.java.Assertions.*;
 import static org.openrewrite.maven.Assertions.pomXml;
 
@@ -595,6 +593,62 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
         );
     }
 
+    @Nested
+    class DeprecatedMethodsNoChange {
+        @Test
+        void unrelatedTypesWithSameMethodNames() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import java.net.URI;
+
+                  class Unrelated {
+                      Object[] getAllHeaders() { return new Object[0]; }
+                      URI getURI() { return null; }
+                      void releaseConnection() {}
+                      String getSchemeName() { return ""; }
+                      Unrelated setSocketTimeout(int timeout) { return this; }
+                      Unrelated setRetryHandler(Object handler) { return this; }
+                  }
+
+                  class A {
+                      void method(Unrelated unrelated) {
+                          unrelated.getAllHeaders();
+                          unrelated.getURI();
+                          unrelated.releaseConnection();
+                          unrelated.getSchemeName();
+                          unrelated.setSocketTimeout(10).setRetryHandler(null);
+                      }
+                  }
+                  """
+              )
+            );
+        }
+
+        @Test
+        void alreadyMigratedHttpClient5Methods() {
+            rewriteRun(
+              //language=java
+              java(
+                """
+                  import org.apache.hc.client5.http.classic.methods.HttpPost;
+                  import org.apache.hc.core5.http.ClassicHttpResponse;
+
+                  class A {
+                      void method(ClassicHttpResponse response) {
+                          HttpPost httpPost = new HttpPost("");
+                          response.getHeaders();
+                          httpPost.getUri();
+                          httpPost.reset();
+                      }
+                  }
+                  """
+              )
+            );
+        }
+    }
+
     @Issue("https://github.com/openrewrite/rewrite-apache/issues/67")
     @Test
     void credentialsProviderToStore() {
@@ -813,6 +867,74 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     class Dependencies {
 
         @Test
+        void migrateGradleDependencies() {
+            rewriteRun(
+              spec -> spec.beforeRecipe(withToolingApi()),
+              mavenProject("proj",
+                srcMainJava(
+                  //language=java
+                  java(
+                    """
+                      import org.apache.http.impl.client.CloseableHttpClient;
+                      import org.apache.http.impl.client.HttpClients;
+
+                      public class A {
+                          CloseableHttpClient getClient() {
+                              return HttpClients.createDefault();
+                          }
+                      }
+                      """,
+                    """
+                      import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+                      import org.apache.hc.client5.http.impl.classic.HttpClients;
+
+                      public class A {
+                          CloseableHttpClient getClient() {
+                              return HttpClients.createDefault();
+                          }
+                      }
+                      """
+                  )
+                ),
+                buildGradle(
+                  //language=groovy
+                  """
+                    plugins {
+                        id 'java-library'
+                    }
+
+                    repositories {
+                        mavenCentral()
+                    }
+
+                    dependencies {
+                        implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+                        implementation 'org.apache.httpcomponents:httpmime:4.5.14'
+                    }
+                    """,
+                  spec -> spec.after(gradle -> {
+                      String httpClientVersion = DependencyVersions.versionOf(gradle, "httpclient5");
+                      //language=groovy
+                      return """
+                        plugins {
+                            id 'java-library'
+                        }
+
+                        repositories {
+                            mavenCentral()
+                        }
+
+                        dependencies {
+                            implementation "org.apache.httpcomponents.client5:httpclient5:%s"
+                        }
+                        """.formatted(httpClientVersion);
+                  })
+                )
+              )
+            );
+        }
+
+        @Test
         void migrateDependencies() {
             rewriteRun(
               mavenProject("proj",
@@ -864,9 +986,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                       </project>
                       """,
                     spec -> spec.after(pom -> {
-                        Matcher version = Pattern.compile("5\\.6\\.\\d+").matcher(pom);
-                        assertThat(version.find()).describedAs("Expected 5.6.x in %s", pom).isTrue();
-                        String httpClientVersion = version.group();
+                        String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
                         //language=xml
                         return """
                           <project>
@@ -933,9 +1053,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     </project>
                     """,
                   spec -> spec.after(pom -> {
-                      Matcher version = Pattern.compile("5\\.6\\.\\d+").matcher(pom);
-                      assertThat(version.find()).describedAs("Expected 5.6.x in %s", pom).isTrue();
-                      String httpClientVersion = version.group();
+                      String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
                       //language=xml
                       return """
                         <project>
@@ -1057,10 +1175,31 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                         </parent>
                     </project>
                     """,
-                  spec -> spec.after(pom -> assertThat(pom)
-                    .contains("<artifactId>httpclient5</artifactId>")
-                    .containsPattern("<version>5\\.6\\.\\d+</version>")
-                    .actual())
+                  spec -> spec.after(pom -> {
+                      String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
+                      //language=xml
+                      return """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>org.example</groupId>
+                            <artifactId>example</artifactId>
+                            <version>1.0.0</version>
+                            <parent>
+                                <groupId>org.example</groupId>
+                                <artifactId>parent</artifactId>
+                                <version>1.0.0</version>
+                                <relativePath>../pom.xml</relativePath>
+                            </parent>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>org.apache.httpcomponents.client5</groupId>
+                                    <artifactId>httpclient5</artifactId>
+                                    <version>%s</version>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """.formatted(httpClientVersion);
+                  })
                 )
               )
             );
@@ -1207,9 +1346,7 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     </project>
                     """,
                   spec -> spec.after(pom -> {
-                      Matcher version = Pattern.compile("5\\.6\\.\\d+").matcher(pom);
-                      assertThat(version.find()).describedAs("Expected 5.6.x in %s", pom).isTrue();
-                      String httpClientVersion = version.group();
+                      String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
                       //language=xml
                       return """
                         <project>

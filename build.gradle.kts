@@ -59,7 +59,10 @@ dependencies {
     implementation("org.jspecify:jspecify:1.0.0")
 
     testImplementation("org.openrewrite:rewrite-java-21")
+    testImplementation("org.openrewrite:rewrite-gradle")
+    testImplementation("org.openrewrite.gradle.tooling:model:$rewriteVersion")
     testImplementation("org.openrewrite:rewrite-kotlin")
+    testRuntimeOnly("org.gradle:gradle-tooling-api:latest.release")
     testImplementation("org.openrewrite:rewrite-test")
     testImplementation("org.openrewrite:rewrite-maven")
 }
