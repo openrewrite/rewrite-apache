@@ -28,6 +28,7 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.JavaTemplate;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.search.SemanticallyEqual;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
@@ -239,8 +240,7 @@ public class MovePoolSettingsToConnectionManager extends Recipe {
     }
 
     private static boolean isSameVariable(@Nullable Expression e, J.Identifier builder) {
-        return e instanceof J.Identifier && ((J.Identifier) e).getSimpleName().equals(builder.getSimpleName()) &&
-                Objects.equals(((J.Identifier) e).getFieldType(), builder.getFieldType());
+        return e instanceof J.Identifier && SemanticallyEqual.areEqual(e, builder);
     }
 
     private static boolean isCreatedIn(J.Identifier builder, J.Block block) {
