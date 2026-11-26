@@ -48,8 +48,6 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             new MethodMatcher(BUILDER + " setConnectionTimeToLive(..)"),
             new MethodMatcher(BUILDER + " setDnsResolver(..)"));
 
-    private static final String DROPPED_LOCAL_ARGUMENT = "DROPPED_LOCAL_ARGUMENT";
-
     String displayName = "Remove `HttpClientBuilder` connection settings ignored next to `setConnectionManager`";
 
     String description = "HttpClient 4's `HttpClientBuilder` applies `setDefaultSocketConfig`, `setDefaultConnectionConfig`, " +
@@ -64,7 +62,8 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
             @Override
             public J visitBlock(J.Block block, ExecutionContext ctx) {
                 J b = super.visitBlock(block, ctx);
-                if (getCursor().pollMessage(DROPPED_LOCAL_ARGUMENT) != null) {
+                Object parent = getCursor().getParentTreeCursor().getValue();
+                if (b != block && !(parent instanceof J.ClassDeclaration || parent instanceof J.NewClass)) {
                     // The dropped arguments are configuration values, typically built by side effect free builder chains
                     return (J) new RemoveUnusedLocalVariables(null, null, true).getVisitor()
                             .visitNonNull(b, ctx, getCursor().getParentOrThrow());
@@ -79,10 +78,6 @@ public class RemoveSettingsIgnoredWithConnectionManager extends Recipe {
                         IGNORED_WITH_CONNECTION_MANAGER.stream().anyMatch(matcher -> matcher.matches(m)) &&
                         chainSetsConnectionManager(m)) {
                     m.getArguments().forEach(argument -> maybeRemoveImport(TypeUtils.asFullyQualified(argument.getType())));
-                    if (m.getArguments().stream().anyMatch(J.Identifier.class::isInstance)) {
-                        getCursor().dropParentUntil(p -> p instanceof J.Block || p == Cursor.ROOT_VALUE)
-                                .putMessage(DROPPED_LOCAL_ARGUMENT, true);
-                    }
                     return m.getSelect();
                 }
                 return m;
