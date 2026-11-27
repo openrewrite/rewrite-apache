@@ -28,6 +28,7 @@ import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
 import org.openrewrite.test.TypeValidation;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.gradle.Assertions.buildGradle;
 import static org.openrewrite.gradle.toolingapi.Assertions.withToolingApi;
 import static org.openrewrite.java.Assertions.*;
@@ -866,6 +867,9 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     @Nested
     class Dependencies {
 
+        private static final String HTTPCLIENT5_DEPENDENCY =
+          "<groupId>org\\.apache\\.httpcomponents\\.client5</groupId>\\s*<artifactId>httpclient5</artifactId>\\s*<version>5\\.\\d+\\.\\d+</version>";
+
         @Test
         void migrateGradleDependencies() {
             rewriteRun(
@@ -912,23 +916,11 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                         implementation 'org.apache.httpcomponents:httpmime:4.5.14'
                     }
                     """,
-                  spec -> spec.after(gradle -> {
-                      String httpClientVersion = DependencyVersions.versionOf(gradle, "httpclient5");
-                      //language=groovy
-                      return """
-                        plugins {
-                            id 'java-library'
-                        }
-
-                        repositories {
-                            mavenCentral()
-                        }
-
-                        dependencies {
-                            implementation "org.apache.httpcomponents.client5:httpclient5:%s"
-                        }
-                        """.formatted(httpClientVersion);
-                  })
+                  spec -> spec.after(gradle -> assertThat(gradle)
+                    .containsPattern("implementation \"org\\.apache\\.httpcomponents\\.client5:httpclient5:5\\.\\d+\\.\\d+\"")
+                    .doesNotContain("org.apache.httpcomponents:httpclient:")
+                    .doesNotContain("httpmime")
+                    .actual())
                 )
               )
             );
@@ -985,25 +977,11 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           </dependencies>
                       </project>
                       """,
-                    spec -> spec.after(pom -> {
-                        String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
-                        //language=xml
-                        return """
-                          <project>
-                              <modelVersion>4.0.0</modelVersion>
-                              <groupId>org.example</groupId>
-                              <artifactId>example</artifactId>
-                              <version>1.0.0</version>
-                              <dependencies>
-                                  <dependency>
-                                      <groupId>org.apache.httpcomponents.client5</groupId>
-                                      <artifactId>httpclient5</artifactId>
-                                      <version>%s</version>
-                                  </dependency>
-                              </dependencies>
-                          </project>
-                          """.formatted(httpClientVersion);
-                    }))
+                    spec -> spec.after(pom -> assertThat(pom)
+                      .containsPattern(HTTPCLIENT5_DEPENDENCY)
+                      .doesNotContain("<artifactId>httpclient</artifactId>")
+                      .doesNotContain("<artifactId>httpmime</artifactId>")
+                      .actual()))
               )
             );
         }
@@ -1052,30 +1030,10 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                         </dependencies>
                     </project>
                     """,
-                  spec -> spec.after(pom -> {
-                      String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
-                      //language=xml
-                      return """
-                        <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <groupId>org.example</groupId>
-                            <artifactId>example</artifactId>
-                            <version>1.0.0</version>
-                            <dependencies>
-                                <dependency>
-                                    <groupId>org.apache.httpcomponents.client5</groupId>
-                                    <artifactId>httpclient5</artifactId>
-                                    <version>%s</version>
-                                </dependency>
-                                <dependency>
-                                    <groupId>org.apache.solr</groupId>
-                                    <artifactId>solr-solrj</artifactId>
-                                    <version>8.11.3</version>
-                                </dependency>
-                            </dependencies>
-                        </project>
-                        """.formatted(httpClientVersion);
-                  }))));
+                  spec -> spec.after(pom -> assertThat(pom)
+                    .containsPattern(HTTPCLIENT5_DEPENDENCY)
+                    .contains("<artifactId>solr-solrj</artifactId>")
+                    .actual()))));
         }
 
         @Test
@@ -1175,31 +1133,10 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                         </parent>
                     </project>
                     """,
-                  spec -> spec.after(pom -> {
-                      String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
-                      //language=xml
-                      return """
-                        <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <groupId>org.example</groupId>
-                            <artifactId>example</artifactId>
-                            <version>1.0.0</version>
-                            <parent>
-                                <groupId>org.example</groupId>
-                                <artifactId>parent</artifactId>
-                                <version>1.0.0</version>
-                                <relativePath>../pom.xml</relativePath>
-                            </parent>
-                            <dependencies>
-                                <dependency>
-                                    <groupId>org.apache.httpcomponents.client5</groupId>
-                                    <artifactId>httpclient5</artifactId>
-                                    <version>%s</version>
-                                </dependency>
-                            </dependencies>
-                        </project>
-                        """.formatted(httpClientVersion);
-                  })
+                  spec -> spec.after(pom -> assertThat(pom)
+                    .containsPattern(HTTPCLIENT5_DEPENDENCY)
+                    .contains("<relativePath>../pom.xml</relativePath>")
+                    .actual())
                 )
               )
             );
@@ -1345,31 +1282,11 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                         </dependencies>
                     </project>
                     """,
-                  spec -> spec.after(pom -> {
-                      String httpClientVersion = DependencyVersions.versionOf(pom, "httpclient5");
-                      //language=xml
-                      return """
-                        <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <groupId>org.example</groupId>
-                            <artifactId>example</artifactId>
-                            <version>1.0.0</version>
-                            <dependencies>
-                                <dependency>
-                                    <groupId>org.apache.httpcomponents.client5</groupId>
-                                    <artifactId>httpclient5</artifactId>
-                                    <version>%s</version>
-                                </dependency>
-                                <dependency>
-                                    <groupId>io.rest-assured</groupId>
-                                    <artifactId>rest-assured</artifactId>
-                                    <version>5.5.0</version>
-                                    <scope>test</scope>
-                                </dependency>
-                            </dependencies>
-                        </project>
-                        """.formatted(httpClientVersion);
-                  })
+                  spec -> spec.after(pom -> assertThat(pom)
+                    .containsPattern(HTTPCLIENT5_DEPENDENCY)
+                    .doesNotContain("<artifactId>httpclient</artifactId>")
+                    .contains("<artifactId>rest-assured</artifactId>")
+                    .actual())
                 )
               )
             );

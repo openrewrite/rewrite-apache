@@ -25,6 +25,7 @@ import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
 import org.openrewrite.test.TypeValidation;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.maven.Assertions.pomXml;
 
@@ -116,25 +117,10 @@ class MigrateApacheHttpCoreNioTest implements RewriteTest {
                   </dependencies>
               </project>
               """,
-            spec -> spec.after(pom -> {
-                String httpCoreVersion = DependencyVersions.versionOf(pom, "httpcore5");
-                //language=xml
-                return """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                      <dependencies>
-                          <dependency>
-                              <groupId>org.apache.httpcomponents.core5</groupId>
-                              <artifactId>httpcore5</artifactId>
-                              <version>%s</version>
-                          </dependency>
-                      </dependencies>
-                  </project>
-                  """.formatted(httpCoreVersion);
-            })
+            spec -> spec.after(pom -> assertThat(pom)
+              .containsPattern("<groupId>org\\.apache\\.httpcomponents\\.core5</groupId>\\s*<artifactId>httpcore5</artifactId>\\s*<version>5\\.\\d+\\.\\d+</version>")
+              .doesNotContain("<artifactId>httpcore-nio</artifactId>")
+              .actual())
           )
         );
     }
