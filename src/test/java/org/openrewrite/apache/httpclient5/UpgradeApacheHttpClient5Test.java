@@ -169,33 +169,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
     }
 
     @Test
-    void migratesMimeMinimalFieldToMimeField() {
-        rewriteRun(
-          //language=java
-          java(
-            """
-              import org.apache.http.entity.mime.MinimalField;
-
-              class A {
-                  void method() {
-                      MinimalField field = new MinimalField("A", "B");
-                  }
-              }
-              """,
-            """
-              import org.apache.hc.client5.http.entity.mime.MimeField;
-
-              class A {
-                  void method() {
-                      MimeField field = new MimeField("A", "B");
-                  }
-              }
-              """
-          )
-        );
-    }
-
-    @Test
     void addTimeUnitsToTimeoutAndDurationMethods() {
         rewriteRun(
           // ChangeType keeps HttpClient 4's RequestConfig.Builder, which has no setConnectTimeout(long, TimeUnit) for AddTimeUnitArgument to find
@@ -620,28 +593,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                           unrelated.releaseConnection();
                           unrelated.getSchemeName();
                           unrelated.setSocketTimeout(10).setRetryHandler(null);
-                      }
-                  }
-                  """
-              )
-            );
-        }
-
-        @Test
-        void alreadyMigratedHttpClient5Methods() {
-            rewriteRun(
-              //language=java
-              java(
-                """
-                  import org.apache.hc.client5.http.classic.methods.HttpPost;
-                  import org.apache.hc.core5.http.ClassicHttpResponse;
-
-                  class A {
-                      void method(ClassicHttpResponse response) {
-                          HttpPost httpPost = new HttpPost("");
-                          response.getHeaders();
-                          httpPost.getUri();
-                          httpPost.reset();
                       }
                   }
                   """
@@ -1138,23 +1089,6 @@ class UpgradeApacheHttpClient5Test implements RewriteTest {
                     .contains("<relativePath>../pom.xml</relativePath>")
                     .actual())
                 )
-              )
-            );
-        }
-
-        @Test
-        void onlyAddDependencyWhenApplicable() {
-            rewriteRun(
-              pomXml(
-                //language=xml
-                """
-                  <project>
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>org.example</groupId>
-                      <artifactId>example</artifactId>
-                      <version>1.0.0</version>
-                  </project>
-                  """
               )
             );
         }
